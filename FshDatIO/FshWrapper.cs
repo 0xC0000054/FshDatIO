@@ -87,7 +87,7 @@ namespace FshDatIO
                         {
                             byte[] compbuf = QfsComp.Comp(rawstream);
 
-                            if (compbuf != null)
+                            if ((compbuf != null) && (compbuf.Length < image.RawData.Length)) // is compbuf not null and is its length less than the uncompressed data length
                             {
                                 datalen = compbuf.Length;
 

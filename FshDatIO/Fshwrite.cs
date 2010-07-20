@@ -300,11 +300,13 @@ namespace FshDatIO
                     if (compress)
                     {
                         ms.Position = 0L;
-                        byte[] buf = QfsComp.Comp(ms);
-                        if (buf != null)
+                        byte[] compbuf = QfsComp.Comp(ms);
+                        if ((compbuf != null) && (compbuf.Length < (int)ms.Length))
                         {
-                            MemoryStream ms2 = new MemoryStream(buf);
-                            ms2.WriteTo(output);
+                            using (MemoryStream ms2 = new MemoryStream(compbuf))
+                            {
+                                ms2.WriteTo(output);
+                            }
                         }
                         else
                         {

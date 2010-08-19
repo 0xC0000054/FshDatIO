@@ -108,7 +108,7 @@ namespace FshDatIO
                 }
             }
         }
-        private Bitmap BlendDXTBmp(Bitmap colorbmp, Bitmap bmpalpha)
+        private static Bitmap BlendDXTBmp(Bitmap colorbmp, Bitmap bmpalpha)
         {
             Bitmap image = null;
             if (colorbmp != null && bmpalpha != null)
@@ -163,7 +163,7 @@ namespace FshDatIO
         private List<int> codelist = null;
         private bool compress = false;
 
-        private int GetBmpDataSize(Bitmap bmp, int code)
+        private static int GetBmpDataSize(Bitmap bmp, int code)
         {
             int ret = -1;
             switch (code)

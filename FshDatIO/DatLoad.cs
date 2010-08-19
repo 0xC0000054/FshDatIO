@@ -141,12 +141,12 @@ namespace FshDatIO
             int idx = indexes.Find(0x7ab50e44, Group, Instance);
 
             if (idx == -1)  
-                throw new Exception("The file at the specified index does not exist."); //  not a valid index so return null
+                throw new DatFileException("The file at the specified index does not exist."); //  not a valid index so return null
 
             DatIndex index = indexes[idx];
             FshWrapper fsh = files.FromDatIndex(idx);
             if (fsh == null)
-                throw new Exception(string.Format("Unable to find the Fsh file at index number {0}", idx.ToString()));
+                throw new DatFileException(string.Format("Unable to find the Fsh file at index number {0}", idx.ToString()));
 
             if (!fsh.Loaded)
             {
@@ -240,22 +240,15 @@ namespace FshDatIO
                         if (index.Flags == DatIndexFlags.New && index.Type == 0x7ab50e44)
                         {
                             FshWrapper fshw = files[i];
+#if DEBUG
                             Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
-
+#endif
                             int rawlen = fshw.Image.RawData.Length;
 
                             location = (uint)bw.BaseStream.Position;
 
-                            try
-                            {
-                                size = (uint)fshw.Save(bw.BaseStream);
-                            }
-                            catch (IndexOutOfRangeException ix)
-                            {                               
-
-                                Debug.WriteLine(ix.Message);
-                                Debug.Write(ix.StackTrace);
-                            }
+                            size = (uint)fshw.Save(bw.BaseStream);
+                           
                             if (fshw.Image.IsCompressed)
                             {
                                 dirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)rawlen));
@@ -266,7 +259,9 @@ namespace FshDatIO
                             location = (uint)bw.BaseStream.Position;
                             size = index.FileSize;
 
-                            Debug.WriteLine(string.Format("Index {0} Type = {1} Compressed = {2}", i.ToString(), index.Type.ToString("X"), index.Compressed.ToString()));
+#if DEBUG
+                            Debug.WriteLine(string.Format("Index {0} Type = {1} Compressed = {2}", i.ToString(), index.Type.ToString("X"), index.Compressed.ToString())); 
+#endif
 
                             byte[] rawbuf = new byte[size];
                             if (reader != null)
@@ -279,7 +274,9 @@ namespace FshDatIO
                                 bw.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
                                 bw.BaseStream.Read(rawbuf, 0, (int)size);
                             }
-                            Debug.WriteLine(string.Format("CompSig = {0}{1}", rawbuf[4].ToString("X"), rawbuf[5].ToString("X")));
+#if DEBUG
+                            Debug.WriteLine(string.Format("CompSig = {0}{1}", rawbuf[4].ToString("X"), rawbuf[5].ToString("X"))); 
+#endif
                             bw.Write(rawbuf);
 
                             if ((rawbuf.Length > 5) && (rawbuf[4] == 0x10 && rawbuf[5] == 0xfb))

@@ -108,7 +108,9 @@ namespace FshDatIO
 
                 int len = ((int)output.Position - prevpos);
 
-                System.Diagnostics.Debug.WriteLine(string.Format("datalen = {0} len = {1}", datalen.ToString(), len.ToString()));
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine(string.Format("datalen = {0} len = {1}", datalen.ToString(), len.ToString())); 
+#endif
 
                 return len;
             }

@@ -283,14 +283,19 @@ namespace FshDatIO
             }
             len = index - lastwrot;
 
-            if (outidx == outbuf.Length)
+            if ((outidx + len) >= outbuf.Length) // add in the remaining data length to check for available space
             {
                 return null; // data did not compress so return null
             }
 
             outbuf[outidx++] = (byte)(0xfc + len);
+
+
             while (len-- > 0)
             {
+                if (outidx >= outbuf.Length)
+                    return null;
+
                 outbuf[outidx++] = inbuf[lastwrot++];
             }
             byte[] tempsize = new byte[outidx]; // trim the outbuf array to it's actual length

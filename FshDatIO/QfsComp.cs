@@ -277,6 +277,10 @@ namespace FshDatIO
                 }
                 outbuf[outidx++] = (byte)(0xe0 + len);
                 len = (4 * len) + 4;
+
+                if ((outidx + len) >= outbuf.Length)
+                    return null;
+
                 Array.Copy(inbuf, lastwrot, outbuf, outidx, len);
                 lastwrot += len;
                 outidx += len;

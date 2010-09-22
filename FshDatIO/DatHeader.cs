@@ -68,7 +68,9 @@ namespace FshDatIO
                 datecreated = value;
             }
         }
-
+        /// <summary>
+        /// The Date the DatFile was Modified (In Unix Timestamp format, the number of seconds since 1 / 1 / 1970) 
+        /// </summary>
         public uint DateModified
         {
             get
@@ -167,7 +169,7 @@ namespace FshDatIO
         {
             if (Encoding.ASCII.GetString(br.ReadBytes(4)) != "DBPF")
             {
-                throw new Exception("Invalid Dat Header");
+                throw new DatHeaderException(FshDatIO.Properties.Resources.DatHeaderInvalidIdentifer);
             }
             this.vmajor = br.ReadUInt32();
             this.vminor = br.ReadUInt32();

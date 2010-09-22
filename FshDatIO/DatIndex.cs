@@ -18,7 +18,7 @@ namespace FshDatIO
         uint group;
         uint instance;
         uint location;
-        uint filesize;
+        uint fileSize;
         DatIndexFlags flags;
         bool compressed; 
 
@@ -28,7 +28,7 @@ namespace FshDatIO
             this.group = 0;
             this.instance = 0;
             this.location = 0;
-            this.filesize = 0;
+            this.fileSize = 0;
             this.flags = DatIndexFlags.None;
             this.compressed = false;
         }
@@ -38,7 +38,7 @@ namespace FshDatIO
             this.group = Group;
             this.instance = Instance;
             this.location = Location;
-            this.filesize = Filesize;
+            this.fileSize = Filesize;
             this.flags = DatIndexFlags.None;
             this.compressed = false;
         }
@@ -48,7 +48,7 @@ namespace FshDatIO
             this.group = Group;
             this.instance = Instance;
             this.location = 0;
-            this.filesize = 0;
+            this.fileSize = 0;
             this.flags = DatIndexFlags.None;
             this.compressed = false;
         }
@@ -59,7 +59,7 @@ namespace FshDatIO
             bw.Write(this.group);
             bw.Write(this.instance);
             bw.Write(this.location);
-            bw.Write(this.filesize);
+            bw.Write(this.fileSize);
         }
 
         public uint Type
@@ -98,7 +98,7 @@ namespace FshDatIO
         {
             get
             {
-                return filesize;
+                return fileSize;
             }
         }
 

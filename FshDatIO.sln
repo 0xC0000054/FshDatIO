@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "readfshdat", "readfshdat.csproj", "{1B016A69-131E-42D8-80AB-19BBEDDFB368}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FshDatIO", "FshDatIO\FshDatIO.csproj", "{86A0ED83-9F8A-4A54-9CCE-D06FD192C851}"
@@ -18,7 +18,6 @@ Global
 		{1B016A69-131E-42D8-80AB-19BBEDDFB368}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1B016A69-131E-42D8-80AB-19BBEDDFB368}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B016A69-131E-42D8-80AB-19BBEDDFB368}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1B016A69-131E-42D8-80AB-19BBEDDFB368}.Release|Any CPU.Build.0 = Release|Any CPU
 		{86A0ED83-9F8A-4A54-9CCE-D06FD192C851}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{86A0ED83-9F8A-4A54-9CCE-D06FD192C851}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86A0ED83-9F8A-4A54-9CCE-D06FD192C851}.Release|Any CPU.ActiveCfg = Release|Any CPU

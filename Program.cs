@@ -1,46 +1,68 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-/*using SynapticEffect.SimCity.IO;
-using SynapticEffect.SimCity.IO.FileTypes;
-using SynapticEffect.SimCity.DatNamespace;*/
 using System.Diagnostics;
 using System.IO;
 using FSHLib;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using FshDatIO;
+using System.Globalization;
 
 namespace readfshdat
 {
     class Program
     {
 
-
-
         static void Main(string[] args)// savetest
         {
              DateTime unix = new DateTime(1970, 1, 1, 0, 0, 0);
-            /*DatFile dl = new DatFile(@"C:\Documents and Settings\Nicholas\Desktop\Problematic Images\xpcomp.dat");
+             string dat = @"C:\Documents and Settings\Nicholas\My Documents\SimCity 4\Plugins\power station 1-0x5ad0e817_0x129a82f9_0x10000.SC4Model";
+             Console.WriteLine(dat);
+            DatFile dl = new DatFile(dat);
+            try
+            {
+                int i = 0;
+                foreach (var item in dl.Indexes)
+                {
+                    if (item.Type == 0x7ab50e44)
+                    {
+                        FshWrapper fw = dl.LoadFile(item.Group, item.Instance);
+                        Debug.WriteLine(string.Format("Fsh {0} Width = {1}, Height = {2}",i++,((BitmapItem)fw.Image.Bitmaps[0]).Bitmap.Width,((BitmapItem)fw.Image.Bitmaps[0]).Bitmap.Height));
+                    }
+                }
+                
+                string savename = @"C:\Documents and Settings\Nicholas\Desktop\Problematic Images\temp2.dat";
 
-            FshWrapper fshw = dl.LoadFile(0x2bd684e4, 0x03aa5024);
-            string savename = @"C:\Documents and Settings\Nicholas\Desktop\Problematic Images\temp2.dat";
-            dl.Save(savename);
-
-            DatFile rel = new DatFile(savename);
+                dl.Save(string.Empty);
+            }
+            catch (DatFileException dfx)
+            {
+                Console.WriteLine(dfx.Message);
+            }
+            catch (ArgumentException ax)
+            {
+                Console.WriteLine(ax.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.ToString());
+            }
+           /* DatFile rel = new DatFile(savename);
             rel.Close();*/
 
             string path = @"C:\Program Files\Maxis\SimCity 4 Deluxe\SimCity_1.dat";
 
             using (BinaryReader br = new BinaryReader(new FileStream(path,FileMode.Open,FileAccess.Read)))
             {
+                string filename = Path.GetFileName(((FileStream)br.BaseStream).Name);
                 DatHeader head = new DatHeader(br);
                 DateTime create = unix.AddSeconds(head.DateCreated);
+                Console.WriteLine("{0} Created = {1}", filename, create.ToString(CultureInfo.CurrentCulture)); 
                 DateTime mod = unix.AddSeconds(head.DateModified);
+                Console.WriteLine("{0} Modified = {1}", filename, mod.ToString(CultureInfo.CurrentCulture)); 
+
             }
-
-            Console.ReadLine();
-
 
            /* using (MemoryStream ms = new MemoryStream())
             {
@@ -84,7 +106,7 @@ namespace readfshdat
                 Debug.WriteLine(indexes.Count.ToString());
             }*/
 
-            Console.WriteLine("Press any key to exit");
+            Console.WriteLine("\n Press any key to exit");
             Console.ReadLine();
         }
     }

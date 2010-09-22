@@ -45,24 +45,33 @@ namespace FshDatIO
             kColourMetricUniform = (1 << 6),
 
         }
-       
-        private byte[] CompressImage(Bitmap image, int flags)
+        
+        private static byte[] SwapRGB(byte[] bytes)
+        {
+            Byte tmp;
+            for (int x = 0; x < bytes.GetLength(0); x += 4)
+            {
+                tmp = bytes[(x + 2)];
+                bytes[x + 2] = bytes[x];
+                bytes[x] = tmp;
+            }
+            return bytes;
+        }
+
+        private static byte[] CompressImage(Bitmap image, int flags)
         {
             byte[] pixelData = new byte[image.Width * image.Height * 4];
 
-            for (int y = 0; y < image.Height; y++)
-            {
-                for (int x = 0; x < image.Width; x++)
-                {
-                    Color pixel = image.GetPixel(x, y);
-                    int Offset = (y * image.Width * 4) + (x * 4);
+            BitmapData data = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 
-                    pixelData[Offset] = pixel.R;
-                    pixelData[Offset + 1] = pixel.G;
-                    pixelData[Offset + 2] = pixel.B;
-                    pixelData[Offset + 3] = pixel.A;
-                }
-            }
+            int len = data.Stride * data.Height;
+            byte[] temp = new byte[len];
+            Marshal.Copy(data.Scan0, temp, 0, len);
+
+            image.UnlockBits(data);
+
+            pixelData = SwapRGB(temp);
+            
 
             // Compute size of compressed block area, and allocate 
             int blockCount = ((image.Width + 3) / 4) * ((image.Height + 3) / 4);

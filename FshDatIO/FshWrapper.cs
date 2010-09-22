@@ -22,22 +22,17 @@ namespace FshDatIO
             loaded = false;
             compressed = false;
         }
-
+        /// <summary>
+        /// Initilizes a new instance of the FshWrapper class with the specified FSHImage
+        /// </summary>
+        /// <param name="fsh">The source image to use</param>
         public FshWrapper(FSHImage fsh)
         {
             image = fsh;
             compressed = fsh.IsCompressed;
             loaded = true;
         }
-
-        public FSHImage Image
-        {
-            get 
-            {
-                return image;
-            }
-        }
-
+        
         public void Load(Stream input)
         {
             if (input == null)
@@ -45,6 +40,7 @@ namespace FshDatIO
 
             image = new FSHImage(input);
             image.IsCompressed = compressed;
+            this.loaded = true;
         }
 
         public int Save(Stream output)
@@ -122,7 +118,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="image">The image to test</param>
         /// <returns>True if successful otherwise false</returns>
-        private bool IsDXTFsh(FSHImage image)
+        private static bool IsDXTFsh(FSHImage image)
         {
             bool result = true;
             foreach (BitmapItem bi in image.Bitmaps)
@@ -134,6 +130,16 @@ namespace FshDatIO
             }
             return result;
         }
+
+        public FSHImage Image
+        {
+            get 
+            {
+                return image;
+            }
+        }
+
+        
 
         public bool Compressed
         {
@@ -159,10 +165,6 @@ namespace FshDatIO
             get
             {
                 return loaded;
-            }
-            set
-            {
-                loaded = value;
             }
         }
 

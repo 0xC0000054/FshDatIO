@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using FSHLib;
 using System.Diagnostics;
+using FshDatIO.Properties;
 
 namespace FshDatIO
 {
@@ -66,50 +67,66 @@ namespace FshDatIO
                 return loaded;
             }
         }
-
+        /// <summary>
+        /// Initializes a new instance of the DatFile class.  
+        /// </summary>
         public DatFile()
         {
             head = new DatHeader();
             indexes = new List<DatIndex>();
             files = new List<FshWrapper>();
-            loaded = false;
-            dirty = false;
         }
-
-        public DatFile(string Filename)
+        /// <summary>
+        /// Initializes a new instance of the DatFile class and loads the specified filename.  
+        /// </summary>
+        /// <param name="fileName">The filename to load.</param>
+        public DatFile(string fileName)
         {
-            reader = new BinaryReader(new FileStream(Filename, FileMode.Open, FileAccess.Read));
-	        
-            this.Load(reader);
-            this.filename = Filename;
-            this.dirty = false;
-        }
+            if (String.IsNullOrEmpty(fileName))
+                throw new ArgumentException("Filename is null or empty.", "Filename");
 
-        public void Load(BinaryReader br)
-        { 
-            head = new DatHeader(br);
-            indexes = new List<DatIndex>();
-            files = new List<FshWrapper>();
-            
-            br.BaseStream.Seek((long)head.IndexLocation, SeekOrigin.Begin);
+            this.Load(new FileStream(fileName, FileMode.Open, FileAccess.Read));
+            this.filename = fileName;
+        }
+        /// <summary>
+        /// Loads a DatFile from the specified Stream
+        /// </summary>
+        /// <param name="input">The input stream to load from</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> input is null</exception>
+        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
+        public void Load(Stream input)
+        {
+            if (input == null)
+                throw new ArgumentNullException("input", "input is null.");
+
+            if (reader != null)
+                reader.Close();
+
+            reader = new BinaryReader(input);
+
+            this.head = new DatHeader(reader);
+            this.indexes = new List<DatIndex>();
+            this.files = new List<FshWrapper>();
+
+            reader.BaseStream.Seek((long)head.IndexLocation, SeekOrigin.Begin);
             for (int i = 0; i < head.Entries; i++)
             {
-                uint type = br.ReadUInt32();
-                uint group = br.ReadUInt32();
-                uint instance = br.ReadUInt32();
-                uint location = br.ReadUInt32();
-                uint size = br.ReadUInt32();
+                uint type = reader.ReadUInt32();
+                uint group = reader.ReadUInt32();
+                uint instance = reader.ReadUInt32();
+                uint location = reader.ReadUInt32();
+                uint size = reader.ReadUInt32();
 
                 if (type == 0xe86b1eef) // Compression Directory
                 {
-                    br.BaseStream.Seek((long)location, SeekOrigin.Begin);
-                    dir = new List<DirectoryEntry>((int)(size / 16));
+                    reader.BaseStream.Seek((long)location, SeekOrigin.Begin);
+                    this.dir = new List<DirectoryEntry>((int)(size / 16));
                     for (int d = 0; d < dir.Capacity; d++)
                     {
-                        DirectoryEntry entry = new DirectoryEntry(br.ReadUInt32(), br.ReadUInt32(), br.ReadUInt32(), br.ReadUInt32());
+                        DirectoryEntry entry = new DirectoryEntry(reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32());
                         dir.Insert(d, entry);
                     }
-                }      
+                }
                 else if (type == 0x7ab50e44)
                 {
                     files.Add(new FshWrapper() { FileIndex = i });
@@ -135,18 +152,25 @@ namespace FshDatIO
 
             this.loaded = true;
         }
-
-        public FshWrapper LoadFile(uint Group, uint Instance)
+        /// <summary>
+        /// Loads a FshWrapper item from the DatFile.
+        /// </summary>
+        /// <param name="group">The TGI group id to load.</param>
+        /// <param name="instance">The TGI instance id to load.</param>
+        /// <returns>The loaded FshWrapper item</returns>
+        /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile</exception>
+        /// <exception cref="FshDatIO.DatFileException">Thrown when the Fsh file is not found at the specified index in the DatFile</exception>
+        public FshWrapper LoadFile(uint group, uint instance)
         {
-            int idx = indexes.Find(0x7ab50e44, Group, Instance);
+            int idx = indexes.Find(0x7ab50e44, group, instance);
 
             if (idx == -1)  
-                throw new DatFileException("The file at the specified index does not exist."); //  not a valid index so return null
+                throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
 
             DatIndex index = indexes[idx];
             FshWrapper fsh = files.FromDatIndex(idx);
             if (fsh == null)
-                throw new DatFileException(string.Format("Unable to find the Fsh file at index number {0}", idx.ToString()));
+                throw new DatFileException(string.Format(Resources.UnableToFindTheFshFileAtIndexNumber_Format, idx.ToString()));
 
             if (!fsh.Loaded)
             {
@@ -159,13 +183,11 @@ namespace FshDatIO
                     comp = true;
                     using(MemoryStream ms = new MemoryStream(fshbuf))
 	                {
-                        fshbuf = QfsComp.Decomp(ms, 0, (int)ms.Length).ToArray(); 
+                        fshbuf = QfsComp.Decomp(ms, 0, (int)ms.Length); 
 	                }
                 }
                 fsh.Compressed = comp;
                 fsh.Load(new MemoryStream(fshbuf));
-
-                fsh.Loaded = true;
             }
 
             return fsh;
@@ -179,8 +201,15 @@ namespace FshDatIO
                 reader = null;
             }
         }
-
-        public void Add(FshWrapper fshitem, uint Group, uint Instance, bool compress)
+        /// <summary>
+        /// Add a FshWrapper item to the DatFile.
+        /// </summary>
+        /// <param name="fshitem">The FshWrapper to add to the DatFile.</param>
+        /// <param name="group">The TGI group id of the FshWrapper item.</param>
+        /// <param name="instance">The TGI instance id of the FshWrapper item.</param>
+        /// <param name="compress">Compress the added FshWrapper item.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the FshWrapper item is null</exception>
+        public void Add(FshWrapper fshitem, uint group, uint instance, bool compress)
         {
             if (fshitem == null)
                 throw new ArgumentNullException("fshitem", "fshitem is null.");
@@ -188,23 +217,29 @@ namespace FshDatIO
             fshitem.Compressed = compress;
             this.files.Add(fshitem);
 
-            DatIndex addidx = new DatIndex(0x7ab50e44, Group, Instance) { Flags = DatIndexFlags.New };
+            DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { Flags = DatIndexFlags.New };
             this.indexes.Add(addidx);
 
             this.dirty = true;
         }
-
-        public void Remove(uint Group, uint Instance)
+        /// <summary>
+        /// Removes the specified file from the DatFile
+        /// </summary>
+        /// <param name="group">The TGI group id to remove</param>
+        /// <param name="instance">The TGI instance id to remove</param>
+        public void Remove(uint group, uint instance)
         {
-            int idx = indexes.Find(0x7ab50e44, Group, Instance);
+            int idx = indexes.Find(0x7ab50e44, group, instance);
             if (idx != -1)
             {
-                indexes[idx].Flags = DatIndexFlags.Deleted;
+                this.indexes[idx].Flags = DatIndexFlags.Deleted;
                 this.dirty = true;
             }
 
         }
-
+        /// <summary>
+        /// Saves the currently loaded DatFile
+        /// </summary>
         public void Save()
         { 
             if (!string.IsNullOrEmpty(filename))
@@ -212,18 +247,22 @@ namespace FshDatIO
                 Save(filename);
             }
         }
-
-        public void Save(string filename)
+        /// <summary>
+        /// Saves the DatFile to the specified filename.
+        /// </summary>
+        /// <param name="fileName">The filename to save as</param>
+        /// <exception cref="System.ArgumentException">The filename is null or empty.</exception>
+        public void Save(string fileName)
         {
-            if (String.IsNullOrEmpty(filename))
-                throw new ArgumentException("filename is null or empty.", "filename");
+            if (String.IsNullOrEmpty(fileName))
+                throw new ArgumentException("Filename is null or empty.", "fileName");
 
-            if ((filename == this.Filename) && (reader != null))
+            if ((fileName == this.Filename) && (reader != null))
             {
-                this.Close();
+                this.Close(); // if the filename is the same close the file
             }
 
-            using (BinaryWriter bw = new BinaryWriter(new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite)))
+            using (BinaryWriter bw = new BinaryWriter(new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite)))
             {
                 DatHeader head = this.head;
                 head.DateCreated = GetCurrentUnixTimestamp();
@@ -264,13 +303,14 @@ namespace FshDatIO
 #endif
 
                             byte[] rawbuf = new byte[size];
-                            if (reader != null)
+                            if (reader != null) // read from the original file if it is open
                             {
                                 reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
                                 reader.BaseStream.Read(rawbuf, 0, (int)size);
                             }
                             else
                             {
+                                // otherwise the original file should have the same name
                                 bw.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
                                 bw.BaseStream.Read(rawbuf, 0, (int)size);
                             }
@@ -281,7 +321,7 @@ namespace FshDatIO
 
                             if ((rawbuf.Length > 5) && (rawbuf[4] == 0x10 && rawbuf[5] == 0xfb))
                             {
-                                dirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)size));
+                                dirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                             }
                         }    
                         saveindexes.Add(new DatIndex(index.Type, index.Group, index.Instance, location, size));
@@ -325,7 +365,7 @@ namespace FshDatIO
                 this.head = head;
                 this.indexes = saveindexes;
                 this.dir = dirs;
-                this.filename = filename;
+                this.filename = fileName;
 
                 GC.Collect(1);
 

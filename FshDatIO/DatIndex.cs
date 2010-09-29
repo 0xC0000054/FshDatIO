@@ -55,6 +55,8 @@ namespace FshDatIO
 
         public void Save(BinaryWriter bw)
         {
+            if (bw == null)
+                throw new ArgumentNullException("bw", "bw is null.");
             bw.Write(this.type);
             bw.Write(this.group);
             bw.Write(this.instance);

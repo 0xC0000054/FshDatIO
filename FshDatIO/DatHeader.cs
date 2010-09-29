@@ -63,7 +63,7 @@ namespace FshDatIO
             {
                 return datecreated;
             }
-            set
+            internal set
             {
                 datecreated = value;
             }
@@ -77,7 +77,7 @@ namespace FshDatIO
             {
                 return datemodified;
             }
-            set
+            internal set
             {
                 datemodified = value;
             }
@@ -95,7 +95,7 @@ namespace FshDatIO
             {
                 return entries;
             }
-            set
+            internal set
             {
                 entries = value;
             }
@@ -161,12 +161,16 @@ namespace FshDatIO
         }
         public DatHeader(BinaryReader reader)
         {
+            if (reader == null)
+                throw new ArgumentNullException("reader", "reader is null.");
             reader.BaseStream.Position = 0L;
             this.Load(reader);
         }
 
         public void Load(BinaryReader br)
         {
+            if (br == null)
+                throw new ArgumentNullException("br", "br is null.");
             if (Encoding.ASCII.GetString(br.ReadBytes(4)) != "DBPF")
             {
                 throw new DatHeaderException(FshDatIO.Properties.Resources.DatHeaderInvalidIdentifer);
@@ -186,9 +190,14 @@ namespace FshDatIO
             this.HoleIdxLoc = br.ReadUInt32();
             this.holesize = br.ReadUInt32();
         }
-
+        /// <summary>
+        /// Saves the DatHeader.
+        /// </summary>
+        /// <param name="bw">The binaryReader to save to</param>
         public void Save(BinaryWriter bw)
         {
+            if (bw == null)
+                throw new ArgumentNullException("bw", "bw is null.");
             bw.Write(Encoding.ASCII.GetBytes("DBPF"));
             bw.Write(this.vmajor);
             bw.Write(this.vminor);

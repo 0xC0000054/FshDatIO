@@ -126,6 +126,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="input">The input stream data to compress</param>
         /// <returns>The compressed data or null if the compession fails</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public static byte[] Comp(Stream input)
         {
             if (input == null)

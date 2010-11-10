@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 
 namespace FshDatIO
 {
+    [Serializable]
     public class DatFileException : Exception, ISerializable
     {
         public DatFileException() : base("A DatFileException has occured")

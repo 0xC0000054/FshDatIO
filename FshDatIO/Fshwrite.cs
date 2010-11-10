@@ -57,9 +57,12 @@ namespace FshDatIO
             }
             return bytes;
         }
-
+        
         private static byte[] CompressImage(Bitmap image, int flags)
         {
+            if (image == null)
+                throw new ArgumentNullException("image", "image is null.");
+
             byte[] pixelData = new byte[image.Width * image.Height * 4];
 
             BitmapData data = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
@@ -71,7 +74,7 @@ namespace FshDatIO
             image.UnlockBits(data);
 
             pixelData = SwapRGB(temp);
-            
+
 
             // Compute size of compressed block area, and allocate 
             int blockCount = ((image.Width + 3) / 4) * ((image.Height + 3) / 4);
@@ -88,16 +91,18 @@ namespace FshDatIO
         }
         private static bool Is64bit()
         {
-            return IntPtr.Size == 8 ? true : false;
+            return (IntPtr.Size == 8);
         }
-        private sealed class Squish_32
+        [System.Security.SuppressUnmanagedCodeSecurity()]
+        private static class Squish_32
         {
-            [DllImport("Squish_Win32.dll")]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("Squish_Win32.dll")]
             internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
-        private sealed class Squish_64
+        [System.Security.SuppressUnmanagedCodeSecurity()]
+        private static class Squish_64
         {
-            [DllImport("squish_x64.dll")]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
             internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
         private static unsafe void CompressImageWrapper(byte[] rgba, int width, int height, byte[] blocks, int flags)
@@ -117,32 +122,35 @@ namespace FshDatIO
                 }
             }
         }
-        private static Bitmap BlendDXTBmp(Bitmap colorbmp, Bitmap bmpalpha)
+        private static unsafe Bitmap BlendDXTBmp(Bitmap colorbmp, Bitmap bmpalpha)
         {
             Bitmap image = null;
-            if (colorbmp != null && bmpalpha != null)
+            Bitmap temp = null;
+            try
             {
-                image = new Bitmap(colorbmp.Width, colorbmp.Height, PixelFormat.Format32bppArgb);
-            }
-            if (colorbmp.Size != bmpalpha.Size)
-            {
-                throw new ArgumentException("The bitmap and alpha must be equal size");
-            }
-            BitmapData colordata = colorbmp.LockBits(new Rectangle(0, 0, colorbmp.Width, colorbmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            BitmapData alphadata = bmpalpha.LockBits(new Rectangle(0, 0, bmpalpha.Width, bmpalpha.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            BitmapData bdata = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            IntPtr scan0 = bdata.Scan0;
-            unsafe
-            {
+                if (colorbmp != null && bmpalpha != null)
+                {
+                    temp = new Bitmap(colorbmp.Width, colorbmp.Height, PixelFormat.Format32bppArgb);
+                }
+                if (colorbmp.Size != bmpalpha.Size)
+                {
+                    throw new ArgumentException("The bitmap and alpha must be equal size");
+                }
+                Rectangle tempRect = new Rectangle(0, 0, temp.Width, temp.Height);
+                BitmapData colordata = colorbmp.LockBits(new Rectangle(0, 0, colorbmp.Width, colorbmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                BitmapData alphadata = bmpalpha.LockBits(new Rectangle(0, 0, bmpalpha.Width, bmpalpha.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                BitmapData bdata = temp.LockBits(tempRect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                IntPtr scan0 = bdata.Scan0;
+
                 byte* clrdata = (byte*)(void*)colordata.Scan0;
                 byte* aldata = (byte*)(void*)alphadata.Scan0;
                 byte* destdata = (byte*)(void*)scan0;
-                int offset = bdata.Stride - image.Width * 4;
-                int clroffset = colordata.Stride - image.Width * 4;
-                int aloffset = alphadata.Stride - image.Width * 4;
-                for (int y = 0; y < image.Height; y++)
+                int offset = bdata.Stride - temp.Width * 4;
+                int clroffset = colordata.Stride - temp.Width * 4;
+                int aloffset = alphadata.Stride - temp.Width * 4;
+                for (int y = 0; y < temp.Height; y++)
                 {
-                    for (int x = 0; x < image.Width; x++)
+                    for (int x = 0; x < temp.Width; x++)
                     {
                         destdata[3] = aldata[0];
                         destdata[0] = clrdata[0];
@@ -159,10 +167,20 @@ namespace FshDatIO
                     aldata += aloffset;
                 }
 
+                colorbmp.UnlockBits(colordata);
+                bmpalpha.UnlockBits(alphadata);
+                temp.UnlockBits(bdata);
+
+                image = temp.Clone(tempRect, temp.PixelFormat);
             }
-            colorbmp.UnlockBits(colordata);
-            bmpalpha.UnlockBits(alphadata);
-            image.UnlockBits(bdata);
+            finally
+            {
+                if (temp != null)
+                {
+                    temp.Dispose();
+                    temp = null;
+                }
+            }
             return image;
         }
 
@@ -192,20 +210,12 @@ namespace FshDatIO
             {
                 return alphalist;
             }
-            set
-            {
-                alphalist = value;
-            }
         }
         public List<Bitmap> bmp
         {
             get
             {
                 return bmplist;
-            }
-            set
-            {
-                bmplist = value;
             }
         }
         public List<byte[]> dir
@@ -214,20 +224,12 @@ namespace FshDatIO
             {
                 return dirnames;
             }
-            set
-            {
-                dirnames = value;
-            }
         }
         public List<int> code
         {
             get
             {
                 return codelist;
-            }
-            set
-            {
-                codelist = value;
             }
         }
         public bool Compress

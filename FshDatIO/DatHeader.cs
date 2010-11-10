@@ -7,47 +7,47 @@ namespace FshDatIO
 {
     public class DatHeader
     {
-        uint vmajor;
-        uint vminor;
-        uint uvmajor;
-        uint uvminor;
+        uint vMajor;
+        uint vMinor;
+        uint uVMajor;
+        uint uVMinor;
         uint flags;
-        uint datecreated;
-        uint datemodified;
-        uint indexvmajor; // index major version always 7
+        uint dateCreated;
+        uint dateModified;
+        uint indexVMajor; // index major version always 7
         uint entries;
-        uint IndexLoc;
-        uint indexsize;
-        uint holecount;
-        uint HoleIdxLoc;
-        uint holesize;
+        uint indexLoc;
+        uint indexSize;
+        uint holeCount;
+        uint holeIdxLoc;
+        uint holeSize;
 
         public uint VersionMajor
         {
             get
             {
-                return vmajor;
+                return vMajor;
             }
         }
         public uint VersionMinor
         {
             get
             {
-                return vminor;
+                return vMinor;
             }
         }
         public uint UserVersionMajor
         {
             get
             {
-                return uvmajor;
+                return uVMajor;
             }
         }
         public uint UserVersionMinor
         {
             get
             {
-                return uvminor;
+                return uVMinor;
             }
         }
         public uint Flags
@@ -57,15 +57,18 @@ namespace FshDatIO
                 return flags;
             }
         }
+        /// <summary>
+        /// The Date the DatFile was Created (In Unix Timestamp format, the number of seconds since 1 / 1 / 1970) 
+        /// </summary>
         public uint DateCreated
         {
             get
             {
-                return datecreated;
+                return dateCreated;
             }
             internal set
             {
-                datecreated = value;
+                dateCreated = value;
             }
         }
         /// <summary>
@@ -75,18 +78,18 @@ namespace FshDatIO
         {
             get
             {
-                return datemodified;
+                return dateModified;
             }
             internal set
             {
-                datemodified = value;
+                dateModified = value;
             }
         }
         public uint IndexVersionMajor
         {
             get
             {
-                return indexvmajor;
+                return indexVMajor;
             }
         }
         public uint Entries
@@ -104,22 +107,22 @@ namespace FshDatIO
         {
             get
             {
-                return IndexLoc;
+                return indexLoc;
             }
             set
             {
-                IndexLoc = value;
+                indexLoc = value;
             }
         }
         public uint IndexSize
         {
             get
             {
-                return indexsize;
+                return indexSize;
             }
             set
             {
-                indexsize = value;
+                indexSize = value;
             }
         }
 
@@ -127,37 +130,37 @@ namespace FshDatIO
         {
             get
             {
-                return holecount;
+                return holeCount;
             }
         }
         public uint HoleIndexLoc
         {
             get
             {
-                return HoleIdxLoc;
+                return holeIdxLoc;
             }
         }
         public uint HoleSize
         {
             get
             {
-                return holesize;
+                return holeSize;
             }
         }
 
         public DatHeader()
         {
-            this.vmajor = 1;
-            this.vmajor = 0;
-            this.uvmajor = 0;
-            this.uvminor = 0;
-            this.indexvmajor = 7;
+            this.vMajor = 1;
+            this.vMajor = 0;
+            this.uVMajor = 0;
+            this.uVMinor = 0;
+            this.indexVMajor = 7;
             this.entries = 0;
-            this.IndexLoc = 96;
-            this.indexsize = 0;
-            this.holecount = 0;
-            this.holesize = 0;
-            this.HoleIdxLoc = 0;
+            this.indexLoc = 96;
+            this.indexSize = 0;
+            this.holeCount = 0;
+            this.holeSize = 0;
+            this.holeIdxLoc = 0;
         }
         public DatHeader(BinaryReader reader)
         {
@@ -175,20 +178,20 @@ namespace FshDatIO
             {
                 throw new DatHeaderException(FshDatIO.Properties.Resources.DatHeaderInvalidIdentifer);
             }
-            this.vmajor = br.ReadUInt32();
-            this.vminor = br.ReadUInt32();
-            this.uvmajor = br.ReadUInt32();
-            this.uvminor = br.ReadUInt32();
+            this.vMajor = br.ReadUInt32();
+            this.vMinor = br.ReadUInt32();
+            this.uVMajor = br.ReadUInt32();
+            this.uVMinor = br.ReadUInt32();
             this.flags = br.ReadUInt32();
-            this.datecreated = br.ReadUInt32();
-            this.datemodified = br.ReadUInt32();
-            this.indexvmajor = br.ReadUInt32();
+            this.dateCreated = br.ReadUInt32();
+            this.dateModified = br.ReadUInt32();
+            this.indexVMajor = br.ReadUInt32();
             this.entries = br.ReadUInt32();
-            this.IndexLoc = br.ReadUInt32();
-            this.indexsize = br.ReadUInt32();
-            this.holecount = br.ReadUInt32();
-            this.HoleIdxLoc = br.ReadUInt32();
-            this.holesize = br.ReadUInt32();
+            this.indexLoc = br.ReadUInt32();
+            this.indexSize = br.ReadUInt32();
+            this.holeCount = br.ReadUInt32();
+            this.holeIdxLoc = br.ReadUInt32();
+            this.holeSize = br.ReadUInt32();
         }
         /// <summary>
         /// Saves the DatHeader.
@@ -199,20 +202,20 @@ namespace FshDatIO
             if (bw == null)
                 throw new ArgumentNullException("bw", "bw is null.");
             bw.Write(Encoding.ASCII.GetBytes("DBPF"));
-            bw.Write(this.vmajor);
-            bw.Write(this.vminor);
-            bw.Write(this.uvmajor);
-            bw.Write(this.uvminor);
+            bw.Write(this.vMajor);
+            bw.Write(this.vMinor);
+            bw.Write(this.uVMajor);
+            bw.Write(this.uVMinor);
             bw.Write(this.flags);
-            bw.Write(this.datecreated);
-            bw.Write(this.datemodified);
-            bw.Write(this.indexvmajor);
+            bw.Write(this.dateCreated);
+            bw.Write(this.dateModified);
+            bw.Write(this.indexVMajor);
             bw.Write(this.entries);
-            bw.Write(this.IndexLoc);
-            bw.Write(this.indexsize);
-            bw.Write(this.holecount);
-            bw.Write(this.HoleIdxLoc);
-            bw.Write(this.holesize);
+            bw.Write(this.indexLoc);
+            bw.Write(this.indexSize);
+            bw.Write(this.holeCount);
+            bw.Write(this.holeIdxLoc);
+            bw.Write(this.holeSize);
             bw.Write(new byte[36]); // reserved byte padding
         }
     }

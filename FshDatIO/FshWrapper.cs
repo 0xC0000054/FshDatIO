@@ -12,8 +12,8 @@ namespace FshDatIO
         private FSHImage image = null;
         private bool loaded = false;
         private bool compressed = false;
-        private int fileindex = -1;
-        private bool usefshwrite = false;
+        private int fileIndex = -1;
+        private bool useFshWrite = false;
 
 
         public FshWrapper()
@@ -26,8 +26,11 @@ namespace FshDatIO
         /// Initilizes a new instance of the FshWrapper class with the specified FSHImage
         /// </summary>
         /// <param name="fsh">The source image to use</param>
+        /// <exception cref="System.ArgumentNullException">The FSHImage is null.</exception>
         public FshWrapper(FSHImage fsh)
         {
+            if (fsh == null)
+                throw new ArgumentNullException("fsh", "fsh is null.");
             image = fsh;
             compressed = fsh.IsCompressed;
             loaded = true;
@@ -54,7 +57,7 @@ namespace FshDatIO
 
                 int datalen = image.RawData.Length;
                
-                if (usefshwrite && IsDXTFsh(image))
+                if (useFshWrite && IsDXTFsh(image))
                 {
                     Fshwrite fw = new Fshwrite();
                     fw.Compress = image.IsCompressed;
@@ -172,23 +175,25 @@ namespace FshDatIO
         {
             get
             {
-                return fileindex;
+                return fileIndex;
             }
-            set
+            internal set
             {
-                fileindex = value;
+                fileIndex = value;
             }
         }
-
+        /// <summary>
+        /// Use FshWrite Compression when saving the image
+        /// </summary>
         public bool UseFshWrite
         {
             get
             {
-                return usefshwrite;
+                return useFshWrite;
             }
             set
             {
-                usefshwrite = value;
+                useFshWrite = value;
             }
         }
 

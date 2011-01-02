@@ -6,6 +6,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Security.Permissions;
 
 namespace FshDatIO
 {
@@ -57,7 +58,7 @@ namespace FshDatIO
             }
             return bytes;
         }
-        
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         private static byte[] CompressImage(Bitmap image, int flags)
         {
             if (image == null)
@@ -105,6 +106,7 @@ namespace FshDatIO
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
             internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         private static unsafe void CompressImageWrapper(byte[] rgba, int width, int height, byte[] blocks, int flags)
         {
             fixed (byte* RGBA = rgba)
@@ -122,6 +124,7 @@ namespace FshDatIO
                 }
             }
         }
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         private static unsafe Bitmap BlendDXTBmp(Bitmap colorbmp, Bitmap bmpalpha)
         {
             Bitmap image = null;
@@ -247,6 +250,7 @@ namespace FshDatIO
         /// The function that writes the fsh
         /// </summary>
         /// <param name="output">The output file to write to</param>
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public unsafe void WriteFsh(Stream output)
         {
             using (MemoryStream ms = new MemoryStream())

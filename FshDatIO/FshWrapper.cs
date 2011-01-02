@@ -45,7 +45,8 @@ namespace FshDatIO
             image.IsCompressed = compressed;
             this.loaded = true;
         }
-
+        
+        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
         public int Save(Stream output)
         {
             if (output == null)

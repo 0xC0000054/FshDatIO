@@ -243,6 +243,7 @@ namespace FshDatIO
         /// <summary>
         /// Saves the currently loaded DatFile
         /// </summary>
+        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
         public void Save()
         { 
             if (!string.IsNullOrEmpty(fileName))
@@ -255,6 +256,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="fileName">The fileName to save as</param>
         /// <exception cref="System.ArgumentException">The fileName is null or empty.</exception>
+        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
         public void Save(string fileName)
         {
             if (String.IsNullOrEmpty(fileName))

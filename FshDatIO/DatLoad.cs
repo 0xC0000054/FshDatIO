@@ -207,18 +207,18 @@ namespace FshDatIO
         /// <summary>
         /// Add a FshWrapper item to the DatFile.
         /// </summary>
-        /// <param name="fshitem">The FshWrapper to add to the DatFile.</param>
+        /// <param name="fshItem">The FshWrapper to add to the DatFile.</param>
         /// <param name="group">The TGI group id of the FshWrapper item.</param>
         /// <param name="instance">The TGI instance id of the FshWrapper item.</param>
         /// <param name="compress">Compress the added FshWrapper item.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the FshWrapper item is null</exception>
-        public void Add(FshWrapper fshitem, uint group, uint instance, bool compress)
+        public void Add(FshWrapper fshItem, uint group, uint instance, bool compress)
         {
-            if (fshitem == null)
-                throw new ArgumentNullException("fshitem", "fshitem is null.");
+            if (fshItem == null)
+                throw new ArgumentNullException("fshItem", "fshItem is null.");
 
-            fshitem.Compressed = compress;
-            this.files.Add(fshitem);
+            fshItem.Compressed = compress;
+            this.files.Add(fshItem);
 
             DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { Flags = DatIndexFlags.New };
             this.indexes.Add(addidx);

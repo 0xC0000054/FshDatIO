@@ -10,7 +10,7 @@ using System.Collections.ObjectModel;
 
 namespace FshDatIO
 {
-    public class DatFile : IDisposable
+    public sealed class DatFile : IDisposable
     {
         DatHeader header = null;
         List<DatIndex> indexes = null;

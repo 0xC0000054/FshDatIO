@@ -221,6 +221,9 @@ namespace FshDatIO
                             }
                             outbuf[outidx++] = (byte)(0xe0 + len);
                             len = (4 * len) + 4;
+                            if ((outidx + len) >= outbuf.Length)
+                                return null;// data did not compress so return null
+
                             Array.Copy(inbuf, lastwrot, outbuf, outidx, len);
                             lastwrot += len;
                             outidx += len;
@@ -230,6 +233,10 @@ namespace FshDatIO
                         {
                             outbuf[outidx++] = (byte)(((((bestoffs - 1) >> 8) << 5) + ((bestlen - 3) << 2)) + len);
                             outbuf[outidx++] = (byte)((bestoffs - 1) & 0xff);
+
+                            if ((outidx + len) >= outbuf.Length)
+                                return null;// data did not compress so return null
+
                             while (len-- > 0)
                             {
                                 outbuf[outidx++] = inbuf[lastwrot++];
@@ -241,6 +248,10 @@ namespace FshDatIO
                             outbuf[outidx++] = (byte)(0x80 + (bestlen - 4));
                             outbuf[outidx++] = (byte)((len << 6) + ((bestoffs - 1) >> 8));
                             outbuf[outidx++] = (byte)((bestoffs - 1) & 0xff);
+
+                            if ((outidx + len) >= outbuf.Length)
+                                return null;// data did not compress so return null
+
                             while (len-- > 0)
                             {
                                 outbuf[outidx++] = inbuf[lastwrot++];
@@ -254,6 +265,10 @@ namespace FshDatIO
                             outbuf[outidx++] = (byte)((bestoffs >> 8) & 0xff);
                             outbuf[outidx++] = (byte)(bestoffs & 0xff);
                             outbuf[outidx++] = (byte)((bestlen - 5) & 0xff);
+
+                            if ((outidx + len) >= outbuf.Length)
+                                return null;
+
                             while (len-- > 0)
                             {
                                 outbuf[outidx++] = inbuf[lastwrot++];
@@ -276,7 +291,7 @@ namespace FshDatIO
                 len = (4 * len) + 4;
 
                 if ((outidx + len) >= outbuf.Length)
-                    return null;
+                    return null;// data did not compress so return null
 
                 Array.Copy(inbuf, lastwrot, outbuf, outidx, len);
                 lastwrot += len;

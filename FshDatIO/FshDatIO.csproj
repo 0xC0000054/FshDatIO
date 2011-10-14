@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FshDatIO</RootNamespace>
     <AssemblyName>FshDatIO</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>Svn</SccProjectName>
     <SccLocalPath>Svn</SccLocalPath>
@@ -36,6 +36,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -73,7 +74,6 @@
     <Compile Include="DatFileException.cs" />
     <Compile Include="DatHeaderException.cs" />
     <Compile Include="DatIndexException.cs" />
-    <Compile Include="ExtensionAttribute.cs" />
     <Compile Include="DatHeader.cs" />
     <Compile Include="DatIndex.cs" />
     <Compile Include="DatLoad.cs" />

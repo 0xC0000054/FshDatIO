@@ -76,7 +76,7 @@
     <Compile Include="DatIndexException.cs" />
     <Compile Include="DatHeader.cs" />
     <Compile Include="DatIndex.cs" />
-    <Compile Include="DatLoad.cs" />
+    <Compile Include="DatFile.cs" />
     <Compile Include="DirectoryEntry.cs" />
     <Compile Include="FshWrapper.cs" />
     <Compile Include="Fshwrite.cs" />

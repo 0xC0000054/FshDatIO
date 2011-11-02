@@ -9,18 +9,20 @@ namespace FshDatIO
 {
     public class FshWrapper
     {
-        private FSHImage image = null;
-        private bool loaded = false;
-        private bool compressed = false;
-        private int fileIndex = -1;
-        private bool useFshWrite = false;
+        private FSHImage image;
+        private bool loaded;
+        private bool compressed;
+        private int fileIndex;
+        private bool useFshWrite;
 
 
         public FshWrapper()
         {
-            image = null;
-            loaded = false;
-            compressed = false;
+            this.image = null;
+            this.loaded = false;
+            this.compressed = false;            
+            this.fileIndex = -1;
+            this.useFshWrite = false;
         }
         /// <summary>
         /// Initilizes a new instance of the FshWrapper class with the specified FSHImage

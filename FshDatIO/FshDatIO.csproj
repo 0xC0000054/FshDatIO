@@ -48,6 +48,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <NoWarn>0628</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -59,6 +60,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugSymbols>false</DebugSymbols>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <NoWarn>0628</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSHLib, Version=0.3.1.32186, Culture=neutral">
@@ -71,6 +73,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BitmapEntry.cs" />
     <Compile Include="DatFileException.cs" />
     <Compile Include="DatHeaderException.cs" />
     <Compile Include="DatIndexException.cs" />
@@ -78,6 +81,8 @@
     <Compile Include="DatIndex.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DirectoryEntry.cs" />
+    <Compile Include="FSHImageExtensions.cs" />
+    <Compile Include="FSHImageWrapper.cs" />
     <Compile Include="FshWrapper.cs" />
     <Compile Include="Fshwrite.cs" />
     <Compile Include="ListExtensions.cs" />
@@ -88,6 +93,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="QfsComp.cs" />
+    <Compile Include="Squish.cs" />
     <Compile Include="StreamExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

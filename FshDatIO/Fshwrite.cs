@@ -125,29 +125,40 @@ namespace FshDatIO
             }
         }
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
-        private static Bitmap BlendDXTBmp(Bitmap colorbmp, Bitmap alphabmp)
+        private static Bitmap BlendDXTBitmap(Bitmap color, Bitmap alpha)
         {
+            if (color == null)
+            {
+                throw new ArgumentNullException("color", "The color bitmap must not be null.");
+            }
+
+            if (alpha == null)
+            {
+                throw new ArgumentNullException("alpha", "The alpha bitmap must not be null.");
+            }
+            
+            if (color.Size != alpha.Size)
+            {
+                throw new ArgumentException("The bitmap and alpha must be equal size");
+            }
+
             Bitmap image = null;
             Bitmap temp = null;
             try
             {
-                if (colorbmp != null && alphabmp != null)
-                {
-                    temp = new Bitmap(colorbmp.Width, colorbmp.Height, PixelFormat.Format32bppArgb);
-                }
-                if (colorbmp.Size != alphabmp.Size)
-                {
-                    throw new ArgumentException("The bitmap and alpha must be equal size");
-                }
+               
+                temp = new Bitmap(color.Width, color.Height, PixelFormat.Format32bppArgb);
+                
+                
                 Rectangle tempRect = new Rectangle(0, 0, temp.Width, temp.Height);
-                BitmapData colordata = colorbmp.LockBits(new Rectangle(0, 0, colorbmp.Width, colorbmp.Height), ImageLockMode.ReadOnly, colorbmp.PixelFormat);
-                BitmapData alphadata = alphabmp.LockBits(new Rectangle(0, 0, alphabmp.Width, alphabmp.Height), ImageLockMode.ReadOnly, alphabmp.PixelFormat);
+                BitmapData colordata = color.LockBits(new Rectangle(0, 0, color.Width, color.Height), ImageLockMode.ReadOnly, color.PixelFormat);
+                BitmapData alphadata = alpha.LockBits(new Rectangle(0, 0, alpha.Width, alpha.Height), ImageLockMode.ReadOnly, alpha.PixelFormat);
                 BitmapData bdata = temp.LockBits(tempRect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                 IntPtr scan0 = bdata.Scan0;
                 unsafe
                 {
-                    int clrBpp = (Bitmap.GetPixelFormatSize(colorbmp.PixelFormat) / 8);
-                    int alphaBpp = (Bitmap.GetPixelFormatSize(alphabmp.PixelFormat) / 8);
+                    int clrBpp = (Bitmap.GetPixelFormatSize(color.PixelFormat) / 8);
+                    int alphaBpp = (Bitmap.GetPixelFormatSize(alpha.PixelFormat) / 8);
 
                     byte* clrdata = (byte*)(void*)colordata.Scan0;
                     byte* aldata = (byte*)(void*)alphadata.Scan0;
@@ -175,8 +186,8 @@ namespace FshDatIO
                     }
 
                 }
-                colorbmp.UnlockBits(colordata);
-                alphabmp.UnlockBits(alphadata);
+                color.UnlockBits(colordata);
+                alpha.UnlockBits(alphadata);
                 temp.UnlockBits(bdata);
 
                 image = temp.Clone(tempRect, temp.PixelFormat);
@@ -287,16 +298,16 @@ namespace FshDatIO
                         int code = codelist[b];
                         // write entry header
                         ms.Write(BitConverter.GetBytes(code), 0, 4); // write the Entry bitmap code
-                        ms.Write(BitConverter.GetBytes((short)bmp.Width), 0, 2); // write width
-                        ms.Write(BitConverter.GetBytes((short)bmp.Height), 0, 2); //write height
+                        ms.Write(BitConverter.GetBytes((ushort)bmp.Width), 0, 2); // write width
+                        ms.Write(BitConverter.GetBytes((ushort)bmp.Height), 0, 2); //write height
                         for (int m = 0; m < 4; m++)
                         {
-                            ms.Write(BitConverter.GetBytes((short)0), 0, 2);// write misc data
+                            ms.Write(BitConverter.GetBytes((ushort)0), 0, 2);// write misc data
                         }
 
                         if (code == 0x60) //DXT1
                         {
-                            Bitmap temp = BlendDXTBmp(bmp, alpha);
+                            Bitmap temp = BlendDXTBitmap(bmp, alpha);
                             byte[] data = new byte[temp.Width * temp.Height * 4];
                             int flags = (int)SquishCompFlags.kDxt1;
                             flags |= (int)SquishCompFlags.kColourIterativeClusterFit;
@@ -305,7 +316,7 @@ namespace FshDatIO
                         }
                         else if (code == 0x61) // DXT3
                         {
-                            Bitmap temp = BlendDXTBmp(bmp, alpha);
+                            Bitmap temp = BlendDXTBitmap(bmp, alpha);
                             byte[] data = new byte[temp.Width * temp.Height * 4];
                             int flags = (int)SquishCompFlags.kDxt3;
                             flags |= (int)SquishCompFlags.kColourIterativeClusterFit;
@@ -321,7 +332,7 @@ namespace FshDatIO
                     {
                         ms.Position = 0L;
                         byte[] compbuf = QfsComp.Comp(ms);
-                        if ((compbuf != null) && (compbuf.Length < (int)ms.Length))
+                        if ((compbuf != null) && (compbuf.LongLength < ms.Length))
                         {
                             using (MemoryStream ms2 = new MemoryStream(compbuf))
                             {

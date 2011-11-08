@@ -62,6 +62,19 @@ namespace FshDatIO
             }
         }
 
+        private BitmapEntry(BitmapEntry cloneMe)
+        {
+            this.bitmap = cloneMe.bitmap.Clone() as Bitmap;
+            this.alpha = cloneMe.alpha.Clone() as Bitmap;
+            this.bmpType = cloneMe.bmpType;
+            this.dirName = cloneMe.dirName;
+        }
+
+        public BitmapEntry Clone()
+        { 
+            return new BitmapEntry(this);
+        }
+
         public BitmapEntry()
         {
             this.bitmap = null;

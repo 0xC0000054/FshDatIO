@@ -121,6 +121,12 @@
     <value>The header identifier is invalid.</value>
     <comment>Thrown when the DatHeader identifier is invalid </comment>
   </data>
+  <data name="InvalidFshFile" xml:space="preserve">
+    <value>The file is truncated and invalid.</value>
+  </data>
+  <data name="InvalidFshHeader" xml:space="preserve">
+    <value>An invalid header was read.</value>
+  </data>
   <data name="SpecifiedIndexDoesNotExist" xml:space="preserve">
     <value>The file at the specified index does not exist.</value>
     <comment>Thrown when the specified index does not exist in the DatFile</comment>
@@ -128,5 +134,8 @@
   <data name="UnableToFindTheFshFileAtIndexNumber_Format" xml:space="preserve">
     <value>Unable to find the Fsh file at index number {0}.</value>
     <comment>Thrown when the Fsh file is not found at the specified index in the DatFile</comment>
+  </data>
+  <data name="UnsupportedFshType" xml:space="preserve">
+    <value>Only 24-bit , 32-bit, DXT1 and DXT3 images are supported.</value>
   </data>
 </root>

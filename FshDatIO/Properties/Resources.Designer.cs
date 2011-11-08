@@ -70,6 +70,24 @@ namespace FshDatIO.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The file is truncated and invalid..
+        /// </summary>
+        internal static string InvalidFshFile {
+            get {
+                return ResourceManager.GetString("InvalidFshFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An invalid header was read..
+        /// </summary>
+        internal static string InvalidFshHeader {
+            get {
+                return ResourceManager.GetString("InvalidFshHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file at the specified index does not exist..
         /// </summary>
         internal static string SpecifiedIndexDoesNotExist {
@@ -84,6 +102,15 @@ namespace FshDatIO.Properties {
         internal static string UnableToFindTheFshFileAtIndexNumber_Format {
             get {
                 return ResourceManager.GetString("UnableToFindTheFshFileAtIndexNumber_Format", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Only 24-bit , 32-bit, DXT1 and DXT3 images are supported..
+        /// </summary>
+        internal static string UnsupportedFshType {
+            get {
+                return ResourceManager.GetString("UnsupportedFshType", resourceCulture);
             }
         }
     }

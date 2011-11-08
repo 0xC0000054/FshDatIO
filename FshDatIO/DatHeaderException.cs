@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace FshDatIO
 {
     [Serializable]
-    public class DatHeaderException : DatFileException, ISerializable
+    public sealed class DatHeaderException : DatFileException, ISerializable
     {
         public DatHeaderException() : base("A DatHeaderException has occured")
         {
@@ -19,7 +19,7 @@ namespace FshDatIO
         {
         }
 
-        protected DatHeaderException(SerializationInfo info, StreamingContext context) : base(info, context)
+        private DatHeaderException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

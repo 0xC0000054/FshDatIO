@@ -9,7 +9,7 @@ namespace FshDatIO
 {
     public class FshWrapper
     {
-        private FSHImage image;
+        private FSHImageWrapper image;
         private bool loaded;
         private bool compressed;
         private int fileIndex;
@@ -29,7 +29,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="fsh">The source image to use</param>
         /// <exception cref="System.ArgumentNullException">The FSHImage is null.</exception>
-        public FshWrapper(FSHImage fsh)
+        public FshWrapper(FSHImageWrapper fsh)
         {
             if (fsh == null)
                 throw new ArgumentNullException("fsh", "fsh is null.");
@@ -43,11 +43,16 @@ namespace FshDatIO
             if (input == null)
                 throw new ArgumentNullException("input", "input is null.");
 
-            image = new FSHImage(input);
+            image = new FSHImageWrapper(input);
             image.IsCompressed = compressed;
             this.loaded = true;
         }
-        
+
+        /// <summary>
+        /// Saves the FSHImageWrapper instance to the specified output stream.
+        /// </summary>
+        /// <param name="output">The output stream to save to.</param>
+        /// <returns>The length of the saved data.</returns>
         [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
         public int Save(Stream output)
         {
@@ -64,14 +69,14 @@ namespace FshDatIO
                 {
                     Fshwrite fw = new Fshwrite();
                     fw.Compress = image.IsCompressed;
-                    foreach (BitmapItem bi in image.Bitmaps)
+                    foreach (BitmapEntry item in image.Bitmaps)
                     {
-                        if ((bi.Bitmap != null && bi.Alpha != null))
+                        if (item.Bitmap != null && item.Alpha != null)
                         {
-                            fw.bmp.Add(bi.Bitmap);
-                            fw.alpha.Add(bi.Alpha);
-                            fw.dir.Add(bi.DirName);
-                            fw.code.Add((int)bi.BmpType);
+                            fw.bmp.Add(item.Bitmap);
+                            fw.alpha.Add(item.Alpha);
+                            fw.dir.Add(Encoding.ASCII.GetBytes(item.DirName));
+                            fw.code.Add((int)item.BmpType);
                         }
                     }
                     fw.WriteFsh(output);
@@ -124,12 +129,12 @@ namespace FshDatIO
         /// </summary>
         /// <param name="image">The image to test</param>
         /// <returns>True if successful otherwise false</returns>
-        private static bool IsDXTFsh(FSHImage image)
+        private static bool IsDXTFsh(FSHImageWrapper image)
         {
             bool result = true;
-            foreach (BitmapItem bi in image.Bitmaps)
+            foreach (BitmapEntry item in image.Bitmaps)
             {
-                if (bi.BmpType != FSHBmpType.DXT3 && bi.BmpType != FSHBmpType.DXT1)
+                if (item.BmpType != FSHBmpType.DXT3 && item.BmpType != FSHBmpType.DXT1)
                 {
                     result = false;
                 }
@@ -137,7 +142,7 @@ namespace FshDatIO
             return result;
         }
 
-        public FSHImage Image
+        public FSHImageWrapper Image
         {
             get 
             {

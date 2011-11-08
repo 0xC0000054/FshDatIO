@@ -397,11 +397,17 @@ namespace FshDatIO
         {
             this.header = cloneMe.header;
             this.bitmaps = new List<BitmapEntry>(cloneMe.bitmaps.Count);
-            this.bitmaps.AddRange(cloneMe.bitmaps);
+
+            for (int i = 0; i < cloneMe.bitmaps.Count; i++)
+            {
+                BitmapEntry entry = cloneMe.bitmaps[i].Clone();
+                this.bitmaps.Add(entry);
+            }
+
             this.dirs = new FSHDirEntry[cloneMe.dirs.Length];
             cloneMe.dirs.CopyTo(this.dirs, 0);
             this.isCompressed = cloneMe.isCompressed;
-            this.rawData = new byte[this.rawData.Length];
+            this.rawData = new byte[cloneMe.rawData.Length];
             Buffer.BlockCopy(cloneMe.rawData, 0, this.rawData, 0, this.rawData.Length);
         }
 
@@ -412,6 +418,22 @@ namespace FshDatIO
         public FSHImageWrapper Clone()
         {
             return new FSHImageWrapper(this);
+        }
+
+        /// <summary>
+        /// Gets the directory entry for the specified index.
+        /// </summary>
+        /// <param name="index">The index of the entry.</param>
+        /// <returns>The FSHDirEntry at the specified index.</returns>
+        /// <exception cref="System.ArgumentOutOfRangeException">The index is less than zero or greater than the number of entries.</exception>
+        public FSHDirEntry GetDirectoryEntry(int index)
+        {
+            if (index < 0 || index > (this.dirs.Length - 1))
+            {
+                throw new ArgumentOutOfRangeException("index");
+            }
+
+            return this.dirs[index];
         }
 
         /// <summary>

@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace FshDatIO
 {
     [Serializable]
-    public class DatIndexException : DatFileException, ISerializable  
+    public sealed class DatIndexException : DatFileException, ISerializable  
     {
         public DatIndexException() : base("A DatIndexException has occured")
         {}
@@ -18,7 +18,8 @@ namespace FshDatIO
         {
         }
 
-        protected DatIndexException(SerializationInfo info, StreamingContext context) : base(info, context)
-        { }
+        private DatIndexException(SerializationInfo info, StreamingContext context) : base(info, context)
+        { 
+        }
     }
 }

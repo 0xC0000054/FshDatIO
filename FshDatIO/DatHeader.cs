@@ -5,22 +5,22 @@ using System.IO;
 
 namespace FshDatIO
 {
-    public class DatHeader
+    public sealed class DatHeader
     {
-        uint vMajor;
-        uint vMinor;
-        uint uVMajor;
-        uint uVMinor;
-        uint flags;
-        uint dateCreated;
-        uint dateModified;
-        uint indexVMajor; // index major version always 7
-        uint entries;
-        uint indexLoc;
-        uint indexSize;
-        uint holeCount;
-        uint holeIdxLoc;
-        uint holeSize;
+        private uint vMajor;
+        private uint vMinor;
+        private uint uVMajor;
+        private uint uVMinor;
+        private uint flags;
+        private uint dateCreated;
+        private uint dateModified;
+        private uint indexVMajor; // index major version always 7
+        private uint entries;
+        private uint indexLoc;
+        private uint indexSize;
+        private uint holeCount;
+        private uint holeIdxLoc;
+        private uint holeSize;
 
         public uint VersionMajor
         {
@@ -109,7 +109,7 @@ namespace FshDatIO
             {
                 return indexLoc;
             }
-            set
+            internal set
             {
                 indexLoc = value;
             }
@@ -120,7 +120,7 @@ namespace FshDatIO
             {
                 return indexSize;
             }
-            set
+            internal set
             {
                 indexSize = value;
             }

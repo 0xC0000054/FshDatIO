@@ -7,17 +7,17 @@ namespace FshDatIO
 {
     internal class DirectoryEntry
     {
-        uint type;
-        uint group;
-        uint instance;
-        uint size;
+        private uint type;
+        private uint group;
+        private uint instance;
+        private uint size;
 
-        public DirectoryEntry(uint Type, uint Group, uint Instance, uint Size)
+        public DirectoryEntry(uint type, uint group, uint instance, uint size)
         {
-            this.type = Type;
-            this.group = Group;
-            this.instance = Instance;
-            this.size = Size;
+            this.Type = type;
+            this.Group = group;
+            this.Instance = instance;
+            this.Size = size;
         }
 
         public uint Type
@@ -25,6 +25,10 @@ namespace FshDatIO
             get
             {
                 return type;
+            }
+            private set
+            {
+                type = value;
             }
         }
 
@@ -34,6 +38,10 @@ namespace FshDatIO
             {
                 return group;
             }
+            private set
+            {
+                group = value;
+            }
         }
 
         public uint Instance
@@ -42,6 +50,10 @@ namespace FshDatIO
             {
                 return instance;
             }
+            private set
+            {
+                instance = value;
+            }
         }
 
         public uint Size
@@ -49,6 +61,10 @@ namespace FshDatIO
             get
             {
                 return size;
+            }
+            private set
+            {
+                size = value;
             }
         }
 

@@ -12,16 +12,14 @@ namespace FshDatIO
 {
     public sealed class DatFile : IDisposable
     {
-        DatHeader header = null;
-        List<DatIndex> indexes = null;
-        List<DirectoryEntry> dir = null;
-        List<FshWrapper> files = null;
-
-        string fileName = string.Empty;
-        bool loaded = false;
-        bool dirty = false;
-
-        BinaryReader reader = null;
+        private DatHeader header;
+        private List<DatIndex> indexes;
+        private List<DirectoryEntry> dir;
+        private List<FshWrapper> files;
+        private string fileName;
+        private bool loaded;
+        private bool dirty;
+        private BinaryReader reader;
 
         public bool IsDirty
         {
@@ -43,7 +41,7 @@ namespace FshDatIO
             }
             set
             {
-                if (System.String.IsNullOrEmpty(value))
+                if (String.IsNullOrEmpty(value))
                     throw new ArgumentException("value is null or empty.", "value");
                 fileName = value;
             }
@@ -76,9 +74,13 @@ namespace FshDatIO
         /// </summary>
         public DatFile()
         {
-            header = new DatHeader();
-            indexes = new List<DatIndex>();
-            files = new List<FshWrapper>();
+            this.header = new DatHeader();
+            this.indexes = new List<DatIndex>();
+            this.files = new List<FshWrapper>();
+            this.fileName = string.Empty;
+            this.loaded = false;
+            this.dirty = false;
+            this.reader = null;
         }
         /// <summary>
         /// Initializes a new instance of the DatFile class and loads the specified fileName.  
@@ -200,6 +202,9 @@ namespace FshDatIO
             return fsh;
         }
 
+        /// <summary>
+        /// Closes this instance.
+        /// </summary>
         public void Close()
         {
             Dispose(true);
@@ -273,8 +278,8 @@ namespace FshDatIO
                     DatHeader head = this.header;
                     head.DateCreated = GetCurrentUnixTimestamp();
                     head.Save(bw);
-                    List<DatIndex> saveindexes = new List<DatIndex>((this.indexes.Count + 2));
-                    List<DirectoryEntry> dirs = new List<DirectoryEntry>();
+                    List<DatIndex> saveIndexes = new List<DatIndex>((this.indexes.Count + 2));
+                    List<DirectoryEntry> compDirs = new List<DirectoryEntry>();
                     uint location = 0;
                     uint size = 0;
                     for (int i = 0; i < this.indexes.Count; i++)
@@ -288,15 +293,13 @@ namespace FshDatIO
 #if DEBUG
                                 Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
 #endif
-                                int rawlen = fshw.Image.RawData.Length;
-
                                 location = (uint)bw.BaseStream.Position;
 
                                 size = (uint)fshw.Save(bw.BaseStream);
 
                                 if (fshw.Image.IsCompressed)
                                 {
-                                    dirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)rawlen));
+                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)fshw.Image.RawData.Length));
                                 }
                             }
                             else
@@ -312,13 +315,13 @@ namespace FshDatIO
                                 if (reader != null) // read from the original file if it is open
                                 {
                                     reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                                    reader.BaseStream.Read(rawbuf, 0, (int)size);
+                                    reader.BaseStream.ProperRead(rawbuf, 0, (int)size);
                                 }
                                 else
                                 {
                                     // otherwise the original file should have the same name
                                     bw.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                                    bw.BaseStream.Read(rawbuf, 0, (int)size);
+                                    bw.BaseStream.ProperRead(rawbuf, 0, (int)size);
                                 }
 #if DEBUG
                                 Debug.WriteLine(string.Format("CompSig = {0}{1}", rawbuf[4].ToString("X"), rawbuf[5].ToString("X")));
@@ -327,10 +330,10 @@ namespace FshDatIO
 
                                 if ((rawbuf.Length > 5) && (rawbuf[4] == 0x10 && rawbuf[5] == 0xfb))
                                 {
-                                    dirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
+                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                                 }
                             }
-                            saveindexes.Add(new DatIndex(index.Type, index.Group, index.Instance, location, size));
+                            saveIndexes.Add(new DatIndex(index.Type, index.Group, index.Instance, location, size));
 
                         }
                         else
@@ -340,27 +343,27 @@ namespace FshDatIO
                         }
                     }
 
-                    if (dirs.Count > 0)
+                    if (compDirs.Count > 0)
                     {
                         location = (uint)bw.BaseStream.Position;
-                        for (int i = 0; i < dirs.Count; i++)
+                        for (int i = 0; i < compDirs.Count; i++)
                         {
-                            dirs[i].Save(bw);
+                            compDirs[i].Save(bw);
                         }
-                        size = (uint)(dirs.Count * 16);
-                        saveindexes.Add(new DatIndex(0xe86b1eef, 0xe86b1eef, 0x286b1f03, location, size));
+                        size = (uint)(compDirs.Count * 16);
+                        saveIndexes.Add(new DatIndex(0xe86b1eef, 0xe86b1eef, 0x286b1f03, location, size));
                     }
 
-                    saveindexes.TrimExcess();
-
+                    saveIndexes.TrimExcess();
+                    
+                    uint entryCount = (uint)saveIndexes.Count;
                     location = (uint)bw.BaseStream.Position;
-                    size = (uint)(saveindexes.Count * 20);
-                    uint entrycnt = (uint)saveindexes.Count;
-                    for (int i = 0; i < saveindexes.Count; i++)
+                    size = (entryCount * 20U);
+                    for (int i = 0; i < saveIndexes.Count; i++)
                     {
-                        saveindexes[i].Save(bw);
+                        saveIndexes[i].Save(bw);
                     }
-                    head.Entries = entrycnt;
+                    head.Entries = entryCount;
                     head.IndexSize = size;
                     head.IndexLocation = location;
                     head.DateModified = GetCurrentUnixTimestamp();
@@ -369,8 +372,8 @@ namespace FshDatIO
                     head.Save(bw);
 
                     this.header = head;
-                    this.indexes = saveindexes;
-                    this.dir = dirs;
+                    this.indexes = saveIndexes;
+                    this.dir = compDirs;
                     this.fileName = fileName;
 
                     this.dirty = false;
@@ -392,6 +395,9 @@ namespace FshDatIO
         #region IDisposable Members
 
         private bool disposed;
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);

@@ -12,45 +12,45 @@ namespace FshDatIO
         Deleted
     }
 
-    public class DatIndex
+    public sealed class DatIndex
     {
-        uint type;
-        uint group;
-        uint instance;
-        uint location;
-        uint fileSize;
-        DatIndexFlags flags;
-        bool compressed; 
+        private uint type;
+        private uint group;
+        private uint instance;
+        private uint location;
+        private uint fileSize;
+        private DatIndexFlags flags;
+        private bool compressed; 
 
         public DatIndex()
         {
-            this.type = 0;
-            this.group = 0;
-            this.instance = 0;
-            this.location = 0;
-            this.fileSize = 0;
-            this.flags = DatIndexFlags.None;
-            this.compressed = false;
+            this.Type = 0;
+            this.Group = 0;
+            this.Instance = 0;
+            this.Location = 0;
+            this.FileSize = 0;
+            this.Flags = DatIndexFlags.None;
+            this.Compressed = false;
         }
-        public DatIndex(uint Type, uint Group, uint Instance, uint Location, uint Filesize)
+        public DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
         {
-            this.type = Type;
-            this.group = Group;
-            this.instance = Instance;
-            this.location = Location;
-            this.fileSize = Filesize;
-            this.flags = DatIndexFlags.None;
-            this.compressed = false;
+            this.Type = type;
+            this.Group = group;
+            this.Instance = instance;
+            this.Location = location;
+            this.FileSize = fileSize;
+            this.Flags = DatIndexFlags.None;
+            this.Compressed = false;
         }
-        public DatIndex(uint Type, uint Group, uint Instance)
+        public DatIndex(uint type, uint group, uint instance)
         {
-            this.type = Type;
-            this.group = Group;
-            this.instance = Instance;
-            this.location = 0;
-            this.fileSize = 0;
-            this.flags = DatIndexFlags.None;
-            this.compressed = false;
+            this.Type = type;
+            this.Group = group;
+            this.Instance = instance;
+            this.Location = 0;
+            this.FileSize = 0;
+            this.Flags = DatIndexFlags.None;
+            this.Compressed = false;
         }
 
         public void Save(BinaryWriter bw)
@@ -70,6 +70,10 @@ namespace FshDatIO
             {
                 return type;
             }
+            private set
+            {
+                type = value;
+            }
         }
 
         public uint Group
@@ -77,6 +81,10 @@ namespace FshDatIO
             get
             {
                 return group;
+            }
+            private set
+            {
+                group = value;
             }
         }
 
@@ -86,6 +94,10 @@ namespace FshDatIO
             {
                 return instance;
             }
+            private set
+            {
+                instance = value;
+            }
         }
 
         public uint Location
@@ -94,6 +106,10 @@ namespace FshDatIO
             {
                 return location;
             }
+            private set
+            {
+                location = value;
+            }
         }
 
         public uint FileSize
@@ -101,6 +117,10 @@ namespace FshDatIO
             get
             {
                 return fileSize;
+            }
+            private set
+            {
+                fileSize = value;
             }
         }
 

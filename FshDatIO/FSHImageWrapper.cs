@@ -7,6 +7,7 @@ using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
 using FshDatIO.Properties;
+using System.Security.Permissions;
 
 namespace FshDatIO
 {
@@ -21,6 +22,7 @@ namespace FshDatIO
         /// <summary>
         /// Gets the list of bitmaps.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
         public List<BitmapEntry> Bitmaps
         {
             get
@@ -151,6 +153,7 @@ namespace FshDatIO
         /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
+        [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         private unsafe void Load(Stream stream)
         {
             if (stream.Length <= 4)
@@ -192,17 +195,9 @@ namespace FshDatIO
                     for (int i = 0; i < nbmp; i++)
                     {
                         br.BaseStream.Seek((long)this.dirs[i].offset, SeekOrigin.Begin);
-                        FSHEntryHeader eHeader = new FSHEntryHeader();
-                        eHeader.code = br.ReadInt32();
-                        eHeader.width = br.ReadInt16();
-                        eHeader.height = br.ReadInt16();
-                        eHeader.misc = new short[4];
-                        for (int m = 0; m < 4; m++)
-                        {
-                            eHeader.misc[m] = br.ReadInt16();
-                        }
+                        EntryHeader eHeader = new EntryHeader(br);
 
-                        int code = (eHeader.code & 0x7f);
+                        int code = (eHeader.Code & 0x7f);
 
                         if ((code == 0x7b) ||  (code == 0x7e) || (code == 0x78) || (code == 0x6d))
                         {
@@ -211,19 +206,19 @@ namespace FshDatIO
 
                         bool isBmp = ((code == 0x7d) || (code == 0x7f) || (code == 0x60) || (code == 0x61));
 
-                        int width = (int)eHeader.width;
-                        int height = (int)eHeader.height;
+                        int width = (int)eHeader.Width;
+                        int height = (int)eHeader.Height;
                         int nAttach = 0;
                         int auxofs = 0;
 
                         if (isBmp)
                         {
-                            FSHEntryHeader aux = eHeader;
+                            EntryHeader aux = eHeader;
                             nAttach =  0;
                             auxofs = dirs[i].offset;
-                            while ((aux.code >> 8) > 0) 
+                            while ((aux.Code >> 8) > 0) 
                             {                      
-                                auxofs += (aux.code >> 8);
+                                auxofs += (aux.Code >> 8);
 
                                 if ((auxofs + 16) >= fshSize)
                                 {
@@ -232,15 +227,7 @@ namespace FshDatIO
                                 nAttach++;
                                
                                 br.BaseStream.Seek(auxofs, SeekOrigin.Begin);
-                                aux = new FSHEntryHeader();
-                                aux.code = br.ReadInt32();
-                                aux.width = br.ReadInt16();
-                                aux.height = br.ReadInt16();
-                                aux.misc = new short[4];
-                                for (int m = 0; m < 4; m++)
-                                {
-                                    aux.misc[m] = br.ReadInt16();
-                                }
+                                aux = new EntryHeader(br);
                             }
 
                             BitmapEntry entry = new BitmapEntry() { BmpType = (FSHBmpType)code, DirName = Encoding.ASCII.GetString(this.dirs[i].name) };
@@ -388,6 +375,7 @@ namespace FshDatIO
         /// Initializes a new instance of the <see cref="FSHImageWrapper"/> class from the specified stream.
         /// </summary>
         /// <param name="stream">The stream to load from.</param>
+        [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         public FSHImageWrapper(Stream stream)
         {
             this.Load(stream);
@@ -439,19 +427,24 @@ namespace FshDatIO
         /// <summary>
         /// Gets the entry header from the image.
         /// </summary>
-        /// <param name="offset">The offset of hte start of the header.</param>
+        /// <param name="offset">The offset of the start of the header.</param>
         /// <returns></returns>
-        public FSHEntryHeader GetEntryHeader(int offset)
+        public EntryHeader GetEntryHeader(int offset)
         {
-            FSHEntryHeader entry = new FSHEntryHeader();
-
-            if (rawData != null && (offset + 16) < rawData.Length)
+            if (offset < 0 || (offset + 16) >= rawData.Length)
             {
-                entry.code = BitConverter.ToInt32(rawData, offset);
-                entry.width = BitConverter.ToInt16(rawData, offset + 4);
-                entry.height = BitConverter.ToInt16(rawData, offset + 6);
-                entry.misc = new short[4];
-                Array.Copy(rawData, offset + 8, entry.misc, 0, 4);
+                throw new ArgumentOutOfRangeException("offset");
+            }
+
+            EntryHeader entry = new EntryHeader();
+
+            if (rawData != null)
+            {
+                entry.Code = BitConverter.ToInt32(rawData, offset);
+                entry.Width = BitConverter.ToUInt16(rawData, offset + 4);
+                entry.Height = BitConverter.ToUInt16(rawData, offset + 6);
+                entry.Misc = new ushort[4];
+                Array.Copy(rawData, offset + 8, entry.Misc, 0, 4);
             }
 
             return entry;
@@ -513,7 +506,8 @@ namespace FshDatIO
 
             for (int i = 0; i < fsh.Bitmaps.Count; i++)
             {
-                wrap.bitmaps.Add((BitmapItem)fsh.Bitmaps[i]);
+                BitmapItem item = (BitmapItem)fsh.Bitmaps[i];
+                wrap.bitmaps.Add(BitmapEntry.FromBitmapItem(item));
             }
             wrap.dirs = new FSHDirEntry[fsh.Directory.Length];
             fsh.Directory.CopyTo(wrap.dirs, 0);

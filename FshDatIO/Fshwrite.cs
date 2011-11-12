@@ -19,111 +19,7 @@ namespace FshDatIO
             dirnames = new List<byte[]>();
             codelist = new List<int>();
         }
-        private enum SquishCompFlags
-        {
-            //! Use DXT1 compression.
-            kDxt1 = (1 << 0),
 
-            //! Use DXT3 compression.
-            kDxt3 = (1 << 1),
-
-            //! Use DXT5 compression.
-            kDxt5 = (1 << 2),
-
-            //! Use a very slow but very high quality colour compressor.
-            kColourIterativeClusterFit = (1 << 8),
-
-            //! Use a slow but high quality colour compressor (the default).
-            kColourClusterFit = (1 << 3),
-
-            //! Use a fast but low quality colour compressor.
-            kColourRangeFit = (1 << 4),
-
-            //! Use a perceptual metric for colour error (the default).
-            kColourMetricPerceptual = (1 << 5),
-
-            //! Use a uniform metric for colour error.
-            kColourMetricUniform = (1 << 6),
-
-        }
-        
-        private static byte[] SwapRGB(byte[] bytes)
-        {
-            Byte tmp;
-            for (int x = 0; x < bytes.GetLength(0); x += 4)
-            {
-                tmp = bytes[(x + 2)];
-                bytes[x + 2] = bytes[x];
-                bytes[x] = tmp;
-            }
-            return bytes;
-        }
-        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
-        private static byte[] CompressImage(Bitmap image, int flags)
-        {
-            if (image == null)
-                throw new ArgumentNullException("image", "image is null.");
-
-            byte[] pixelData = new byte[image.Width * image.Height * 4];
-
-            BitmapData data = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            int len = data.Stride * data.Height;
-            byte[] temp = new byte[len];
-            Marshal.Copy(data.Scan0, temp, 0, len);
-
-            image.UnlockBits(data);
-
-            pixelData = SwapRGB(temp);
-
-
-            // Compute size of compressed block area, and allocate 
-            int blockCount = ((image.Width + 3) / 4) * ((image.Height + 3) / 4);
-            int blockSize = ((flags & (int)SquishCompFlags.kDxt1) != 0) ? 8 : 16;
-
-            // Allocate room for compressed blocks
-            byte[] blockData = new byte[blockCount * blockSize];
-
-            // Invoke squish::CompressImage() with the required parameters
-            CompressImageWrapper(pixelData, image.Width, image.Height, blockData, flags);
-
-            // Return our block data to caller..
-            return blockData;
-        }
-        private static bool Is64bit()
-        {
-            return (IntPtr.Size == 8);
-        }
-        [System.Security.SuppressUnmanagedCodeSecurity()]
-        private static class Squish_32
-        {
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("Squish_Win32.dll")]
-            internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
-        }
-        [System.Security.SuppressUnmanagedCodeSecurity()]
-        private static class Squish_64
-        {
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
-            internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
-        }
-        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
-        private static unsafe void CompressImageWrapper(byte[] rgba, int width, int height, byte[] blocks, int flags)
-        {
-            fixed (byte* RGBA = rgba)
-            {
-                fixed (byte* Blocks = blocks)
-                {
-                    if (Is64bit())
-                    {
-                        Squish_64.SquishCompressImage(RGBA, width, height, Blocks, flags);
-                    }
-                    else
-                    {
-                        Squish_32.SquishCompressImage(RGBA, width, height, Blocks, flags);
-                    }
-                }
-            }
-        }
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         private static Bitmap BlendDXTBitmap(Bitmap color, Bitmap alpha)
         {
@@ -309,18 +205,18 @@ namespace FshDatIO
                         {
                             Bitmap temp = BlendDXTBitmap(bmp, alpha);
                             byte[] data = new byte[temp.Width * temp.Height * 4];
-                            int flags = (int)SquishCompFlags.kDxt1;
-                            flags |= (int)SquishCompFlags.kColourIterativeClusterFit;
-                            data = CompressImage(temp, flags);
+                            int flags = (int)SquishFlags.kDxt1;
+                            flags |= (int)SquishFlags.kColourIterativeClusterFit;
+                            data = Squish.CompressImage(temp, flags);
                             ms.Write(data, 0, data.Length);
                         }
                         else if (code == 0x61) // DXT3
                         {
                             Bitmap temp = BlendDXTBitmap(bmp, alpha);
                             byte[] data = new byte[temp.Width * temp.Height * 4];
-                            int flags = (int)SquishCompFlags.kDxt3;
-                            flags |= (int)SquishCompFlags.kColourIterativeClusterFit;
-                            data = CompressImage(temp, flags);
+                            int flags = (int)SquishFlags.kDxt3;
+                            flags |= (int)SquishFlags.kColourIterativeClusterFit;
+                            data = Squish.CompressImage(temp, flags);
                             ms.Write(data, 0, data.Length);
                         }
 

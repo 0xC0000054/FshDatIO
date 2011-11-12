@@ -7,14 +7,15 @@ using System.IO;
 
 namespace FshDatIO
 {
-    public class FshWrapper
+    public class FshWrapper : IDisposable
     {
         private FSHImageWrapper image;
         private bool loaded;
         private bool compressed;
         private int fileIndex;
         private bool useFshWrite;
-
+       
+        private bool disposed;
 
         public FshWrapper()
         {
@@ -23,6 +24,7 @@ namespace FshDatIO
             this.compressed = false;            
             this.fileIndex = -1;
             this.useFshWrite = false;
+            this.disposed = false;
         }
         /// <summary>
         /// Initilizes a new instance of the FshWrapper class with the specified FSHImage
@@ -205,6 +207,19 @@ namespace FshDatIO
             }
         }
 
-      
+        public void Dispose()
+        {
+            if (!disposed)
+            {
+                if (image != null)
+                {
+                    image.Dispose();
+                    image = null;
+                }
+
+                this.disposed = true;
+            }
+            GC.SuppressFinalize(this);
+        }
     }
 }

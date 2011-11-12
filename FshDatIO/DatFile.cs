@@ -7,6 +7,7 @@ using System.Diagnostics;
 using FshDatIO.Properties;
 using System.Globalization;
 using System.Collections.ObjectModel;
+using System.Security.Permissions;
 
 namespace FshDatIO
 {
@@ -183,16 +184,6 @@ namespace FshDatIO
                 reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
                 byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
 
-                bool comp = false;
-                if ((fshbuf.Length > 5) && (fshbuf[4] == 0x10 && fshbuf[5] == 0xfb))
-                {
-                    comp = true;
-                    using (MemoryStream ms = new MemoryStream(fshbuf))
-                    {
-                        fshbuf = QfsComp.Decomp(ms, 0, (int)ms.Length);
-                    }
-                }
-                fsh.Compressed = comp;
                 using (MemoryStream ms = new MemoryStream(fshbuf))
                 {
                     fsh.Load(ms);
@@ -248,12 +239,12 @@ namespace FshDatIO
         /// <summary>
         /// Saves the currently loaded DatFile
         /// </summary>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save()
         { 
-            if (!string.IsNullOrEmpty(fileName))
+            if (!string.IsNullOrEmpty(this.fileName))
             {
-                Save(fileName);
+                Save(this.fileName);
             }
         }
         /// <summary>
@@ -261,7 +252,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="fileName">The fileName to save as</param>
         /// <exception cref="System.ArgumentException">The fileName is null or empty.</exception>
-        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
+        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save(string fileName)
         {
             if (String.IsNullOrEmpty(fileName))
@@ -413,6 +404,15 @@ namespace FshDatIO
                     {
                         reader.Close();
                         reader = null;
+                    }
+
+                    if (files.Count > 0)
+                    {
+                        foreach (var item in files)
+                        {
+                            item.Dispose();
+                        }
+                        files.Clear();
                     }
                 }
                 disposed = true;

@@ -124,22 +124,26 @@ namespace FshDatIO
 
             return item;
         }
-        
-        public static implicit operator BitmapEntry(BitmapItem item)
+
+        /// <summary>
+        /// Froms the bitmap item.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns></returns>
+        public static BitmapEntry FromBitmapItem(BitmapItem item)
         {
-            if (item != null && item.Bitmap != null && item.Alpha != null)
+            if (item == null)
             {
-                BitmapEntry entry = new BitmapEntry();
-                Rectangle cloneRect = new Rectangle(0, 0, item.Bitmap.Width, item.Bitmap.Height);
-                entry.bitmap = item.Bitmap.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                entry.alpha = item.Alpha.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                entry.bmpType = item.BmpType;
-                entry.dirName = Encoding.ASCII.GetString(item.DirName);
-
-                return entry; 
+                throw new ArgumentNullException("item");
             }
+            BitmapEntry entry = new BitmapEntry();
+            Rectangle cloneRect = new Rectangle(0, 0, item.Bitmap.Width, item.Bitmap.Height);
+            entry.bitmap = item.Bitmap.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            entry.alpha = item.Alpha.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            entry.bmpType = item.BmpType;
+            entry.dirName = Encoding.ASCII.GetString(item.DirName);
 
-            return null;
+            return entry; 
         }
     }
 }

@@ -5,19 +5,29 @@ using System.IO;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// Encapsulates a DBPF compression directory entry
+    /// </summary>
     internal sealed class DirectoryEntry
     {
         private uint type;
         private uint group;
         private uint instance;
-        private uint size;
+        private uint unCompressedSize;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DirectoryEntry"/> class.
+        /// </summary>
+        /// <param name="type">The type id of the entry.</param>
+        /// <param name="group">The group id of the entry.</param>
+        /// <param name="instance">The instance id of the entry.</param>
+        /// <param name="unCompressedSize">The uncompressed size of the entry.</param>
         public DirectoryEntry(uint type, uint group, uint instance, uint size)
         {
             this.Type = type;
             this.Group = group;
             this.Instance = instance;
-            this.Size = size;
+            this.UncompressedSize = size;
         }
 
         public uint Type
@@ -56,16 +66,21 @@ namespace FshDatIO
             }
         }
 
-        public uint Size
+        public uint UncompressedSize
         {
             get
             {
-                return size;
+                return unCompressedSize;
             }
             private set
             {
-                size = value;
+                unCompressedSize = value;
             }
+        }
+
+        public bool Equals(uint typeID, uint groupID, uint instanceID)
+        {
+            return ((this.type == typeID) && (this.group == groupID) && (this.instance == instanceID));
         }
 
         public void Save(BinaryWriter bw)
@@ -73,7 +88,7 @@ namespace FshDatIO
             bw.Write(this.type);
             bw.Write(this.group);
             bw.Write(this.instance);
-            bw.Write(this.size);
+            bw.Write(this.unCompressedSize);
         }
     }
 

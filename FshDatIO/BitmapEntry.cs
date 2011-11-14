@@ -126,22 +126,29 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Froms the bitmap item.
+        /// Creates a new BitmapEntry from the specified BitmapItem.
         /// </summary>
         /// <param name="item">The item.</param>
-        /// <returns></returns>
+        /// <returns>The new BitmapEntry or null.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the item is null.</exception>
         public static BitmapEntry FromBitmapItem(BitmapItem item)
         {
             if (item == null)
             {
                 throw new ArgumentNullException("item");
             }
-            BitmapEntry entry = new BitmapEntry();
-            Rectangle cloneRect = new Rectangle(0, 0, item.Bitmap.Width, item.Bitmap.Height);
-            entry.bitmap = item.Bitmap.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            entry.alpha = item.Alpha.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            entry.bmpType = item.BmpType;
-            entry.dirName = Encoding.ASCII.GetString(item.DirName);
+
+            BitmapEntry entry = null;
+            using (BitmapEntry temp = new BitmapEntry())
+            {
+                Rectangle cloneRect = new Rectangle(0, 0, item.Bitmap.Width, item.Bitmap.Height);
+                temp.bitmap = item.Bitmap.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                temp.alpha = item.Alpha.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                temp.bmpType = item.BmpType;
+                temp.dirName = Encoding.ASCII.GetString(item.DirName);
+
+                entry = temp.Clone();
+            }
 
             return entry; 
         }

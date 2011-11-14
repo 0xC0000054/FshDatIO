@@ -5,7 +5,7 @@ using System.IO;
 
 namespace FshDatIO
 {
-    public enum DatIndexFlags
+    public enum DatIndexState
     {
         None,
         New,
@@ -19,7 +19,7 @@ namespace FshDatIO
         private uint instance;
         private uint location;
         private uint fileSize;
-        private DatIndexFlags flags;
+        private DatIndexState indexState;
         private bool compressed; 
 
         public DatIndex()
@@ -29,7 +29,7 @@ namespace FshDatIO
             this.Instance = 0;
             this.Location = 0;
             this.FileSize = 0;
-            this.Flags = DatIndexFlags.None;
+            this.IndexState = DatIndexState.None;
             this.Compressed = false;
         }
         public DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
@@ -39,7 +39,7 @@ namespace FshDatIO
             this.Instance = instance;
             this.Location = location;
             this.FileSize = fileSize;
-            this.Flags = DatIndexFlags.None;
+            this.IndexState = DatIndexState.None;
             this.Compressed = false;
         }
         public DatIndex(uint type, uint group, uint instance)
@@ -49,7 +49,7 @@ namespace FshDatIO
             this.Instance = instance;
             this.Location = 0;
             this.FileSize = 0;
-            this.Flags = DatIndexFlags.None;
+            this.IndexState = DatIndexState.None;
             this.Compressed = false;
         }
 
@@ -124,15 +124,15 @@ namespace FshDatIO
             }
         }
 
-        public DatIndexFlags Flags
+        public DatIndexState IndexState
         {
             get
             {
-                return flags;
+                return indexState;
             }
             set
             {
-                flags = value;
+                indexState = value;
             }
         }
         public bool Compressed
@@ -145,6 +145,11 @@ namespace FshDatIO
             {
                 compressed = value;
             }
+        }
+
+        public bool Equals(uint typeID, uint groupID, uint instanceID)
+        {
+            return ((this.type == typeID) && (this.group == groupID) && (this.instance == instanceID));
         }
     }
 }

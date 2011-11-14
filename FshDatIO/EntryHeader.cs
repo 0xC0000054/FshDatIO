@@ -65,8 +65,13 @@ namespace FshDatIO
         /// Initializes a new instance of the <see cref="EntryHeader"/> struct from the specified BinaryReader.
         /// </summary>
         /// <param name="br">The BinaryReader to read from.</param>
-        public EntryHeader(System.IO.BinaryReader br)
+        internal EntryHeader(System.IO.BinaryReader br)
         {
+            if (br == null)
+            {
+                throw new ArgumentNullException("br");
+            }
+
             this.code = br.ReadInt32();
             this.width = br.ReadUInt16();
             this.height = br.ReadUInt16();

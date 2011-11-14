@@ -22,6 +22,9 @@ namespace FshDatIO
         private uint holeIdxLoc;
         private uint holeSize;
 
+        /// <summary>
+        /// Gets the header major version.
+        /// </summary>
         public uint VersionMajor
         {
             get
@@ -29,6 +32,9 @@ namespace FshDatIO
                 return vMajor;
             }
         }
+        /// <summary>
+        /// Gets the header minor version.
+        /// </summary>
         public uint VersionMinor
         {
             get
@@ -36,6 +42,9 @@ namespace FshDatIO
                 return vMinor;
             }
         }
+        /// <summary>
+        /// Gets the major user version.
+        /// </summary>
         public uint UserVersionMajor
         {
             get
@@ -43,6 +52,9 @@ namespace FshDatIO
                 return uVMajor;
             }
         }
+        /// <summary>
+        /// Gets the minor user version.
+        /// </summary>
         public uint UserVersionMinor
         {
             get
@@ -50,6 +62,9 @@ namespace FshDatIO
                 return uVMinor;
             }
         }
+        /// <summary>
+        /// Gets the header flags.
+        /// </summary>
         public uint Flags
         {
             get
@@ -85,6 +100,9 @@ namespace FshDatIO
                 dateModified = value;
             }
         }
+        /// <summary>
+        /// Gets the  major version of the index.
+        /// </summary>
         public uint IndexVersionMajor
         {
             get
@@ -92,6 +110,9 @@ namespace FshDatIO
                 return indexVMajor;
             }
         }
+        /// <summary>
+        /// Gets the number of entries in the file.
+        /// </summary>
         public uint Entries
         {
             get
@@ -103,6 +124,9 @@ namespace FshDatIO
                 entries = value;
             }
         }
+        /// <summary>
+        /// Gets the start location of the index.
+        /// </summary>
         public uint IndexLocation
         {
             get
@@ -114,6 +138,9 @@ namespace FshDatIO
                 indexLoc = value;
             }
         }
+        /// <summary>
+        /// Gets the size of the index.
+        /// </summary>
         public uint IndexSize
         {
             get
@@ -126,6 +153,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the hole count.
+        /// </summary>
         public uint HoleCount
         {
             get
@@ -133,6 +163,9 @@ namespace FshDatIO
                 return holeCount;
             }
         }
+        /// <summary>
+        /// Gets the hole index location.
+        /// </summary>
         public uint HoleIndexLoc
         {
             get
@@ -140,6 +173,9 @@ namespace FshDatIO
                 return holeIdxLoc;
             }
         }
+        /// <summary>
+        /// Gets the size of the hole.
+        /// </summary>
         public uint HoleSize
         {
             get
@@ -148,6 +184,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatHeader"/> class.
+        /// </summary>
         public DatHeader()
         {
             this.vMajor = 1;
@@ -162,6 +201,11 @@ namespace FshDatIO
             this.holeSize = 0;
             this.holeIdxLoc = 0;
         }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatHeader"/> class.
+        /// </summary>
+        /// <param name="reader">The BinaryReader to read from.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
         public DatHeader(BinaryReader reader)
         {
             if (reader == null)
@@ -170,6 +214,12 @@ namespace FshDatIO
             this.Load(reader);
         }
 
+        /// <summary>
+        /// Loads the DatHeader from specified BinaryReader.
+        /// </summary>
+        /// <param name="br">The BinaryReader to read from.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
+        /// <exception cref="FshDatIO.DatHeaderExcecption">Thrown when the header signature is invalid.</exception>
         public void Load(BinaryReader br)
         {
             if (br == null)
@@ -196,7 +246,8 @@ namespace FshDatIO
         /// <summary>
         /// Saves the DatHeader.
         /// </summary>
-        /// <param name="bw">The binaryReader to save to</param>
+        /// <param name="bw">The BinaryReader to save to</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
         public void Save(BinaryWriter bw)
         {
             if (bw == null)
@@ -216,7 +267,8 @@ namespace FshDatIO
             bw.Write(this.holeCount);
             bw.Write(this.holeIdxLoc);
             bw.Write(this.holeSize);
-            bw.Write(new byte[36]); // reserved byte padding
+            byte[] reservedBytes = new byte[36];
+            bw.Write(reservedBytes); // reserved byte padding
         }
     }
 

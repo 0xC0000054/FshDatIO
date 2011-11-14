@@ -5,7 +5,7 @@ using System.IO;
 
 namespace FshDatIO
 {
-    internal class DirectoryEntry
+    internal sealed class DirectoryEntry
     {
         private uint type;
         private uint group;

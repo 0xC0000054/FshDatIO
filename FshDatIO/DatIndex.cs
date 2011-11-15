@@ -147,9 +147,9 @@ namespace FshDatIO
             }
         }
 
-        public bool Equals(uint typeID, uint groupID, uint instanceID)
+        public bool Equals(uint typeId, uint groupId, uint instanceId)
         {
-            return ((this.type == typeID) && (this.group == groupID) && (this.instance == instanceID));
+            return ((this.type == typeId) && (this.group == groupId) && (this.instance == instanceId));
         }
     }
 }

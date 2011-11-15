@@ -3,25 +3,24 @@ using System.Collections.Generic;
 using System.Text;
 using FSHLib;
 using System.IO;
-//using SynapticEffect.SimCity;
 
 namespace FshDatIO
 {
-    public class FshWrapper : IDisposable
+    public sealed class FshWrapper : IDisposable
     {
         private FSHImageWrapper image;
         private bool loaded;
         private bool compressed;
         private int fileIndex;
         private bool useFshWrite;
-       
+
         private bool disposed;
 
         public FshWrapper()
         {
             this.image = null;
             this.loaded = false;
-            this.compressed = false;            
+            this.compressed = false;
             this.fileIndex = -1;
             this.useFshWrite = false;
             this.disposed = false;
@@ -39,11 +38,11 @@ namespace FshDatIO
             compressed = fsh.IsCompressed;
             loaded = true;
         }
-        
+
         public void Load(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("output", "output is null.");
 
             image = new FSHImageWrapper(input);
             image.IsCompressed = compressed;
@@ -66,27 +65,10 @@ namespace FshDatIO
                 int prevpos = (int)output.Position;
 
                 int datalen = image.RawData.Length;
-               
+
                 if (useFshWrite && IsDXTFsh(image))
                 {
-                    Fshwrite fw = new Fshwrite();
-                    fw.Compress = image.IsCompressed;
-                    foreach (BitmapEntry item in image.Bitmaps)
-                    {
-                        if (item.Bitmap != null && item.Alpha != null)
-                        {
-                            fw.bmp.Add(item.Bitmap);
-                            fw.alpha.Add(item.Alpha);
-                            fw.dir.Add(Encoding.ASCII.GetBytes(item.DirName));
-                            fw.code.Add((int)item.BmpType);
-                        }
-                    }
-                    fw.WriteFsh(output);
-
-                    if (image.IsCompressed && !fw.Compress)  
-                    {
-                        image.IsCompressed = false; // compression failed so set image.IsCompressed to false 
-                    }
+                    image.Save(output, true);
                 }
                 else
                 {
@@ -104,7 +86,7 @@ namespace FshDatIO
                             }
                             else
                             {
-                                image.IsCompressed = false; 
+                                image.IsCompressed = false;
                                 rawstream.WriteTo(output); // write the uncompressed data to the stream if the data did not compress
                             }
                         }
@@ -146,19 +128,19 @@ namespace FshDatIO
 
         public FSHImageWrapper Image
         {
-            get 
+            get
             {
                 return image;
             }
         }
 
-        
+
 
         public bool Compressed
         {
             get
             {
-                if (image != null) 
+                if (image != null)
                 {
                     compressed = image.IsCompressed;
                 }

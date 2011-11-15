@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using FSHLib;
-using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
-using FshDatIO.Properties;
+using System.IO;
 using System.Security.Permissions;
+using System.Text;
+using FshDatIO.Properties;
+using FSHLib;
 
 namespace FshDatIO
 {
@@ -18,6 +17,14 @@ namespace FshDatIO
         private FSHDirEntry[] dirs;
         private bool isCompressed;
         private byte[] rawData;
+
+        private static readonly bool runningOnMono = (RunningonUnix() ||(RunningonUnix() && Type.GetType("Mono.Runtime") != null));
+
+        private static bool RunningonUnix()
+        {
+            int p = (int)Environment.OSVersion.Platform;
+            return ((p == 4) || (p == 6) || (p == 128));
+        }
 
         /// <summary>
         /// Gets the list of bitmaps.
@@ -59,7 +66,7 @@ namespace FshDatIO
             if (packbuf[0] == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
             {            
                 this.isCompressed = true;
-                return new MemoryStream(QfsComp.Decomp(stream, 0, (int)stream.Length));
+                return QfsComp.Decomp(stream, 0, (int)stream.Length);
             }
             else
             {
@@ -67,9 +74,9 @@ namespace FshDatIO
                 stream.Read(packbuf, 0, 2);
 
                 if (packbuf[0] == 16 && packbuf[1] == 0xfb)
-                {
+                {                   
                     this.isCompressed = true;
-                    return new MemoryStream(QfsComp.Decomp(stream, 0, (int)stream.Length));
+                    return QfsComp.Decomp(stream, 0, (int)stream.Length);
                 }
             }
             byte[] buffer = new byte[stream.Length];
@@ -156,6 +163,15 @@ namespace FshDatIO
         [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         private unsafe void Load(Stream stream)
         {
+
+            if (runningOnMono) // use FSHImage to load if we are on Unix or Mono
+            {
+                FSHImage fsh = new FSHImage(stream);
+                this.CopyFromFSHImage(fsh);
+                
+                return; 
+            }
+
             if (stream.Length <= 4)
             {
                 throw new FormatException(Resources.InvalidFshFile);
@@ -194,7 +210,8 @@ namespace FshDatIO
 
                     for (int i = 0; i < nbmp; i++)
                     {
-                        br.BaseStream.Seek((long)this.dirs[i].offset, SeekOrigin.Begin);
+                        FSHDirEntry dir = this.dirs[i];
+                        br.BaseStream.Seek((long)dir.offset, SeekOrigin.Begin);
                         EntryHeader eHeader = new EntryHeader(br);
 
                         int code = (eHeader.Code & 0x7f);
@@ -213,6 +230,7 @@ namespace FshDatIO
 
                         if (isBmp)
                         {
+                            long bmpStartOffset = (long)dir.offset + 16L;
                             EntryHeader aux = eHeader;
                             nAttach =  0;
                             auxofs = dirs[i].offset;
@@ -220,17 +238,22 @@ namespace FshDatIO
                             {                      
                                 auxofs += (aux.Code >> 8);
 
-                                if ((auxofs + 16) >= fshSize)
+                                if ((auxofs + 4) >= fshSize)
                                 {
                                     break;
                                 }
                                 nAttach++;
-                               
+
                                 br.BaseStream.Seek(auxofs, SeekOrigin.Begin);
-                                aux = new EntryHeader(br);
+                                aux.Code = br.ReadInt32();
                             }
 
-                            BitmapEntry entry = new BitmapEntry() { BmpType = (FSHBmpType)code, DirName = Encoding.ASCII.GetString(this.dirs[i].name) };
+                            if (br.BaseStream.Position != bmpStartOffset)
+                            {
+                                br.BaseStream.Seek(bmpStartOffset, SeekOrigin.Begin);
+                            }
+
+                            BitmapEntry entry = new BitmapEntry() { BmpType = (FSHBmpType)code, DirName = Encoding.ASCII.GetString(dir.name) };
                             entry.Bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb);
                             entry.Alpha = new Bitmap(width, height, PixelFormat.Format24bppRgb);
 
@@ -409,9 +432,9 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the directory entry for the specified index.
+        /// Gets the directory temp for the specified index.
         /// </summary>
-        /// <param name="index">The index of the entry.</param>
+        /// <param name="index">The index of the temp.</param>
         /// <returns>The FSHDirEntry at the specified index.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">The index is less than zero or greater than the number of entries.</exception>
         public FSHDirEntry GetDirectoryEntry(int index)
@@ -425,7 +448,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the entry header from the image.
+        /// Gets the temp header from the image.
         /// </summary>
         /// <param name="offset">The offset of the start of the header.</param>
         /// <returns></returns>
@@ -451,21 +474,73 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Saves the FSHImage to the specified stream.
+        /// Saves the FSHImageWrapper to the specified stream.
         /// </summary>
-        /// <param name="input">The input.</param>
-        public void Save(Stream input)
+        /// <param name="output">The output stream to save to.</param>
+        public void Save(Stream output)
         {
-            FSHImage image = new FSHImage() { IsCompressed = this.isCompressed };
-            BitmapItem[] items = new BitmapItem[this.bitmaps.Count];
-            for (int i = 0; i < this.bitmaps.Count; i++)
+            Save(output, false);
+        }
+
+        /// <summary>
+        /// Saves the FSHImageWrapper to the specified stream.
+        /// </summary>
+        /// <param name="output">The output stream to save to.</param>
+        /// <param name="fshWriteCompression">if set to <c>true</c> use FSH Write compression on DXT1 or DXT3 images.</param>
+        [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
+        public void Save(Stream output, bool fshWriteCompression)
+        {
+            if (fshWriteCompression && IsDXTFsh())
             {
-                items[i] = this.bitmaps[i].ToBitmapItem();
+                Fshwrite fw = new Fshwrite();
+                fw.Compress = this.isCompressed;
+                foreach (BitmapEntry item in this.Bitmaps)
+                {
+                    if (item.Bitmap != null && item.Alpha != null)
+                    {
+                        fw.bmp.Add(item.Bitmap);
+                        fw.alpha.Add(item.Alpha);
+                        fw.dir.Add(Encoding.ASCII.GetBytes(item.DirName));
+                        fw.code.Add((int)item.BmpType);
+                    }
+                }
+                fw.WriteFsh(output);
+
+                if (this.isCompressed && !fw.Compress)
+                {
+                    this.isCompressed = false; // compression failed so set image.IsCompressed to false 
+                }
             }
+            else
+            {
+                FSHImage image = new FSHImage() { IsCompressed = this.isCompressed };
+                BitmapItem[] items = new BitmapItem[this.bitmaps.Count];
+                for (int i = 0; i < this.bitmaps.Count; i++)
+                {
+                    items[i] = this.bitmaps[i].ToBitmapItem();
+                }
 
-            image.Bitmaps.AddRange(items);
+                image.Bitmaps.AddRange(items);
 
-            image.Save(input);
+                image.Save(output); 
+            }
+        }
+
+        /// <summary>
+        /// Test if the fsh only contains DXT1 or DXT3 items
+        /// </summary>
+        /// <param name="image">The image to test</param>
+        /// <returns>True if successful otherwise false</returns>
+        private bool IsDXTFsh()
+        {
+            foreach (BitmapEntry item in this.bitmaps)
+            {
+                if (item.BmpType != FSHBmpType.DXT3 && item.BmpType != FSHBmpType.DXT1)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -515,6 +590,21 @@ namespace FshDatIO
             wrap.rawData = fsh.RawData;
 
             return wrap;
+        }
+
+        private void CopyFromFSHImage(FSHImage fsh)
+        {
+            this.bitmaps = new List<BitmapEntry>(fsh.Bitmaps.Count);
+
+            for (int i = 0; i < fsh.Bitmaps.Count; i++)
+            {
+                BitmapItem item = (BitmapItem)fsh.Bitmaps[i];
+                this.bitmaps.Add(BitmapEntry.FromBitmapItem(item));
+            }
+            this.dirs = new FSHDirEntry[fsh.Directory.Length];
+            fsh.Directory.CopyTo(this.dirs, 0);
+            this.header = fsh.Header;
+            this.rawData = fsh.RawData;
         }
 
 

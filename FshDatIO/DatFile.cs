@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Linq;
 using FSHLib;
 using System.Diagnostics;
 using FshDatIO.Properties;
@@ -15,7 +16,7 @@ namespace FshDatIO
     {
         private DatHeader header;
         private List<DatIndex> indexes;
-        private List<DirectoryEntry> dir;
+        private DirectoryEntryCollection dirs;
         private List<FshWrapper> files;
         private string fileName;
         private bool loaded;
@@ -98,13 +99,13 @@ namespace FshDatIO
         /// <summary>
         /// Loads a DatFile from the specified Stream
         /// </summary>
-        /// <param name="input">The input stream to load from</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> input is null</exception>
+        /// <param name="output">The output stream to load from</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> output is null</exception>
         /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
         public void Load(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("output", "output is null.");
 
             if (reader != null)
                 reader.Close();
@@ -112,11 +113,14 @@ namespace FshDatIO
             reader = new BinaryReader(input);
 
             this.header = new DatHeader(reader);
-            this.indexes = new List<DatIndex>();
+
+            int entryCount = (int)header.Entries;
+
+            this.indexes = new List<DatIndex>(entryCount);
             this.files = new List<FshWrapper>();
 
             reader.BaseStream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
-            for (int i = 0; i < header.Entries; i++)
+            for (int i = 0; i < entryCount; i++)
             {
                 uint type = reader.ReadUInt32();
                 uint group = reader.ReadUInt32();
@@ -127,11 +131,12 @@ namespace FshDatIO
                 if (type == 0xe86b1eef) // Compression Directory
                 {
                     reader.BaseStream.Seek((long)location, SeekOrigin.Begin);
-                    this.dir = new List<DirectoryEntry>((int)(size / 16));
-                    for (int d = 0; d < dir.Capacity; d++)
+                    int count = (int)(size / 16);
+                    this.dirs = new DirectoryEntryCollection(count);
+                    for (int d = 0; d < count; d++)
                     {
                         DirectoryEntry entry = new DirectoryEntry(reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32());
-                        dir.Insert(d, entry);
+                        dirs.Insert(d, entry);
                     }
                 }
                 else if (type == 0x7ab50e44) // Fsh image
@@ -139,19 +144,18 @@ namespace FshDatIO
                     files.Add(new FshWrapper() { FileIndex = i });
                 }
                 indexes.Add(new DatIndex(type, group, instance, location, size));
-
             }
-            if ((dir != null) && dir.Count > 0)
+            if ((dirs != null) && dirs.Count > 0)
             {
                 for (int i = 0; i < indexes.Count; i++)
                 {
                     DatIndex di = indexes[i];
-                    if (di.Type != 0xe86b1eef)
+                    uint type = di.Type;
+                    if (type != 0xe86b1eef)
                     {
-                        int idx = dir.Find(di.Type, di.Group, di.Instance);
-                        if (idx != -1)
+                        if (dirs.Contains(type, di.Group, di.Instance))
                         {
-                            indexes[i].Compressed = true;
+                            di.Compressed = true;
                         }
                     }
                 }
@@ -216,7 +220,7 @@ namespace FshDatIO
             fshItem.Compressed = compress;
             this.files.Add(fshItem);
 
-            DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { Flags = DatIndexFlags.New };
+            DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { IndexState = DatIndexState.New };
             this.indexes.Add(addidx);
 
             this.dirty = true;
@@ -231,7 +235,7 @@ namespace FshDatIO
             int idx = indexes.Find(0x7ab50e44, group, instance);
             if (idx != -1)
             {
-                this.indexes[idx].Flags = DatIndexFlags.Deleted;
+                this.indexes[idx].IndexState = DatIndexState.Deleted;
                 this.dirty = true;
             }
 
@@ -258,12 +262,17 @@ namespace FshDatIO
             if (String.IsNullOrEmpty(fileName))
                 throw new ArgumentException("Filename is null or empty.", "fileName");
 
-            if ((fileName == this.fileName) && (reader != null))
+            if ((fileName == this.fileName) && (this.reader != null))
             {
                 this.Close(); // if the fileName is the same close the file
             }
-            using (FileStream fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+
+            FileStream fs = null;
+
+            try
             {
+                fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
                 using (BinaryWriter bw = new BinaryWriter(fs))
                 {
                     DatHeader head = this.header;
@@ -276,9 +285,9 @@ namespace FshDatIO
                     for (int i = 0; i < this.indexes.Count; i++)
                     {
                         DatIndex index = indexes[i];
-                        if (index.Flags != DatIndexFlags.Deleted && index.Type != 0xe86b1eef)
+                        if (index.IndexState != DatIndexState.Deleted && index.Type != 0xe86b1eef)
                         {
-                            if (index.Flags == DatIndexFlags.New && index.Type == 0x7ab50e44)
+                            if (index.IndexState == DatIndexState.New && index.Type == 0x7ab50e44)
                             {
                                 FshWrapper fshw = files[i];
 #if DEBUG
@@ -346,7 +355,7 @@ namespace FshDatIO
                     }
 
                     saveIndexes.TrimExcess();
-                    
+
                     uint entryCount = (uint)saveIndexes.Count;
                     location = (uint)bw.BaseStream.Position;
                     size = (entryCount * 20U);
@@ -364,10 +373,20 @@ namespace FshDatIO
 
                     this.header = head;
                     this.indexes = saveIndexes;
-                    this.dir = compDirs;
+                    this.dirs = new DirectoryEntryCollection(compDirs);
                     this.fileName = fileName;
 
                     this.dirty = false;
+                }
+                
+                fs = null;
+            }
+            finally
+            {
+                if (fs != null)
+                {
+                    fs.Dispose();
+                    fs = null;
                 }
             }
         }

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
-using System.Diagnostics;
 
 namespace FshDatIO
 {
@@ -15,17 +12,17 @@ namespace FshDatIO
         /// <param name="offset">The offset to start at</param>
         /// <param name="length">The length of the compressed data block</param>
         /// <returns>A byte array containing the decompressed data</returns>
-        public static byte[] Decomp(Stream input, int offset, int length)
+        public static MemoryStream Decomp(Stream input, int offset, int length)
         {
             if (input == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("output", "output is null.");
 
             input.Seek((long)offset, SeekOrigin.Begin);
 
             int complen = (int)(input.Position + length);
 
-            int outidx = 0;
-            int outlen = 0;
+            int outIndex = 0;
+            int outLength = 0;
 
             byte[] packbuf = new byte[2];
             input.Read(packbuf, 0, 2);
@@ -40,21 +37,20 @@ namespace FshDatIO
                 }
             }
 
-            outlen = ((input.ReadByte2() << 16) + (input.ReadByte2() << 8) + input.ReadByte2());
-            //Debug.WriteLine(outlen.ToString());
+            outLength = ((input.ReadByte2() << 16) + (input.ReadByte2() << 8) + input.ReadByte2());
 
-            byte[] uncompdata = new byte[outlen];
+            byte[] unCompressedData = new byte[outLength];
 
             byte ccbyte0 = 0; // control char 0
             byte ccbyte1 = 0; // control char 1
             byte ccbyte2 = 0; // control char 2
             byte ccbyte3 = 0; // control char 3
 
-            int plaincnt = 0;
-            int copycnt = 0;
-            int copyofs = 0;
+            int plainCount = 0;
+            int copyCount = 0;
+            int copyOffset = 0;
 
-            int srcidx = 0;
+            int srcIndex = 0;
 
             while (input.Position < complen)
             {
@@ -68,18 +64,18 @@ namespace FshDatIO
                 {
                     ccbyte1 = input.ReadByte2();
 
-                    plaincnt = (ccbyte0 & 3);
-                    copycnt = ((ccbyte0 & 0x1c) >> 2) + 3;
-                    copyofs = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
+                    plainCount = (ccbyte0 & 3);
+                    copyCount = ((ccbyte0 & 0x1c) >> 2) + 3;
+                    copyOffset = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
                 }
                 else if ((ccbyte0 & 0x40) == 0)
                 {
                     ccbyte1 = input.ReadByte2();
                     ccbyte2 = input.ReadByte2();
 
-                    plaincnt = (ccbyte1 >> 6) & 0x03;
-                    copycnt = (ccbyte0 & 0x3F) + 4;
-                    copyofs = ((ccbyte1 & 0x3F) * 256) + ccbyte2 + 1;
+                    plainCount = (ccbyte1 >> 6) & 0x03;
+                    copyCount = (ccbyte0 & 0x3F) + 4;
+                    copyOffset = ((ccbyte1 & 0x3F) * 256) + ccbyte2 + 1;
                 }
                 else if ((ccbyte0 & 0x20) == 0)
                 {
@@ -87,34 +83,31 @@ namespace FshDatIO
                     ccbyte2 = input.ReadByte2();
                     ccbyte3 = input.ReadByte2();
 
-                    plaincnt = (ccbyte0 & 3);
-                    copycnt = (((ccbyte0 >> 2) & 0x03) * 256) + ccbyte3 + 5;
-                    copyofs = (((ccbyte0 & 16) << 12) + (256 * ccbyte1)) + ccbyte2 + 1;
+                    plainCount = (ccbyte0 & 3);
+                    copyCount = (((ccbyte0 >> 2) & 0x03) * 256) + ccbyte3 + 5;
+                    copyOffset = (((ccbyte0 & 16) << 12) + (256 * ccbyte1)) + ccbyte2 + 1;
                 }
                 else
                 {
-                    plaincnt = ((ccbyte0 & 0x1F) * 4) + 4;
-                    copycnt = 0;
-                    copyofs = 0;
+                    plainCount = ((ccbyte0 & 0x1F) * 4) + 4;
+                    copyCount = 0;
+                    copyOffset = 0;
                 }
 
-                for (int i = 0; i < plaincnt; i++)
+                for (int i = 0; i < plainCount; i++)
                 {
-                    if (input.Position < input.Length)
-                    {
-                        uncompdata[outidx++] = input.ReadByte2();
-                    }
+                    unCompressedData[outIndex++] = input.ReadByte2();
                 }
 
-                srcidx = outidx - copyofs;
+                srcIndex = outIndex - copyOffset;
 
-                for (int i = 0; i < copycnt; i++)
+                for (int i = 0; i < copyCount; i++)
                 {
-                    uncompdata[outidx++] = uncompdata[srcidx++];
+                    unCompressedData[outIndex++] = unCompressedData[srcIndex++];
                 }
             }
 
-            return uncompdata;
+            return new MemoryStream(unCompressedData);
         }
 
         const int QfsMaxIterCount = 50;
@@ -122,7 +115,7 @@ namespace FshDatIO
         const int CompMaxLen = 131072; // FshTool's WINDOWLEN
         const int CompMask = CompMaxLen - 1;  // Fshtool's WINDOWMASK
         /// <summary>
-        /// Compresses the input Stream with QFS compression
+        /// Compresses the output Stream with QFS compression
         /// </summary>
         /// <param name="input">The input stream data to compress</param>
         /// <returns>The compressed data or null if the compession fails</returns>
@@ -130,11 +123,11 @@ namespace FshDatIO
         public static byte[] Comp(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("output", "output is null.");
 
             int inlen = (int)input.Length;
             byte[] inbuf = new byte[(inlen + 1028)]; // 1028 byte safety buffer
-            input.Read(inbuf, 0, (int)input.Length);
+            input.ProperRead(inbuf, 0, (int)input.Length);
 
             int[] similar_rev = new int[CompMaxLen];
             int[,] last_rev = new int[256, 256];
@@ -224,7 +217,7 @@ namespace FshDatIO
                             if ((outidx + len) >= outbuf.Length)
                                 return null;// data did not compress so return null
 
-                            Array.Copy(inbuf, lastwrot, outbuf, outidx, len);
+                            Buffer.BlockCopy(inbuf, lastwrot, outbuf, outidx, len);
                             lastwrot += len;
                             outidx += len;
                         }
@@ -293,7 +286,7 @@ namespace FshDatIO
                 if ((outidx + len) >= outbuf.Length)
                     return null;// data did not compress so return null
 
-                Array.Copy(inbuf, lastwrot, outbuf, outidx, len);
+                Buffer.BlockCopy(inbuf, lastwrot, outbuf, outidx, len);
                 lastwrot += len;
                 outidx += len;
             }
@@ -315,7 +308,7 @@ namespace FshDatIO
                 outbuf[outidx++] = inbuf[lastwrot++];
             }
             byte[] tempsize = new byte[outidx]; // trim the outbuf array to it's actual length
-            Array.Copy(outbuf, 0, tempsize, 0, outidx);
+            Buffer.BlockCopy(outbuf, 0, tempsize, 0, outidx);
             outbuf = tempsize;
 
             return outbuf;

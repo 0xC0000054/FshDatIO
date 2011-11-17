@@ -23,16 +23,16 @@ namespace FshDatIO
         /// </summary>
         /// <param name="index">The index number to find</param>
         /// <returns>The FshWrapper at the specified index or null</returns>
-        public static FshWrapper FromDatIndex(this List<FshWrapper> files, int index)
+        public static int FromDatIndex(this List<FshWrapper> files, int index)
         {
-            foreach (FshWrapper file in files)
+            for (int i = 0; i < files.Count; i++)
             {
-                if (file.FileIndex == index)
+                if (files[i].FileIndex == index)
                 {
-                    return file;
+                    return i;
                 }
             }
-            return null;
+            return -1;
         }
     }
 }

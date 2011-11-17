@@ -45,7 +45,7 @@ namespace FshDatIO
                 throw new ArgumentNullException("output", "output is null.");
 
             image = new FSHImageWrapper(input);
-            image.IsCompressed = compressed;
+            compressed = image.IsCompressed;
             this.loaded = true;
         }
 

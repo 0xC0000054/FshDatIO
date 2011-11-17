@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
 
+#if DEBUG
+using System.Diagnostics;
+#endif
+
 namespace FshDatIO
 {
     static class QfsComp
@@ -19,14 +23,12 @@ namespace FshDatIO
 
             input.Seek((long)offset, SeekOrigin.Begin);
 
-            int complen = (int)(input.Position + length);
-
             int outIndex = 0;
             int outLength = 0;
 
             byte[] packbuf = new byte[2];
             input.Read(packbuf, 0, 2);
-            if (packbuf[0] != 16 && packbuf[1] != 0xfb)
+            if (packbuf[0] != 16 || packbuf[1] != 0xfb)
             {
                 input.Position = 4L;
                 input.Read(packbuf, 0, 2);
@@ -37,7 +39,11 @@ namespace FshDatIO
                 }
             }
 
-            outLength = ((input.ReadByte2() << 16) + (input.ReadByte2() << 8) + input.ReadByte2());
+            byte hi = input.ReadByte2();
+            byte mid = input.ReadByte2();
+            byte lo = input.ReadByte2();
+
+            outLength = ((hi << 16) | (mid << 8)) | lo;
 
             byte[] unCompressedData = new byte[outLength];
 
@@ -52,7 +58,7 @@ namespace FshDatIO
 
             int srcIndex = 0;
 
-            while (input.Position < complen)
+            while (input.Position < length)
             {
                 ccbyte0 = input.ReadByte2();  // return the next byte or throws an EndOfStreamException
                 if (ccbyte0 == 0xfc)
@@ -60,24 +66,26 @@ namespace FshDatIO
                     input.Position -= 1L; // go back one byte
                     break;
                 }
-                if ((ccbyte0 & 0x80) == 0)
-                {
-                    ccbyte1 = input.ReadByte2();
 
+                if (ccbyte0 >= 0xFC) // -- try to re write this with code from http://simswiki.info/wiki.php?title=DBPF_Compression
+                {
                     plainCount = (ccbyte0 & 3);
-                    copyCount = ((ccbyte0 & 0x1c) >> 2) + 3;
-                    copyOffset = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
-                }
-                else if ((ccbyte0 & 0x40) == 0)
-                {
-                    ccbyte1 = input.ReadByte2();
-                    ccbyte2 = input.ReadByte2();
 
-                    plainCount = (ccbyte1 >> 6) & 0x03;
-                    copyCount = (ccbyte0 & 0x3F) + 4;
-                    copyOffset = ((ccbyte1 & 0x3F) * 256) + ccbyte2 + 1;
+                    if ((input.Position + plainCount) > length)
+                    {
+                        plainCount = (int)(length - input.Position);
+                    }
+
+                    copyCount = 0;
+                    copyOffset = 0;
                 }
-                else if ((ccbyte0 & 0x20) == 0)
+                else if (ccbyte0 >= 0xE0)
+                {
+                    plainCount = (ccbyte0 - 0xDF) << 2;
+                    copyCount = 0;
+                    copyOffset = 0;
+                }
+                else if (ccbyte0 >= 0xC0)
                 {
                     ccbyte1 = input.ReadByte2();
                     ccbyte2 = input.ReadByte2();
@@ -87,15 +95,45 @@ namespace FshDatIO
                     copyCount = (((ccbyte0 >> 2) & 0x03) * 256) + ccbyte3 + 5;
                     copyOffset = (((ccbyte0 & 16) << 12) + (256 * ccbyte1)) + ccbyte2 + 1;
                 }
-                else
+                else if (ccbyte0 >= 0x80)
                 {
-                    plainCount = ((ccbyte0 & 0x1F) * 4) + 4;
-                    copyCount = 0;
-                    copyOffset = 0;
+                    ccbyte1 = input.ReadByte2();
+                    ccbyte2 = input.ReadByte2();
+
+                    plainCount = (ccbyte1 >> 6) & 0x03;
+                    copyCount = (ccbyte0 & 0x3F) + 4;
+                    copyOffset = ((ccbyte1 & 0x3F) * 256) + ccbyte2 + 1;
+                }
+                else      
+                {
+#if DEBUG
+                    if ((input.Position + 1L) >= input.Length)
+                    {
+                        Debugger.Break();
+
+                        /*using (FileStream fs = new FileStream(@"C:\Dev_projects\sc4\readfshdat\bin\Debug\dump.qfs",FileMode.Create, FileAccess.Write))
+                        {
+                            byte[] buf = ((MemoryStream)input).ToArray();
+                            fs.Write(buf, ccbyte0, buf.Length);
+                        }*/
+
+
+                        Debug.WriteLine(ccbyte0.ToString("X1"));
+                    }
+#endif
+
+                    ccbyte1 = input.ReadByte2();
+
+                    plainCount = (ccbyte0 & 3);
+                    copyCount = ((ccbyte0 & 0x1c) >> 2) + 3;
+                    copyOffset = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
                 }
 
                 for (int i = 0; i < plainCount; i++)
                 {
+#if DEBUG
+                    Debug.Assert((input.Position + 1L) < input.Length);
+#endif
                     unCompressedData[outIndex++] = input.ReadByte2();
                 }
 

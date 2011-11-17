@@ -36,46 +36,20 @@ namespace FshDatIO
             return (Marshal.SizeOf(IntPtr.Zero) == 8);
         }
 
+        [System.Security.SuppressUnmanagedCodeSecurity]
         private static class Squish_32
         {
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("Squish_Win32.dll")]
             internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_Win32.dll")]
-            internal static extern unsafe void SquishDecompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
-
+                
+        [System.Security.SuppressUnmanagedCodeSecurity]
         private static class Squish_64
         {
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
             internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
-            internal static extern unsafe void SquishDecompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
-        }
-        private static unsafe void CallDecompressImage(byte[] rgba, int width, int height, byte[] blocks, int flags)
-        {
-            fixed (byte* pRGBA = rgba)
-            {
-                fixed (byte* pBlocks = blocks)
-                {
-                    if (Is64Bit())
-                        Squish_64.SquishDecompressImage(pRGBA, width, height, pBlocks, flags);
-                    else
-                        Squish_32.SquishDecompressImage(pRGBA, width, height, pBlocks, flags);
-                }
-            }
         }
 
-        public static byte[] DecompressImage(byte[] blocks, int width, int height, int flags)
-        {
-            // Allocate room for decompressed output
-            byte[] pixelOutput = new byte[width * height * 4];
-
-            // Invoke squish::DecompressImage() with the required parameters
-            CallDecompressImage(pixelOutput, width, height, blocks, flags);
-
-            // Return our pixel data to caller..
-            return pixelOutput;
-        }
 
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public static unsafe byte[] CompressImage(Bitmap image, int flags)

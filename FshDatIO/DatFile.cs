@@ -179,7 +179,9 @@ namespace FshDatIO
                 throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
 
             DatIndex index = indexes[idx];
-            FshWrapper fsh = files.FromDatIndex(idx);
+
+            int fileIndex = files.FromDatIndex(idx);
+            FshWrapper fsh = files[fileIndex];
             if (fsh == null)
                 throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnableToFindTheFshFileAtIndexNumber_Format, idx.ToString(CultureInfo.CurrentCulture)));
 

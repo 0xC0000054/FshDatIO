@@ -18,14 +18,6 @@ namespace FshDatIO
         private bool isCompressed;
         private byte[] rawData;
 
-        private static readonly bool runningOnMono = (RunningonUnix() ||(RunningonUnix() && Type.GetType("Mono.Runtime") != null));
-
-        private static bool RunningonUnix()
-        {
-            int p = (int)Environment.OSVersion.Platform;
-            return ((p == 4) || (p == 6) || (p == 128));
-        }
-
         /// <summary>
         /// Gets the list of bitmaps.
         /// </summary>
@@ -160,18 +152,8 @@ namespace FshDatIO
         /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
-        [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         private unsafe void Load(Stream stream)
         {
-
-            if (runningOnMono) // use FSHImage to load if we are on Unix or Mono
-            {
-                FSHImage fsh = new FSHImage(stream);
-                this.CopyFromFSHImage(fsh);
-                
-                return; 
-            }
-
             if (stream.Length <= 4)
             {
                 throw new FormatException(Resources.InvalidFshFile);
@@ -357,8 +339,7 @@ namespace FshDatIO
                             }
                             else if (code == 0x60 || code == 0x61) // DXT1 or DXT3
                             {
-                                SquishFlags flag = code == 0x60 ? SquishFlags.kDxt1 : SquishFlags.kDxt3;
-                                byte[] rgba = Squish.DecompressImage(data, width, height, (int)flag);
+                                byte[] rgba = DXTComp.UnpackDXTImage(data, width, height, (code == 0x60));
 
                                 ReadDxtImageData(rgba, ref entry, lockRect);
                             }

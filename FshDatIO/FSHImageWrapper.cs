@@ -76,6 +76,7 @@ namespace FshDatIO
             return new MemoryStream(buffer);
         }
 
+
         private static int GetBmpDataSize(int width, int height, int code)
         {
             int size = 0;
@@ -218,7 +219,7 @@ namespace FshDatIO
                             auxofs = dirs[i].offset;
                             while ((aux.Code >> 8) > 0) 
                             {                      
-                                auxofs += (aux.Code >> 8);
+                                auxofs += (aux.Code >> 8); // the section length is the start offset for the attachment
 
                                 if ((auxofs + 4) >= fshSize)
                                 {
@@ -433,6 +434,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="offset">The offset of the start of the header.</param>
         /// <returns></returns>
+        /// <exception cref="System.ArgumentOutOfRangeException">The offset is less than zero or greater than the length of the file.</exception>
         public EntryHeader GetEntryHeader(int offset)
         {
             if (offset < 0 || (offset + 16) >= rawData.Length)
@@ -458,6 +460,7 @@ namespace FshDatIO
         /// Saves the FSHImageWrapper to the specified stream.
         /// </summary>
         /// <param name="output">The output stream to save to.</param>
+        [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         public void Save(Stream output)
         {
             Save(output, false);
@@ -588,6 +591,107 @@ namespace FshDatIO
             this.rawData = fsh.RawData;
         }
 
+
+        /// <summary>
+        /// Checks the size of the images within the fsh.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
+        internal static bool CheckImageSize(Stream stream)
+        { 
+            if (stream.Length <= 4)
+            {
+                throw new FormatException(Resources.InvalidFshFile);
+            }
+
+            stream.Position = 0L;
+            MemoryStream ms = null;
+
+            try
+            {
+                byte[] packbuf = new byte[2];
+                stream.Read(packbuf, 0, 2);
+
+                if (packbuf[0] == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
+                {
+                    ms = QfsComp.Decomp(stream, 0, (int)stream.Length);
+                }
+                else
+                {
+                    stream.Position = 4L; // SimCity 4 uses this offset
+                    stream.Read(packbuf, 0, 2);
+
+                    if (packbuf[0] == 16 && packbuf[1] == 0xfb)
+                    {
+                        ms = QfsComp.Decomp(stream, 0, (int)stream.Length);
+                    }
+                    else
+                    {
+                        byte[] buffer = new byte[stream.Length];
+                        stream.ProperRead(buffer, 0, buffer.Length);
+                        ms = new MemoryStream(buffer);
+                    }
+
+                }
+               
+                using (BinaryReader br = new BinaryReader(ms))
+                {
+                    byte[] SHPI = br.ReadBytes(4);
+                    if (Encoding.ASCII.GetString(SHPI) != "SHPI")
+                    {
+                        throw new FormatException(Resources.InvalidFshHeader);
+                    }
+                    FSHHeader header = new FSHHeader();
+                    header.SHPI = SHPI;
+                    header.size = br.ReadInt32();
+                    header.numBmps = br.ReadInt32();
+                    header.dirID = br.ReadBytes(4);
+
+                    int fshSize = header.size;
+                    int nbmp = header.numBmps;
+                    FSHDirEntry[] dirs = new FSHDirEntry[nbmp];
+
+                    for (int i = 0; i < nbmp; i++)
+                    {
+                        dirs[i].name = br.ReadBytes(4);
+                        dirs[i].offset = br.ReadInt32();
+                    }
+
+                    for (int i = 0; i < nbmp; i++)
+                    {
+                        FSHDirEntry dir = dirs[i];
+                        br.BaseStream.Seek((long)dir.offset, SeekOrigin.Begin);
+                        EntryHeader eHeader = new EntryHeader(br);
+
+                        int code = (eHeader.Code & 0x7f);
+
+                        if ((code == 0x7b) ||  (code == 0x7e) || (code == 0x78) || (code == 0x6d))
+                        {
+                            throw new FormatException(Resources.UnsupportedFshType); // bail on the non SC4 formats
+                        }
+
+                        bool isBmp = ((code == 0x7d) || (code == 0x7f) || (code == 0x60) || (code == 0x61));
+
+                        if (isBmp && eHeader.Width < 128 && eHeader.Height < 128)
+	                    {
+                            return false;
+	                    }
+                    }
+                }
+
+                ms = null;
+            }
+            finally
+            {
+                if (ms != null)
+                {
+                    ms.Dispose();
+                    ms = null;
+                }
+            }
+
+            return true;
+        }
 
         private bool disposed;
         public void Dispose()

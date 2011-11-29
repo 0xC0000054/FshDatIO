@@ -105,7 +105,7 @@ namespace FshDatIO
         public void Load(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("output", "output is null.");
+                throw new ArgumentNullException("input", "input is null.");
 
             if (reader != null)
                 reader.Close();
@@ -130,6 +130,7 @@ namespace FshDatIO
 
                 if (type == 0xe86b1eef) // Compression Directory
                 {
+                    long oldPosition = reader.BaseStream.Position;
                     reader.BaseStream.Seek((long)location, SeekOrigin.Begin);
                     int count = (int)(size / 16);
                     this.dirs = new DirectoryEntryCollection(count);
@@ -138,13 +139,15 @@ namespace FshDatIO
                         DirectoryEntry entry = new DirectoryEntry(reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32());
                         dirs.Insert(d, entry);
                     }
+                    reader.BaseStream.Seek(oldPosition, SeekOrigin.Begin);
                 }
                 else if (type == 0x7ab50e44) // Fsh image
                 {
                     files.Add(new FshWrapper() { FileIndex = i });
                 }
-                indexes.Add(new DatIndex(type, group, instance, location, size));
+                indexes.Add( new DatIndex(type, group, instance, location, size)); 
             }
+
             if ((dirs != null) && dirs.Count > 0)
             {
                 for (int i = 0; i < indexes.Count; i++)
@@ -159,7 +162,7 @@ namespace FshDatIO
                         }
                     }
                 }
-            }
+            }  
 
             this.loaded = true;
         }
@@ -198,6 +201,34 @@ namespace FshDatIO
 
             return fsh;
         }
+
+        /// <summary>
+        /// Checks the size of the images within the fsh.
+        /// </summary>
+        /// <param name="group">The group id of the file.</param>
+        /// <param name="instance">The instance id of the file.</param>
+        /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
+        /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile</exception>
+        public bool CheckImageSize(uint group, uint instance)
+        {
+            int idx = indexes.Find(0x7ab50e44, group, instance);
+
+            if (idx == -1)
+                throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
+
+            DatIndex index = indexes[idx];
+
+            reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
+            byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
+
+            using (MemoryStream ms = new MemoryStream(fshbuf))
+            {
+                return FSHImageWrapper.CheckImageSize(ms);
+            }
+
+        }
+
+
 
         /// <summary>
         /// Closes this instance.

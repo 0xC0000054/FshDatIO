@@ -16,10 +16,10 @@ namespace FshDatIO
         /// <param name="offset">The offset to start at</param>
         /// <param name="length">The length of the compressed data block</param>
         /// <returns>A byte array containing the decompressed data</returns>
-        public static MemoryStream Decomp(Stream input, int offset, int length)
+        public unsafe static MemoryStream Decomp(Stream input, int offset, int length)
         {
             if (input == null)
-                throw new ArgumentNullException("output", "output is null.");
+                throw new ArgumentNullException("input", "input is null.");
 
             input.Seek((long)offset, SeekOrigin.Begin);
 
@@ -47,6 +47,11 @@ namespace FshDatIO
 
             byte[] unCompressedData = new byte[outLength];
 
+            int index = (int)input.Position;
+
+            byte[] compressedData = new byte[length];
+            input.ProperRead(compressedData, offset, length);
+
             byte ccbyte0 = 0; // control char 0
             byte ccbyte1 = 0; // control char 1
             byte ccbyte2 = 0; // control char 2
@@ -57,55 +62,62 @@ namespace FshDatIO
             int copyOffset = 0;
 
             int srcIndex = 0;
-
-            while (input.Position < length)
+            fixed (byte* compressed = compressedData, uncompressed = unCompressedData)
             {
-                ccbyte0 = input.ReadByte2();  // return the next byte or throws an EndOfStreamException
-                if (ccbyte0 == 0xfc)
-                {
-                    input.Position -= 1L; // go back one byte
-                    break;
-                }
+                byte* compData = compressed + index;
+                byte* unCompData = uncompressed;
 
-                if (ccbyte0 >= 0xFC) // -- try to re write this with code from http://simswiki.info/wiki.php?title=DBPF_Compression
+                while (index < length && outIndex < outLength) // code adapted from http://simswiki.info/wiki.php?title=DBPF_Compression
                 {
-                    plainCount = (ccbyte0 & 3);
+                    ccbyte0 = *compData++;
+                    index++;
 
-                    if ((input.Position + plainCount) > length)
+                    if (ccbyte0 >= 0xFC)
                     {
-                        plainCount = (int)(length - input.Position);
+                        plainCount = (ccbyte0 & 3);
+
+                        if ((index + plainCount) > length)
+                        {
+                            plainCount = (int)(length - index);
+                        }
+
+
+                        copyCount = 0;
+                        copyOffset = 0;
                     }
+                    else if (ccbyte0 >= 0xE0)
+                    {
+                        plainCount = (ccbyte0 - 0xDF) << 2;
 
-                    copyCount = 0;
-                    copyOffset = 0;
-                }
-                else if (ccbyte0 >= 0xE0)
-                {
-                    plainCount = (ccbyte0 - 0xDF) << 2;
-                    copyCount = 0;
-                    copyOffset = 0;
-                }
-                else if (ccbyte0 >= 0xC0)
-                {
-                    ccbyte1 = input.ReadByte2();
-                    ccbyte2 = input.ReadByte2();
-                    ccbyte3 = input.ReadByte2();
+                        copyCount = 0;
+                        copyOffset = 0;
+                    }
+                    else if (ccbyte0 >= 0xC0)
+                    {
+                        ccbyte1 = *compData++;
+                        ccbyte2 = *compData++;
+                        ccbyte3 = *compData++;
 
-                    plainCount = (ccbyte0 & 3);
-                    copyCount = (((ccbyte0 >> 2) & 0x03) * 256) + ccbyte3 + 5;
-                    copyOffset = (((ccbyte0 & 16) << 12) + (256 * ccbyte1)) + ccbyte2 + 1;
-                }
-                else if (ccbyte0 >= 0x80)
-                {
-                    ccbyte1 = input.ReadByte2();
-                    ccbyte2 = input.ReadByte2();
+                        index += 3;
 
-                    plainCount = (ccbyte1 >> 6) & 0x03;
-                    copyCount = (ccbyte0 & 0x3F) + 4;
-                    copyOffset = ((ccbyte1 & 0x3F) * 256) + ccbyte2 + 1;
-                }
-                else      
-                {
+                        plainCount = (ccbyte0 & 3);
+
+                        copyCount = (((ccbyte0 >> 2) & 0x03) * 256) + ccbyte3 + 5;
+                        copyOffset = (((ccbyte0 & 16) << 12) + (256 * ccbyte1)) + ccbyte2 + 1;
+                    }
+                    else if (ccbyte0 >= 0x80)
+                    {
+                        ccbyte1 = *compData++;
+                        ccbyte2 = *compData++;
+                        index += 2;
+
+                        plainCount = (ccbyte1 >> 6) & 0x03;
+
+                        copyCount = (ccbyte0 & 0x3F) + 4;
+                        copyOffset = ((ccbyte1 & 0x3F) * 256) + ccbyte2 + 1;
+                    }
+                    else
+                    {
 #if DEBUG
                     if ((input.Position + 1L) >= input.Length)
                     {
@@ -122,30 +134,55 @@ namespace FshDatIO
                     }
 #endif
 
-                    ccbyte1 = input.ReadByte2();
+                        ccbyte1 = *compData++;
+                        index++;
 
-                    plainCount = (ccbyte0 & 3);
-                    copyCount = ((ccbyte0 & 0x1c) >> 2) + 3;
-                    copyOffset = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
-                }
+                        plainCount = (ccbyte0 & 3);
 
-                for (int i = 0; i < plainCount; i++)
-                {
+                        copyCount = ((ccbyte0 & 0x1c) >> 2) + 3;
+                        copyOffset = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
+                    }
+
+                    for (int i = 0; i < plainCount; i++)
+                    {
 #if DEBUG
                     Debug.Assert((input.Position + 1L) < input.Length);
 #endif
-                    unCompressedData[outIndex++] = input.ReadByte2();
-                }
+                        unCompData[outIndex++] = *compData++;
+                        index++;
+                    }
 
-                srcIndex = outIndex - copyOffset;
+                    srcIndex = outIndex - copyOffset;
 
-                for (int i = 0; i < copyCount; i++)
-                {
-                    unCompressedData[outIndex++] = unCompressedData[srcIndex++];
+                    Copy(unCompData, srcIndex, unCompData, outIndex, copyCount);
+
+                    srcIndex += copyCount;
+                    outIndex += copyCount;
+
                 }
             }
 
             return new MemoryStream(unCompressedData);
+        }
+
+        private unsafe static void Copy(byte* source, int srcIndex, byte* dest, int dstIndex, int length)
+        {
+            byte* src = source + srcIndex;
+            byte* dst = dest + dstIndex;
+            for (int i = 0; i < length / 2; i++)
+            {
+                *((short*)dst) = *((short*)src);
+                src += 2;
+                dst += 2;
+            }
+
+            // Complete the copy by moving any bytes that weren't moved in blocks of 4:
+            for (int i = 0; i < length % 2; i++)
+            {
+                *dst = *src;
+                dst++;
+                src++;
+            }
         }
 
         const int QfsMaxIterCount = 50;
@@ -161,7 +198,7 @@ namespace FshDatIO
         public static byte[] Comp(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("output", "output is null.");
+                throw new ArgumentNullException("input", "input is null.");
 
             int inlen = (int)input.Length;
             byte[] inbuf = new byte[(inlen + 1028)]; // 1028 byte safety buffer

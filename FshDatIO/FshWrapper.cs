@@ -42,7 +42,7 @@ namespace FshDatIO
         public void Load(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("output", "output is null.");
+                throw new ArgumentNullException("input", "input is null.");
 
             image = new FSHImageWrapper(input);
             compressed = image.IsCompressed;

@@ -6,10 +6,15 @@ using System.Text;
 namespace FshDatIO
 {
     /// <summary>
-    /// DXT Decompression code based off Squish
+    /// DXT Decompression code based off Simon Brown's Squish library 
+    /// http://code.google.com/p/libsquish/
     /// </summary>
     class DXTComp
     {
+
+        private DXTComp()
+        {
+        }
         /// <summary>
         /// Unpacks the DXT image.
         /// </summary>
@@ -29,6 +34,8 @@ namespace FshDatIO
                     int bytesPerBlock = dxt1 ? 8 : 16;
                     byte* targetRGBA = stackalloc byte[4 * 16];
                     byte* pBlock = pBlocks;
+                    byte* sourcePixel; // define the pointers outside the loop to help performance
+                    byte* targetPixel;
                     for (int y = 0; y < height; y += 4)
                     {
                         for (int x = 0; x < width; x += 4)
@@ -37,7 +44,7 @@ namespace FshDatIO
                             Decompress(targetRGBA, pBlock, dxt1);
 
                             // write the decompressed pixels to the correct image locations
-                            byte* sourcePixel = targetRGBA;
+                            sourcePixel = targetRGBA;
                             for (int py = 0; py < 4; py++)
                             {
                                 for (int px = 0; px < 4; px++)
@@ -48,7 +55,7 @@ namespace FshDatIO
 
                                     if (sy < width && sy < height)
                                     {
-                                        byte* targetPixel = rgba + 4 * ((width * sy) + sx);
+                                        targetPixel = rgba + 4 * ((width * sy) + sx);
 
                                         for (int p = 0; p < 4; p++)
                                         {
@@ -83,17 +90,17 @@ namespace FshDatIO
             byte* colorBlock = block;
             byte* alphaBlock = block;
 
-            if (!isDxt1)
+            if (isDxt1)
+            {
+                DecompressColor(rgba, colorBlock, true);
+            }
+            else
             {
                 colorBlock = block + 8;
-            }
-
-            DecompressColor(rgba, colorBlock, isDxt1);
-
-            if (!isDxt1)
-            {
+                DecompressColor(rgba, colorBlock, false);
                 DecompressDXT3Alpha(rgba, alphaBlock);
             }
+
         }
 
         /// <summary>
@@ -131,6 +138,7 @@ namespace FshDatIO
             int a = Unpack565(blocks, codes);
             int b = Unpack565(blocks + 2, codes + 4);
 
+            // unpack the midpoints
             for (int i = 0; i < 3; i++)
             {
                 int c = codes[i];
@@ -143,7 +151,7 @@ namespace FshDatIO
                 }
                 else
                 {
-                    // handle the other mask cases
+                    // handle the other mask cases from FSHTool.
                     if (a > b)
                     {
                         codes[8 + i] = (byte)((2 * c + d) / 3);
@@ -179,10 +187,10 @@ namespace FshDatIO
             for (int i = 0; i < 16; i++)
             {
                 int offset = 4 * indices[i];
-
+                int index = 4 * i;
                 for (int j = 0; j < 4; j++)
                 {
-                    rgba[4 * i + j] = codes[offset + j];
+                    rgba[index + j] = codes[offset + j];
                 }
             }
         }
@@ -201,10 +209,10 @@ namespace FshDatIO
                 // extract the values
                 int lo = quant & 0x0f;
                 int hi = quant & 0xf0;
-
+                int index = 8 * i;
                 // convert back up to bytes
-                rgba[8 * i + 3] = (byte)(lo | (lo << 4));
-                rgba[8 * i + 7] = (byte)(hi | (hi >> 4));
+                rgba[index + 3] = (byte)(lo | (lo << 4));
+                rgba[index + 7] = (byte)(hi | (hi >> 4));
             }
         }
     }

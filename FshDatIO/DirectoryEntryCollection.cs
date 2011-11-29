@@ -55,7 +55,7 @@ namespace FshDatIO
         {
             for (int i = 0; i < dirs.Length; i++)
             {
-                if (dirs[i].Equals(type, group, instance))
+                if (dirs[i].Type == type && dirs[i].Group == group && dirs[i].Instance == instance)
                 {
                     return true;
                 }

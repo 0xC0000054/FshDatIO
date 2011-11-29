@@ -143,18 +143,29 @@ namespace FshDatIO
                         copyOffset = ((ccbyte0 >> 5) << 8) + ccbyte1 + 1;
                     }
 
+                    byte* pDst = unCompData + outIndex;
                     for (int i = 0; i < plainCount; i++)
                     {
 #if DEBUG
                     Debug.Assert((input.Position + 1L) < input.Length);
 #endif
-                        unCompData[outIndex++] = *compData++;
-                        index++;
+                       *pDst = *compData;
+                       compData++;
+                       pDst++;
                     }
+                    index += plainCount;
+                    outIndex += plainCount;
 
                     srcIndex = outIndex - copyOffset;
 
-                    Copy(unCompData, srcIndex, unCompData, outIndex, copyCount);
+                    byte* src = unCompData + srcIndex;
+                    byte* dst = unCompData + outIndex;
+                    for (int i = 0; i < copyCount; i++)
+                    {
+                        *dst = *src;
+                        src++;
+                        dst++;
+                    }
 
                     srcIndex += copyCount;
                     outIndex += copyCount;
@@ -163,26 +174,6 @@ namespace FshDatIO
             }
 
             return new MemoryStream(unCompressedData);
-        }
-
-        private unsafe static void Copy(byte* source, int srcIndex, byte* dest, int dstIndex, int length)
-        {
-            byte* src = source + srcIndex;
-            byte* dst = dest + dstIndex;
-            for (int i = 0; i < length / 2; i++)
-            {
-                *((short*)dst) = *((short*)src);
-                src += 2;
-                dst += 2;
-            }
-
-            // Complete the copy by moving any bytes that weren't moved in blocks of 4:
-            for (int i = 0; i < length % 2; i++)
-            {
-                *dst = *src;
-                dst++;
-                src++;
-            }
         }
 
         const int QfsMaxIterCount = 50;

@@ -78,11 +78,6 @@ namespace FshDatIO
             }
         }
 
-        public bool Equals(uint typeID, uint groupID, uint instanceID)
-        {
-            return ((this.type == typeID) && (this.group == groupID) && (this.instance == instanceID));
-        }
-
         public void Save(BinaryWriter bw)
         {
             bw.Write(this.type);

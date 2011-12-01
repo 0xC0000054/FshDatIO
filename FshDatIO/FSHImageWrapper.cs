@@ -55,7 +55,7 @@ namespace FshDatIO
             byte[] packbuf = new byte[2];
             stream.Read(packbuf, 0, 2);
 
-            if (packbuf[0] == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
+            if ((packbuf[0]  & 0xfe) == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
             {            
                 this.isCompressed = true;
                 return QfsComp.Decomp(stream, 0, (int)stream.Length);
@@ -65,7 +65,7 @@ namespace FshDatIO
                 stream.Position = 4L; // SimCity 4 uses this offset
                 stream.Read(packbuf, 0, 2);
 
-                if (packbuf[0] == 16 && packbuf[1] == 0xfb)
+                if ((packbuf[0] & 0xfe) == 16 && packbuf[1] == 0xfb)
                 {                   
                     this.isCompressed = true;
                     return QfsComp.Decomp(stream, 0, (int)stream.Length);
@@ -576,22 +576,6 @@ namespace FshDatIO
             return wrap;
         }
 
-        private void CopyFromFSHImage(FSHImage fsh)
-        {
-            this.bitmaps = new List<BitmapEntry>(fsh.Bitmaps.Count);
-
-            for (int i = 0; i < fsh.Bitmaps.Count; i++)
-            {
-                BitmapItem item = (BitmapItem)fsh.Bitmaps[i];
-                this.bitmaps.Add(BitmapEntry.FromBitmapItem(item));
-            }
-            this.dirs = new FSHDirEntry[fsh.Directory.Length];
-            fsh.Directory.CopyTo(this.dirs, 0);
-            this.header = fsh.Header;
-            this.rawData = fsh.RawData;
-        }
-
-
         /// <summary>
         /// Checks the size of the images within the fsh.
         /// </summary>
@@ -612,7 +596,7 @@ namespace FshDatIO
                 byte[] packbuf = new byte[2];
                 stream.Read(packbuf, 0, 2);
 
-                if (packbuf[0] == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
+                if ((packbuf[0] & 0xfe) == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
                 {
                     ms = QfsComp.Decomp(stream, 0, (int)stream.Length);
                 }
@@ -621,7 +605,7 @@ namespace FshDatIO
                     stream.Position = 4L; // SimCity 4 uses this offset
                     stream.Read(packbuf, 0, 2);
 
-                    if (packbuf[0] == 16 && packbuf[1] == 0xfb)
+                    if ((packbuf[0] & 0xfe) == 16 && packbuf[1] == 0xfb)
                     {
                         ms = QfsComp.Decomp(stream, 0, (int)stream.Length);
                     }

@@ -144,15 +144,8 @@ namespace FshDatIO
                     }
 
                     byte* pDst = unCompData + outIndex;
-                    for (int i = 0; i < plainCount; i++)
-                    {
-#if DEBUG
-                    Debug.Assert((input.Position + 1L) < input.Length);
-#endif
-                       *pDst = *compData;
-                       compData++;
-                       pDst++;
-                    }
+                    Copy(ref compData, ref pDst, plainCount);
+     
                     index += plainCount;
                     outIndex += plainCount;
 
@@ -160,12 +153,7 @@ namespace FshDatIO
 
                     byte* src = unCompData + srcIndex;
                     byte* dst = unCompData + outIndex;
-                    for (int i = 0; i < copyCount; i++)
-                    {
-                        *dst = *src;
-                        src++;
-                        dst++;
-                    }
+                    Copy(ref src, ref dst, copyCount);
 
                     srcIndex += copyCount;
                     outIndex += copyCount;
@@ -174,6 +162,14 @@ namespace FshDatIO
             }
 
             return new MemoryStream(unCompressedData);
+        }
+
+        private static unsafe void Copy(ref byte* src, ref byte* dst, int length)
+        {
+            while (length-- > 0)
+            {
+                *dst++ = *src++;
+            }
         }
 
         const int QfsMaxIterCount = 50;

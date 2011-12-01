@@ -18,7 +18,7 @@ namespace FshDatIO
         private List<DatIndex> indexes;
         private DirectoryEntryCollection dirs;
         private List<FshWrapper> files;
-        private string fileName;
+        private string datFileName;
         private bool loaded;
         private bool dirty;
         private BinaryReader reader;
@@ -39,13 +39,13 @@ namespace FshDatIO
         {
             get 
             {
-                return fileName;
+                return datFileName;
             }
             set
             {
                 if (String.IsNullOrEmpty(value))
                     throw new ArgumentException("value is null or empty.", "value");
-                fileName = value;
+                datFileName = value;
             }
         }
 
@@ -79,7 +79,7 @@ namespace FshDatIO
             this.header = new DatHeader();
             this.indexes = new List<DatIndex>();
             this.files = new List<FshWrapper>();
-            this.fileName = string.Empty;
+            this.datFileName = string.Empty;
             this.loaded = false;
             this.dirty = false;
             this.reader = null;
@@ -94,7 +94,7 @@ namespace FshDatIO
                 throw new ArgumentException("Filename is null or empty.", "fileName");
 
             this.Load(new FileStream(fileName, FileMode.Open, FileAccess.Read));
-            this.fileName = fileName;
+            this.datFileName = fileName;
         }
         /// <summary>
         /// Loads a DatFile from the specified Stream
@@ -148,22 +148,6 @@ namespace FshDatIO
                 indexes.Add( new DatIndex(type, group, instance, location, size)); 
             }
 
-            if ((dirs != null) && dirs.Count > 0)
-            {
-                for (int i = 0; i < indexes.Count; i++)
-                {
-                    DatIndex di = indexes[i];
-                    uint type = di.Type;
-                    if (type != 0xe86b1eef)
-                    {
-                        if (dirs.Contains(type, di.Group, di.Instance))
-                        {
-                            di.Compressed = true;
-                        }
-                    }
-                }
-            }  
-
             this.loaded = true;
         }
         /// <summary>
@@ -208,15 +192,13 @@ namespace FshDatIO
         /// <param name="group">The group id of the file.</param>
         /// <param name="instance">The instance id of the file.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
-        /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile</exception>
-        public bool CheckImageSize(uint group, uint instance)
+        /// <exception cref="System.ArgumentNullException">Thrown when the index parameter is null.</exception>
+        public bool CheckImageSize(DatIndex index)
         {
-            int idx = indexes.Find(0x7ab50e44, group, instance);
-
-            if (idx == -1)
-                throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
-
-            DatIndex index = indexes[idx];
+            if (index == null)
+            {
+                throw new ArgumentNullException("index");
+            }
 
             reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
             byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
@@ -225,10 +207,25 @@ namespace FshDatIO
             {
                 return FSHImageWrapper.CheckImageSize(ms);
             }
-
         }
 
+        /// <summary>
+        /// Checks the size of the images within the fsh.
+        /// </summary>
+        /// <param name="group">The group id of the file.</param>
+        /// <param name="instance">The instance id of the file.</param>
+        /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the index parameter is null.</exception>
+        /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile.</exception>
+        public bool CheckImageSize(uint group, uint instance)
+        {
+            int idx = indexes.Find(0x7ab50e44, group, instance);
 
+            if (idx == -1)
+                throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
+
+            return CheckImageSize(this.indexes[idx]);
+        }
 
         /// <summary>
         /// Closes this instance.
@@ -258,20 +255,61 @@ namespace FshDatIO
 
             this.dirty = true;
         }
+
+        private int GetDeletedIndexCount()
+        {
+            int count = 0;
+            for (int i = 0; i < this.Indexes.Count; i++)
+            {
+                if (indexes[i].IndexState == DatIndexState.Deleted)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        public void Insert(FshWrapper fshItem, int fileIndex, uint group, uint instance, bool compress)
+        {
+            fshItem.Compressed = compress;
+            fshItem.FileIndex = this.indexes.Count - GetDeletedIndexCount() - 1;
+            this.files.Insert(fileIndex, fshItem);
+
+            DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { IndexState = DatIndexState.New };
+            this.indexes.Add(addidx);
+
+            this.dirty = true;
+        }
         /// <summary>
         /// Removes the specified file from the DatFile
         /// </summary>
         /// <param name="group">The TGI group id to remove</param>
         /// <param name="instance">The TGI instance id to remove</param>
-        public void Remove(uint group, uint instance)
+        /// <returns>The index of the removed file.</returns>
+        public int Remove(uint group, uint instance)
         {
+            int fIndex = -1;
+
             int idx = indexes.Find(0x7ab50e44, group, instance);
             if (idx != -1)
             {
+                int fileIndex = files.FromDatIndex(idx);
+                if (fileIndex >= 0)
+                {
+                    if (files[fileIndex] != null)
+                    {
+                        files.RemoveAt(fileIndex); // remove the file if it exists as we are replacing it.
+                        fIndex = fileIndex; 
+                    }
+                }
+
+
                 this.indexes[idx].IndexState = DatIndexState.Deleted;
                 this.dirty = true;
             }
 
+            return fIndex; // return the file index if it exists
         }
         /// <summary>
         /// Saves the currently loaded DatFile
@@ -279,9 +317,9 @@ namespace FshDatIO
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save()
         { 
-            if (!string.IsNullOrEmpty(this.fileName))
+            if (!string.IsNullOrEmpty(this.datFileName))
             {
-                Save(this.fileName);
+                Save(this.datFileName);
             }
         }
         /// <summary>
@@ -295,9 +333,10 @@ namespace FshDatIO
             if (String.IsNullOrEmpty(fileName))
                 throw new ArgumentException("Filename is null or empty.", "fileName");
 
-            if ((fileName == this.fileName) && (this.reader != null))
+            if ((fileName == this.datFileName) && (this.reader != null))
             {
-                this.Close(); // if the fileName is the same close the file
+                this.reader.Close(); // if the fileName is the same close the BinaryReader
+                this.reader = null;
             }
 
             FileStream fs = null;
@@ -322,17 +361,31 @@ namespace FshDatIO
                         {
                             if (index.IndexState == DatIndexState.New && index.Type == 0x7ab50e44)
                             {
-                                FshWrapper fshw = files[i];
+                                int fi = files.FromDatIndex(i);
+
+                                if (fi < 0 || fi >= files.Count)
+                                {
+                                    continue;
+                                }
+
+                                FshWrapper fshw = files[fi];
 #if DEBUG
                                 Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
 #endif
-                                location = (uint)bw.BaseStream.Position;
-
-                                size = (uint)fshw.Save(bw.BaseStream);
-
-                                if (fshw.Image.IsCompressed)
+                                if (fshw.Image != null)
                                 {
-                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)fshw.Image.RawData.Length));
+                                    location = (uint)bw.BaseStream.Position;
+
+                                    size = (uint)fshw.Save(bw.BaseStream);
+
+                                    if (fshw.Image.IsCompressed)
+                                    {
+                                        compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)fshw.Image.RawData.Length));
+                                    } 
+                                }
+                                else
+                                {
+                                    continue; // skip any null images
                                 }
                             }
                             else
@@ -347,15 +400,18 @@ namespace FshDatIO
                                 byte[] rawbuf = new byte[size];
                                 if (reader != null) // read from the original file if it is open
                                 {
-                                    reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                                    reader.BaseStream.ProperRead(rawbuf, 0, (int)size);
+                                    reader.BaseStream.ProperRead(rawbuf, (int)index.Location, (int)size);
                                 }
                                 else
                                 {
                                     // otherwise the original file should have the same name
-                                    bw.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                                    bw.BaseStream.ProperRead(rawbuf, 0, (int)size);
+                                    bw.BaseStream.ProperRead(rawbuf, (int)index.Location, (int)size);
                                 }
+                                if (bw.BaseStream.Position != location)
+                                {
+                                    bw.Seek((int)location, SeekOrigin.Begin);
+                                }
+
 #if DEBUG
                                 Debug.WriteLine(string.Format("CompSig = {0}{1}", rawbuf[4].ToString("X"), rawbuf[5].ToString("X")));
 #endif
@@ -407,7 +463,7 @@ namespace FshDatIO
                     this.header = head;
                     this.indexes = saveIndexes;
                     this.dirs = new DirectoryEntryCollection(compDirs);
-                    this.fileName = fileName;
+                    this.datFileName = fileName;
 
                     this.dirty = false;
                 }

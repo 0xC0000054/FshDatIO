@@ -8,9 +8,11 @@ namespace FshDatIO
     {
         public static int Find(this List<DatIndex> indexes, uint type, uint group, uint instance)
         {
-            for (int i = 0; i < indexes.Count; i++)
+            int count = indexes.Count;
+            for (int i = 0; i < count; i++)
             {
-                if (indexes[i].Equals(type, group, instance))
+                DatIndex index = indexes[i];
+                if (index.Type == type && index.Group == group && index.Instance == instance)
                 {
                     return i;
                 }
@@ -25,7 +27,8 @@ namespace FshDatIO
         /// <returns>The FshWrapper at the specified index or null</returns>
         public static int FromDatIndex(this List<FshWrapper> files, int index)
         {
-            for (int i = 0; i < files.Count; i++)
+            int count = files.Count;
+            for (int i = 0; i < count; i++)
             {
                 if (files[i].FileIndex == index)
                 {

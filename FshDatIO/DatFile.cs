@@ -12,17 +12,25 @@ using System.Security.Permissions;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// Encapsulates a DBPF file
+    /// </summary>
     public sealed class DatFile : IDisposable
     {
         private DatHeader header;
         private List<DatIndex> indexes;
-        private DirectoryEntryCollection dirs;
         private List<FshWrapper> files;
         private string datFileName;
         private bool loaded;
         private bool dirty;
         private BinaryReader reader;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this instance is dirty.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is dirty; otherwise, <c>false</c>.
+        /// </value>
         public bool IsDirty
         {
             get
@@ -35,13 +43,20 @@ namespace FshDatIO
             }
         }
 
+
+        /// <summary>
+        /// Gets the name of the loaded file.
+        /// </summary>
+        /// <value>
+        /// The name of the file.
+        /// </value>
         public string FileName
         {
             get 
             {
                 return datFileName;
             }
-            set
+            private set
             {
                 if (String.IsNullOrEmpty(value))
                     throw new ArgumentException("value is null or empty.", "value");
@@ -49,6 +64,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the <see cref="FshDatIO.DatHeader"/> of the DatFile.
+        /// </summary>
         public DatHeader Header
         {
             get
@@ -56,6 +74,9 @@ namespace FshDatIO
                 return header;
             }
         }
+        /// <summary>
+        /// Gets the <see cref="FshDatIO.DatIndex"/> collection from the DatFile.
+        /// </summary>
         public ReadOnlyCollection<DatIndex> Indexes
         {
             get 
@@ -64,6 +85,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="DatFile"/> is loaded.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if loaded; otherwise, <c>false</c>.
+        /// </value>
         public bool Loaded
         {
             get
@@ -99,7 +126,7 @@ namespace FshDatIO
         /// <summary>
         /// Loads a DatFile from the specified Stream
         /// </summary>
-        /// <param name="output">The output stream to load from</param>
+        /// <param name="input">The input stream to load from</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> output is null</exception>
         /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
         public void Load(Stream input)
@@ -128,20 +155,7 @@ namespace FshDatIO
                 uint location = reader.ReadUInt32();
                 uint size = reader.ReadUInt32();
 
-                if (type == 0xe86b1eef) // Compression Directory
-                {
-                    long oldPosition = reader.BaseStream.Position;
-                    reader.BaseStream.Seek((long)location, SeekOrigin.Begin);
-                    int count = (int)(size / 16);
-                    this.dirs = new DirectoryEntryCollection(count);
-                    for (int d = 0; d < count; d++)
-                    {
-                        DirectoryEntry entry = new DirectoryEntry(reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32());
-                        dirs.Insert(d, entry);
-                    }
-                    reader.BaseStream.Seek(oldPosition, SeekOrigin.Begin);
-                }
-                else if (type == 0x7ab50e44) // Fsh image
+                if (type == 0x7ab50e44) // Fsh image
                 {
                     files.Add(new FshWrapper() { FileIndex = i });
                 }
@@ -189,10 +203,9 @@ namespace FshDatIO
         /// <summary>
         /// Checks the size of the images within the fsh.
         /// </summary>
-        /// <param name="group">The group id of the file.</param>
-        /// <param name="instance">The instance id of the file.</param>
+        /// <param name="index">The <see cref="FshDatIO.DatIndex"/> of the file to check.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the index parameter is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when the index is null.</exception>
         public bool CheckImageSize(DatIndex index)
         {
             if (index == null)
@@ -270,8 +283,20 @@ namespace FshDatIO
             return count;
         }
 
+        /// <summary>
+        /// Inserts the specified FSH item into the <see cref="FshDatIO.DatFile"/>.
+        /// </summary>
+        /// <param name="fshItem">The FSH item to insert.</param>
+        /// <param name="fileIndex">Index of the <see cref="FshDatIO.FshWrapper"/> item to replace.</param>
+        /// <param name="group">The group id.</param>
+        /// <param name="instance">The instance id.</param>
+        /// <param name="compress">if set to <c>true</c>the fshItem is compressed.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the FshWrapper item is null</exception>
         public void Insert(FshWrapper fshItem, int fileIndex, uint group, uint instance, bool compress)
         {
+            if (fshItem == null)
+                throw new ArgumentNullException("fshItem", "fshItem is null.");
+
             fshItem.Compressed = compress;
             fshItem.FileIndex = this.indexes.Count - GetDeletedIndexCount() - 1;
             this.files.Insert(fileIndex, fshItem);
@@ -350,7 +375,7 @@ namespace FshDatIO
                     DatHeader head = this.header;
                     head.DateCreated = GetCurrentUnixTimestamp();
                     head.Save(bw);
-                    List<DatIndex> saveIndexes = new List<DatIndex>((this.indexes.Count + 2));
+                    List<DatIndex> saveIndexes = new List<DatIndex>(this.indexes.Count + 2);
                     List<DirectoryEntry> compDirs = new List<DirectoryEntry>();
                     uint location = 0;
                     uint size = 0;
@@ -417,7 +442,7 @@ namespace FshDatIO
 #endif
                                 bw.Write(rawbuf);
 
-                                if ((rawbuf.Length > 5) && (rawbuf[4] == 0x10 && rawbuf[5] == 0xfb))
+                                if ((rawbuf.Length > 5) && ((rawbuf[4] & 0xfe) == 0x10 && rawbuf[5] == 0xfb))
                                 {
                                     compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                                 }
@@ -435,10 +460,7 @@ namespace FshDatIO
                     if (compDirs.Count > 0)
                     {
                         location = (uint)bw.BaseStream.Position;
-                        for (int i = 0; i < compDirs.Count; i++)
-                        {
-                            compDirs[i].Save(bw);
-                        }
+                        
                         size = (uint)(compDirs.Count * 16);
                         saveIndexes.Add(new DatIndex(0xe86b1eef, 0xe86b1eef, 0x286b1f03, location, size));
                     }
@@ -462,7 +484,6 @@ namespace FshDatIO
 
                     this.header = head;
                     this.indexes = saveIndexes;
-                    this.dirs = new DirectoryEntryCollection(compDirs);
                     this.datFileName = fileName;
 
                     this.dirty = false;

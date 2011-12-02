@@ -10,10 +10,13 @@ using FSHLib;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// The class that encapsulates a fsh image.
+    /// </summary>
     public sealed class FSHImageWrapper : IDisposable
     {
         private FSHHeader header;
-        private List<BitmapEntry> bitmaps;
+        private BitmapEntryCollection bitmaps;
         private FSHDirEntry[] dirs;
         private bool isCompressed;
         private byte[] rawData;
@@ -21,8 +24,7 @@ namespace FshDatIO
         /// <summary>
         /// Gets the list of bitmaps.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public List<BitmapEntry> Bitmaps
+        public BitmapEntryCollection Bitmaps
         {
             get
             {
@@ -30,6 +32,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this instance is compressed.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance is compressed; otherwise, <c>false</c>.
+        /// </value>
         public bool IsCompressed
         {
             get
@@ -42,6 +50,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the raw data.
+        /// </summary>
         public byte[] RawData
         {
             get
@@ -150,11 +161,17 @@ namespace FshDatIO
         /// Loads a Fsh image from the specified stream.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the stream is null.</exception>
         /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
         private unsafe void Load(Stream stream)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("stream");
+            }
+
             if (stream.Length <= 4)
             {
                 throw new FormatException(Resources.InvalidFshFile);
@@ -183,7 +200,7 @@ namespace FshDatIO
                     int fshSize = header.size;
                     int nbmp = header.numBmps;
                     this.dirs = new FSHDirEntry[nbmp];
-                    this.bitmaps = new List<BitmapEntry>(nbmp);
+                    this.bitmaps = new BitmapEntryCollection(nbmp);
 
                     for (int i = 0; i < nbmp; i++)
                     {
@@ -361,7 +378,6 @@ namespace FshDatIO
                     ms = null;
                 }
             }
-            
         }
 
         /// <summary>
@@ -369,7 +385,7 @@ namespace FshDatIO
         /// </summary>
         public FSHImageWrapper()
         {
-            this.bitmaps = new List<BitmapEntry>();
+            this.bitmaps = new BitmapEntryCollection();
             this.dirs = null;
             this.isCompressed = false;
             this.rawData = null;
@@ -389,7 +405,7 @@ namespace FshDatIO
         private FSHImageWrapper(FSHImageWrapper cloneMe)
         {
             this.header = cloneMe.header;
-            this.bitmaps = new List<BitmapEntry>(cloneMe.bitmaps.Count);
+            this.bitmaps = new BitmapEntryCollection(cloneMe.bitmaps.Count);
 
             for (int i = 0; i < cloneMe.bitmaps.Count; i++)
             {
@@ -460,6 +476,7 @@ namespace FshDatIO
         /// Saves the FSHImageWrapper to the specified stream.
         /// </summary>
         /// <param name="output">The output stream to save to.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the output stream is null.</exception>
         [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         public void Save(Stream output)
         {
@@ -471,14 +488,19 @@ namespace FshDatIO
         /// </summary>
         /// <param name="output">The output stream to save to.</param>
         /// <param name="fshWriteCompression">if set to <c>true</c> use FSH Write compression on DXT1 or DXT3 images.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the output stream is null.</exception>
         [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         public void Save(Stream output, bool fshWriteCompression)
         {
+            if (output == null)
+            {
+                throw new ArgumentNullException("output");
+            }
             if (fshWriteCompression && IsDXTFsh())
             {
                 Fshwrite fw = new Fshwrite();
                 fw.Compress = this.isCompressed;
-                foreach (BitmapEntry item in this.Bitmaps)
+                foreach (BitmapEntry item in bitmaps)
                 {
                     if (item.Bitmap != null && item.Alpha != null)
                     {
@@ -513,7 +535,6 @@ namespace FshDatIO
         /// <summary>
         /// Test if the fsh only contains DXT1 or DXT3 items
         /// </summary>
-        /// <param name="image">The image to test</param>
         /// <returns>True if successful otherwise false</returns>
         private bool IsDXTFsh()
         {
@@ -561,7 +582,7 @@ namespace FshDatIO
             }
 
             FSHImageWrapper wrap = new FSHImageWrapper();
-            wrap.bitmaps = new List<BitmapEntry>(fsh.Bitmaps.Count);
+            wrap.bitmaps =new BitmapEntryCollection(fsh.Bitmaps.Count);
 
             for (int i = 0; i < fsh.Bitmaps.Count; i++)
             {
@@ -581,8 +602,14 @@ namespace FshDatIO
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the stream is null.</exception>
         internal static bool CheckImageSize(Stream stream)
-        { 
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("stream");
+            }
+
             if (stream.Length <= 4)
             {
                 throw new FormatException(Resources.InvalidFshFile);
@@ -678,6 +705,9 @@ namespace FshDatIO
         }
 
         private bool disposed;
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             if (!disposed)

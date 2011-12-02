@@ -51,16 +51,17 @@
     <NoWarn>0628</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <NoWarn>0628</NoWarn>
+    <DocumentationFile>bin\Release\FshDatIO.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSHLib, Version=0.3.1.32186, Culture=neutral">
@@ -74,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitmapEntry.cs" />
+    <Compile Include="BitmapEntryCollection.cs" />
     <Compile Include="DatFileException.cs" />
     <Compile Include="DatHeaderException.cs" />
     <Compile Include="DatIndexException.cs" />
@@ -81,6 +83,8 @@
     <Compile Include="DatIndex.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DirectoryEntry.cs" />
+    <Compile Include="DXTComp.cs" />
+    <Compile Include="EntryHeader.cs" />
     <Compile Include="FSHImageExtensions.cs" />
     <Compile Include="FSHImageWrapper.cs" />
     <Compile Include="FshWrapper.cs" />

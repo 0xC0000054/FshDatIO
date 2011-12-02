@@ -4,6 +4,9 @@ using System.Text;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// Encapsulates the header of a DBPF file.
+    /// </summary>
     public sealed class DatHeader
     {
         private uint vMajor;
@@ -218,7 +221,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="br">The BinaryReader to read from.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
-        /// <exception cref="FshDatIO.DatHeaderExcecption">Thrown when the header signature is invalid.</exception>
+        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the header signature is invalid.</exception>
         public void Load(BinaryReader br)
         {
             if (br == null)

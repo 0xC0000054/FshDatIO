@@ -5,6 +5,9 @@ using FSHLib;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// Ecapsualtes the images within a FSHImageWrapper
+    /// </summary>
     public sealed class BitmapEntry : IDisposable
     {
         private Bitmap bitmap;
@@ -12,6 +15,12 @@ namespace FshDatIO
         private FSHBmpType bmpType;
         private string dirName;
 
+        /// <summary>
+        /// Gets or sets the bitmap.
+        /// </summary>
+        /// <value>
+        /// The bitmap.
+        /// </value>
         public Bitmap Bitmap
         {
             get 
@@ -24,6 +33,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the alpha bitmap.
+        /// </summary>
+        /// <value>
+        /// The alpha.
+        /// </value>
         public Bitmap Alpha
         {
             get
@@ -36,6 +51,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the FSHBitmapType of the entry.
+        /// </summary>
+        /// <value>
+        /// The FSHBitmapType.
+        /// </value>
         public FSHBmpType BmpType
         {
             get
@@ -48,6 +69,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the name of the <see cref="FSHLib.FSHDirEntry"/> dir.
+        /// </summary>
+        /// <value>
+        /// The name of the dir.
+        /// </value>
         public string DirName
         {
             get
@@ -68,11 +95,18 @@ namespace FshDatIO
             this.dirName = cloneMe.dirName;
         }
 
+        /// <summary>
+        /// Clones this instance.
+        /// </summary>
+        /// <returns></returns>
         public BitmapEntry Clone()
         { 
             return new BitmapEntry(this);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BitmapEntry"/> class.
+        /// </summary>
         public BitmapEntry()
         {
             this.bitmap = null;
@@ -82,6 +116,9 @@ namespace FshDatIO
         }
 
         private bool disposed;
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             if (!disposed)
@@ -104,6 +141,10 @@ namespace FshDatIO
 
         }
 
+        /// <summary>
+        /// Converts the <see cref="BitmapEntry"/> into a new <see cref="FSHLib.BitmapItem"/>.
+        /// </summary>
+        /// <returns></returns>
         public BitmapItem ToBitmapItem()
         {
             BitmapItem item = new BitmapItem();

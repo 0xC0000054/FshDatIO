@@ -9,12 +9,8 @@ namespace FshDatIO
     /// DXT Decompression code based off Simon Brown's Squish library 
     /// http://code.google.com/p/libsquish/
     /// </summary>
-    class DXTComp
+    static class DXTComp
     {
-
-        private DXTComp()
-        {
-        }
         /// <summary>
         /// Unpacks the DXT image.
         /// </summary>

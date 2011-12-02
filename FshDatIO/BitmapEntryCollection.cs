@@ -7,7 +7,7 @@ using System.Text;
 namespace FshDatIO
 {
     /// <summary>
-    /// The collection of BitmapEntry items within the DatFile
+    /// The collection of BitmapEntry items within the FSHImageWrapper
     /// </summary>
     public sealed class BitmapEntryCollection : Collection<BitmapEntry>
     {

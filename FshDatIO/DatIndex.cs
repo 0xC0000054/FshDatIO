@@ -5,13 +5,28 @@ using System.IO;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// The enum specifing the DatIndex states.
+    /// </summary>
     public enum DatIndexState
     {
+        /// <summary>
+        /// The normal state of a DatIndex.
+        /// </summary>
         None,
+        /// <summary>
+        /// The DatIndex contains a new file to add to the dat.
+        /// </summary>
         New,
+        /// <summary>
+        /// The DatIndex will be deleted on save.
+        /// </summary>
         Deleted
     }
 
+    /// <summary>
+    /// The class that holds the TGI and location data of an entry within the DatFile 
+    /// </summary>
     public sealed class DatIndex
     {
         private uint type;
@@ -20,8 +35,10 @@ namespace FshDatIO
         private uint location;
         private uint fileSize;
         private DatIndexState indexState;
-        private bool compressed; 
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatIndex"/> class.
+        /// </summary>
         public DatIndex()
         {
             this.Type = 0;
@@ -30,8 +47,15 @@ namespace FshDatIO
             this.Location = 0;
             this.FileSize = 0;
             this.IndexState = DatIndexState.None;
-            this.Compressed = false;
         }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatIndex"/> class.
+        /// </summary>
+        /// <param name="type">The type id of the entry.</param>
+        /// <param name="group">The group id of the entry.</param>
+        /// <param name="instance">The instance id of the entry.</param>
+        /// <param name="location">The location of the entry.</param>
+        /// <param name="fileSize">Size of the entry.</param>
         public DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
         {
             this.Type = type;
@@ -40,8 +64,13 @@ namespace FshDatIO
             this.Location = location;
             this.FileSize = fileSize;
             this.IndexState = DatIndexState.None;
-            this.Compressed = false;
         }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatIndex"/> class.
+        /// </summary>
+        /// <param name="type">The type id of the entry.</param>
+        /// <param name="group">The group id of the entry.</param>
+        /// <param name="instance">The instance id of the entry.</param>
         public DatIndex(uint type, uint group, uint instance)
         {
             this.Type = type;
@@ -50,9 +79,13 @@ namespace FshDatIO
             this.Location = 0;
             this.FileSize = 0;
             this.IndexState = DatIndexState.None;
-            this.Compressed = false;
         }
 
+        /// <summary>
+        /// Saves the DatIndex instance to the specified BinaryWriter.
+        /// </summary>
+        /// <param name="bw">The <see cref="System.IO.BinaryWriter"/> to save to.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
         public void Save(BinaryWriter bw)
         {
             if (bw == null)
@@ -64,6 +97,9 @@ namespace FshDatIO
             bw.Write(this.fileSize);
         }
 
+        /// <summary>
+        /// Gets the type id of the index.
+        /// </summary>
         public uint Type
         {
             get
@@ -76,6 +112,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the group id of the index.
+        /// </summary>
         public uint Group
         {
             get
@@ -88,6 +127,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the instance id of the index.
+        /// </summary>
         public uint Instance
         {
             get
@@ -100,6 +142,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the location of the file.
+        /// </summary>
         public uint Location
         {
             get
@@ -112,6 +157,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the size of the file.
+        /// </summary>
+        /// <value>
+        /// The size of the file.
+        /// </value>
         public uint FileSize
         {
             get
@@ -124,6 +175,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the state of the index.
+        /// </summary>
+        /// <value>
+        /// The state of the index.
+        /// </value>
         public DatIndexState IndexState
         {
             get
@@ -134,22 +191,6 @@ namespace FshDatIO
             {
                 indexState = value;
             }
-        }
-        public bool Compressed
-        {
-            get
-            {
-                return compressed;
-            }
-            set
-            {
-                compressed = value;
-            }
-        }
-
-        public bool Equals(uint typeId, uint groupId, uint instanceId)
-        {
-            return ((this.type == typeId) && (this.group == groupId) && (this.instance == instanceId));
         }
     }
 }

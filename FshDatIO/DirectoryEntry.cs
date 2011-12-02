@@ -19,12 +19,12 @@ namespace FshDatIO
         /// <param name="group">The group id of the entry.</param>
         /// <param name="instance">The instance id of the entry.</param>
         /// <param name="unCompressedSize">The uncompressed size of the entry.</param>
-        public DirectoryEntry(uint type, uint group, uint instance, uint size)
+        public DirectoryEntry(uint type, uint group, uint instance, uint unCompressedSize)
         {
             this.Type = type;
             this.Group = group;
             this.Instance = instance;
-            this.UncompressedSize = size;
+            this.UncompressedSize = unCompressedSize;
         }
 
         public uint Type

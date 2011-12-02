@@ -6,6 +6,9 @@ using System.IO;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// Encapsulates a fsh format image within a <see cref="DatFile"/>.
+    /// </summary>
     public sealed class FshWrapper : IDisposable
     {
         private FSHImageWrapper image;
@@ -16,6 +19,9 @@ namespace FshDatIO
 
         private bool disposed;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FshWrapper"/> class.
+        /// </summary>
         public FshWrapper()
         {
             this.image = null;
@@ -39,6 +45,11 @@ namespace FshDatIO
             loaded = true;
         }
 
+        /// <summary>
+        /// Loads a fsh file from the specified stream.
+        /// </summary>
+        /// <param name="input">The input stream to load from.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input stream is null.</exception>
         public void Load(Stream input)
         {
             if (input == null)
@@ -126,6 +137,9 @@ namespace FshDatIO
             return result;
         }
 
+        /// <summary>
+        /// Gets the image.
+        /// </summary>
         public FSHImageWrapper Image
         {
             get
@@ -136,6 +150,12 @@ namespace FshDatIO
 
 
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="FshWrapper"/> is compressed.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if compressed; otherwise, <c>false</c>.
+        /// </value>
         public bool Compressed
         {
             get
@@ -155,6 +175,12 @@ namespace FshDatIO
                 }
             }
         }
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="FshWrapper"/> is loaded.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if loaded; otherwise, <c>false</c>.
+        /// </value>
         public bool Loaded
         {
             get
@@ -163,13 +189,19 @@ namespace FshDatIO
             }
         }
 
-        public int FileIndex // used for the FromDatIndex function
+        /// <summary>
+        /// Gets or sets the index of the file.
+        /// </summary>
+        /// <value>
+        /// The index of the <see cref="FshWrapper"/> entry in the <see cref="DatFile"/>.
+        /// </value>
+        internal int FileIndex // used for the FromDatIndex function
         {
             get
             {
                 return fileIndex;
             }
-            internal set
+            set
             {
                 fileIndex = value;
             }
@@ -189,6 +221,9 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             if (!disposed)

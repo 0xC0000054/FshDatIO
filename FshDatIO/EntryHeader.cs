@@ -5,6 +5,9 @@ using System.Text;
 
 namespace FshDatIO
 {
+    /// <summary>
+    /// The header for the images within a fsh file. 
+    /// </summary>
     public struct EntryHeader
     {
         private int code;
@@ -12,6 +15,12 @@ namespace FshDatIO
         private ushort height;
         private ushort[] misc;
 
+        /// <summary>
+        /// Gets or sets the entry code.
+        /// </summary>
+        /// <value>
+        /// The code.
+        /// </value>
         public int Code
         {
             get
@@ -24,6 +33,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the entry width.
+        /// </summary>
+        /// <value>
+        /// The width.
+        /// </value>
         public ushort Width
         {
             get
@@ -36,6 +51,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the entry height.
+        /// </summary>
+        /// <value>
+        /// The height.
+        /// </value>
         public ushort Height
         {
             get
@@ -48,6 +69,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets or sets the miscellaneous entry data.
+        /// </summary>
+        /// <value>
+        /// The misc.
+        /// </value>
         public ushort[] Misc
         {
             get

@@ -115,6 +115,8 @@ namespace FshDatIO
         /// Initializes a new instance of the DatFile class and loads the specified fileName.  
         /// </summary>
         /// <param name="fileName">The fileName to load.</param>
+        /// <exception cref="System.ArgumentExcecption">Thrown when the fileName is null or empty.</exception>
+        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
         public DatFile(string fileName)
         {
             if (String.IsNullOrEmpty(fileName))
@@ -127,7 +129,7 @@ namespace FshDatIO
         /// Loads a DatFile from the specified Stream
         /// </summary>
         /// <param name="input">The input stream to load from</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> output is null</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> input is null</exception>
         /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
         public void Load(Stream input)
         {

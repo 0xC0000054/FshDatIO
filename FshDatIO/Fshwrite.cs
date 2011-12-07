@@ -147,6 +147,12 @@ namespace FshDatIO
                 return codelist;
             }
         }
+        /// <summary>
+        /// Gets or sets a value indicating whether the file will be compressed with QFS compression.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if compressed; otherwise, <c>false</c>.
+        /// </value>
         public bool Compress
         {
             get
@@ -226,25 +232,20 @@ namespace FshDatIO
                     ms.Write(BitConverter.GetBytes((int)ms.Length), 0, 4); // write the files length
                     if (compress)
                     {
-                        ms.Position = 0L;
-                        byte[] compbuf = QfsComp.Comp(ms);
+                        byte[] rawData = ms.ToArray();
+                        byte[] compbuf = QfsComp.Comp(rawData);
                         if ((compbuf != null) && (compbuf.LongLength < ms.Length))
                         {
-                            using (MemoryStream ms2 = new MemoryStream(compbuf))
-                            {
-                                ms2.WriteTo(output);
-                            }
+                            output.Write(compbuf, 0, compbuf.Length);
                         }
                         else
                         {
-                            ms.Position = 0L;
                             compress = false;
-                            ms.WriteTo(output);
+                            output.Write(rawData, 0, rawData.Length);
                         }
                     }
                     else
                     {
-                        ms.Position = 0L;
                         ms.WriteTo(output); // write the memory stream to the file
                     }
                     

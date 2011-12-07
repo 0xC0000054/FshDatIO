@@ -272,9 +272,9 @@ namespace FshDatIO
         private int GetDeletedIndexCount()
         {
             int count = 0;
-            for (int i = 0; i < this.Indexes.Count; i++)
+            foreach (var item in this.indexes)
             {
-                if (indexes[i].IndexState == DatIndexState.Deleted)
+                if (item.IndexState == DatIndexState.Deleted)
                 {
                     count++;
                 }

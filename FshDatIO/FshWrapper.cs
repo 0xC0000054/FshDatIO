@@ -83,29 +83,29 @@ namespace FshDatIO
                 }
                 else
                 {
-                    using (MemoryStream rawstream = new MemoryStream(image.RawData)) // bypass FSHLib because it does not seem to save some images correctly
+                    byte[] rawData = image.RawData;
+                    
+                    if (image.IsCompressed) // bypass FSHLib because it does not seem to save some images correctly
                     {
-                        if (image.IsCompressed)
+                        byte[] compbuf = QfsComp.Comp(rawData);
+
+                        if ((compbuf != null) && (compbuf.Length < image.RawData.Length)) // is compbuf not null and is its length less than the uncompressed data length
                         {
-                            byte[] compbuf = QfsComp.Comp(rawstream);
+                            datalen = compbuf.Length;
 
-                            if ((compbuf != null) && (compbuf.Length < image.RawData.Length)) // is compbuf not null and is its length less than the uncompressed data length
-                            {
-                                datalen = compbuf.Length;
-
-                                output.Write(compbuf, 0, compbuf.Length);
-                            }
-                            else
-                            {
-                                image.IsCompressed = false;
-                                rawstream.WriteTo(output); // write the uncompressed data to the stream if the data did not compress
-                            }
+                            output.Write(compbuf, 0, compbuf.Length);
                         }
                         else
                         {
-                            rawstream.WriteTo(output);
+                            image.IsCompressed = false;
+                            output.Write(rawData, 0, rawData.Length); // write the uncompressed data to the stream if the data did not compress
                         }
                     }
+                    else
+                    {
+                        output.Write(rawData, 0, rawData.Length);
+                    }
+                    
                 }
 
                 int len = ((int)output.Position - prevpos);

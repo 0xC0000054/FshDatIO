@@ -6,7 +6,7 @@ using FSHLib;
 namespace FshDatIO
 {
     /// <summary>
-    /// Ecapsualtes the images within a FSHImageWrapper
+    /// Encapsualtes the images within a FSHImageWrapper
     /// </summary>
     public sealed class BitmapEntry : IDisposable
     {

@@ -177,19 +177,19 @@ namespace FshDatIO
         const int CompMaxLen = 131072; // FshTool's WINDOWLEN
         const int CompMask = CompMaxLen - 1;  // Fshtool's WINDOWMASK
         /// <summary>
-        /// Compresses the output Stream with QFS compression
+        /// Compresses the input byte array with QFS compression
         /// </summary>
-        /// <param name="input">The input stream data to compress</param>
+        /// <param name="input">The input byte array to compress</param>
         /// <returns>The compressed data or null if the compession fails</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1814:PreferJaggedArraysOverMultidimensional", MessageId = "Body"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        public static byte[] Comp(Stream input)
+        public static byte[] Comp(byte[] input)
         {
             if (input == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("input", "input byte array is null.");
 
             int inlen = (int)input.Length;
             byte[] inbuf = new byte[(inlen + 1028)]; // 1028 byte safety buffer
-            input.ProperRead(inbuf, 0, (int)input.Length);
+            Buffer.BlockCopy(input, 0, inbuf, 0, input.Length);
 
             int[] similar_rev = new int[CompMaxLen];
             int[,] last_rev = new int[256, 256];

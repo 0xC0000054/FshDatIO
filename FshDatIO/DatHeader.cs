@@ -208,6 +208,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="reader">The BinaryReader to read from.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
+        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the header signature is invalid.</exception>
         public DatHeader(BinaryReader reader)
         {
             if (reader == null)

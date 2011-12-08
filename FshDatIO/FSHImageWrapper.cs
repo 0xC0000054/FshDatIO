@@ -61,30 +61,24 @@ namespace FshDatIO
 			}
 		}
 
-		private MemoryStream Decompress(Stream stream)
+		private MemoryStream Decompress(byte[] imageBytes)
 		{
-			byte[] packbuf = new byte[2];
-			stream.Read(packbuf, 0, 2);
 
-			if ((packbuf[0]  & 0xfe) == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
-			{            
+			if ((imageBytes[0] & 0xfe) == 16 && imageBytes[1] == 0xfb) // NFS 1 uses this offset
+			{
 				this.isCompressed = true;
-				return QfsComp.Decomp(stream, 0, (int)stream.Length);
+				return QfsComp.Decomp(imageBytes);
 			}
 			else
 			{
-				stream.Position = 4L; // SimCity 4 uses this offset
-				stream.Read(packbuf, 0, 2);
-
-				if ((packbuf[0] & 0xfe) == 16 && packbuf[1] == 0xfb)
-				{                   
+				if ((imageBytes[4] & 0xfe) == 16 && imageBytes[5] == 0xfb)
+				{
 					this.isCompressed = true;
-					return QfsComp.Decomp(stream, 0, (int)stream.Length);
+					return QfsComp.Decomp(imageBytes);
 				}
 			}
-			byte[] buffer = new byte[stream.Length];
-			stream.ProperRead(buffer, 0, buffer.Length);
-			return new MemoryStream(buffer);
+
+			return new MemoryStream(imageBytes);
 		}
 
 
@@ -160,29 +154,28 @@ namespace FshDatIO
 		/// <summary>
 		/// Loads a Fsh image from the specified stream.
 		/// </summary>
-		/// <param name="stream">The stream to read from.</param>
-		/// <exception cref="System.ArgumentNullException">Thrown when the stream is null.</exception>
+		/// <param name="imageBytes">The byte array containing the image data.</param>
+		/// <exception cref="System.ArgumentNullException">Thrown when the byte array is null.</exception>
 		/// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
 		/// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
 		/// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
-		private unsafe void Load(Stream stream)
+		private unsafe void Load(byte[] imageBytes)
 		{
-			if (stream == null)
+			if (imageBytes == null)
 			{
-				throw new ArgumentNullException("stream");
+				throw new ArgumentNullException("imageBytes");
 			}
 
-			if (stream.Length <= 4)
+			if (imageBytes.Length <= 4)
 			{
 				throw new FormatException(Resources.InvalidFshFile);
 			}
 
-			stream.Position = 0L;
 			MemoryStream ms = null;
 
 			try
 			{
-				ms = Decompress(stream);
+				ms = Decompress(imageBytes);
 				this.rawData = ms.ToArray();
 				using (BinaryReader br = new BinaryReader(ms))
 				{
@@ -396,10 +389,35 @@ namespace FshDatIO
 		/// Initializes a new instance of the <see cref="FSHImageWrapper"/> class from the specified stream.
 		/// </summary>
 		/// <param name="stream">The stream to load from.</param>
+		/// <exception cref="System.ArgumentNullException">Thrown when the stream is null.</exception>
+		/// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
+		/// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
+		/// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
 		[SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
 		public FSHImageWrapper(Stream stream)
 		{
-			this.Load(stream);
+			if (stream == null)
+				throw new ArgumentNullException("stream");
+			
+			byte[] bytes = new byte[stream.Length];
+			stream.ProperRead(bytes, 0, (int)stream.Length);
+			this.Load(bytes);
+		}
+		/// <summary>
+		/// Initializes a new instance of the <see cref="FSHImageWrapper"/> class.
+		/// </summary>
+		/// <param name="imageBytes">The image bytes.</param>
+		/// <exception cref="System.ArgumentException">Thrown when the byte array is null or empty.</exception>
+		/// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
+		/// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
+		/// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
+		[SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
+		public FSHImageWrapper(byte[] imageBytes)
+		{
+			if (imageBytes == null || imageBytes.Length == 0)
+				throw new ArgumentException("imageBytes is null or empty.", "imageBytes");
+
+			this.Load(imageBytes);
 		}
 
 		private FSHImageWrapper(FSHImageWrapper cloneMe)
@@ -600,47 +618,38 @@ namespace FshDatIO
 		/// <summary>
 		/// Checks the size of the images within the fsh.
 		/// </summary>
-		/// <param name="stream">The stream to read from.</param>
+		/// <param name="imageBytes">The stream to read from.</param>
 		/// <returns>True if all the image are at least 128x128; otherwise false.</returns>
 		/// <exception cref="System.ArgumentNullException">Thrown when the stream is null.</exception>
-		internal static bool CheckImageSize(Stream stream)
+		internal static bool CheckImageSize(byte[] imageBytes)
 		{
-			if (stream == null)
+			if (imageBytes == null)
 			{
 				throw new ArgumentNullException("stream");
 			}
 
-			if (stream.Length <= 4)
+			if (imageBytes.Length <= 4)
 			{
 				throw new FormatException(Resources.InvalidFshFile);
 			}
 
-			stream.Position = 0L;
 			MemoryStream ms = null;
 
 			try
 			{
-				byte[] packbuf = new byte[2];
-				stream.Read(packbuf, 0, 2);
-
-				if ((packbuf[0] & 0xfe) == 16 && packbuf[1] == 0xfb) // NFS 1 uses this offset
+				if ((imageBytes[0] & 0xfe) == 16 && imageBytes[1] == 0xfb) // NFS 1 uses this offset
 				{
-					ms = QfsComp.Decomp(stream, 0, (int)stream.Length);
+					ms = QfsComp.Decomp(imageBytes);
 				}
 				else
 				{
-					stream.Position = 4L; // SimCity 4 uses this offset
-					stream.Read(packbuf, 0, 2);
-
-					if ((packbuf[0] & 0xfe) == 16 && packbuf[1] == 0xfb)
+					if ((imageBytes[4] & 0xfe) == 16 && imageBytes[5] == 0xfb)
 					{
-						ms = QfsComp.Decomp(stream, 0, (int)stream.Length);
+						ms = QfsComp.Decomp(imageBytes);
 					}
 					else
 					{
-						byte[] buffer = new byte[stream.Length];
-						stream.ProperRead(buffer, 0, buffer.Length);
-						ms = new MemoryStream(buffer);
+						ms = new MemoryStream(imageBytes);
 					}
 
 				}

@@ -50,12 +50,29 @@ namespace FshDatIO
         /// </summary>
         /// <param name="input">The input stream to load from.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the input stream is null.</exception>
+        /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
+        /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
+        /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
         public void Load(Stream input)
         {
             if (input == null)
                 throw new ArgumentNullException("input", "input is null.");
 
             image = new FSHImageWrapper(input);
+            compressed = image.IsCompressed;
+            this.loaded = true;
+        }
+        /// <summary>
+        /// Loads a fsh file from the specified byte array.
+        /// </summary>
+        /// <param name="bytes">The byte array to load.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the byte array is null.</exception>
+        /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
+        /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
+        /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
+        public void Load(byte[] bytes)
+        {
+            image = new FSHImageWrapper(bytes);
             compressed = image.IsCompressed;
             this.loaded = true;
         }

@@ -12,45 +12,42 @@ namespace FshDatIO
         /// <summary>
         /// Decompresses an QFS Compressed File
         /// </summary>
-        /// <param name="input">The input stream to decompress</param>
-        /// <param name="offset">The offset to start at</param>
-        /// <param name="length">The length of the compressed data block</param>
-        /// <returns>A byte array containing the decompressed data</returns>
-        public unsafe static MemoryStream Decomp(Stream input, int offset, int length)
+        /// <param name="compressedData">The byte array to decompress</param>
+        /// <returns>A MemoryStream containing the decompressed data</returns>
+        public unsafe static MemoryStream Decomp(byte[] compressedData)
         {
-            if (input == null)
+            if (compressedData == null)
                 throw new ArgumentNullException("input", "input is null.");
 
-            input.Seek((long)offset, SeekOrigin.Begin);
+            int length = compressedData.Length;
 
             int outIndex = 0;
             int outLength = 0;
 
-            byte[] packbuf = new byte[2];
-            input.Read(packbuf, 0, 2);
-            if (packbuf[0] != 16 || packbuf[1] != 0xfb)
-            {
-                input.Position = 4L;
-                input.Read(packbuf, 0, 2);
+            int startOffset = 0;
 
-                if (packbuf[0] != 16 && packbuf[1] != 0xfb)
+            if (compressedData[0] != 16 || compressedData[1] != 0xfb)
+            {
+                startOffset = 4;
+                if (compressedData[4] != 16 && compressedData[5] != 0xfb)
                 {
                     throw new NotSupportedException("Unsupported compression format");
                 }
             }
 
-            byte hi = input.ReadByte2();
-            byte mid = input.ReadByte2();
-            byte lo = input.ReadByte2();
+            byte hi = compressedData[startOffset + 2];
+            byte mid = compressedData[startOffset + 3];
+            byte lo = compressedData[startOffset + 4];
 
             outLength = ((hi << 16) | (mid << 8)) | lo;
 
             byte[] unCompressedData = new byte[outLength];
 
-            int index = (int)input.Position;
-
-            byte[] compressedData = new byte[length];
-            input.ProperRead(compressedData, offset, length);
+            int index = startOffset + 5;
+            if ((compressedData[startOffset] & 1) > 0)
+            {
+                index = 8;
+            }
 
             byte ccbyte0 = 0; // control char 0
             byte ccbyte1 = 0; // control char 1

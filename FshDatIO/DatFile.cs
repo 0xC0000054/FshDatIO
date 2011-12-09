@@ -13,7 +13,7 @@ using System.Security.Permissions;
 namespace FshDatIO
 {
     /// <summary>
-    /// Encapsulates a DBPF file
+    /// Encapsulates a DBPF file.
     /// </summary>
     public sealed class DatFile : IDisposable
     {
@@ -24,6 +24,17 @@ namespace FshDatIO
         private bool loaded;
         private bool dirty;
         private BinaryReader reader;
+        private const uint fshTypeId = 0x7ab50e44;
+        /// <summary>
+        /// The start date of unix time in UTC format
+        /// </summary>
+        private static readonly DateTime unixEpochUTC;
+
+        static DatFile()
+        { 
+            unixEpochUTC = new DateTime(1970, 1, 1).ToUniversalTime();
+        }
+
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is dirty.
@@ -157,7 +168,7 @@ namespace FshDatIO
                 uint location = reader.ReadUInt32();
                 uint size = reader.ReadUInt32();
 
-                if (type == 0x7ab50e44) // Fsh image
+                if (type == fshTypeId) 
                 {
                     files.Add(new FshWrapper() { FileIndex = i });
                 }
@@ -176,7 +187,7 @@ namespace FshDatIO
         /// <exception cref="FshDatIO.DatFileException">Thrown when the Fsh file is not found at the specified index in the DatFile</exception>
         public FshWrapper LoadFile(uint group, uint instance)
         {
-            int idx = indexes.Find(0x7ab50e44, group, instance);
+            int idx = indexes.Find(fshTypeId, group, instance);
 
             if (idx == -1)  
                 throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
@@ -193,10 +204,8 @@ namespace FshDatIO
                 reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
                 byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
 
-                using (MemoryStream ms = new MemoryStream(fshbuf))
-                {
-                    fsh.Load(ms);
-                }
+                fsh.Load(fshbuf);
+                
             }
 
             return fsh;
@@ -218,10 +227,7 @@ namespace FshDatIO
             reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
             byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
 
-            using (MemoryStream ms = new MemoryStream(fshbuf))
-            {
-                return FSHImageWrapper.CheckImageSize(ms);
-            }
+            return FSHImageWrapper.CheckImageSize(fshbuf);
         }
 
         /// <summary>
@@ -230,11 +236,10 @@ namespace FshDatIO
         /// <param name="group">The group id of the file.</param>
         /// <param name="instance">The instance id of the file.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the index parameter is null.</exception>
         /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile.</exception>
         public bool CheckImageSize(uint group, uint instance)
         {
-            int idx = indexes.Find(0x7ab50e44, group, instance);
+            int idx = indexes.Find(fshTypeId, group, instance);
 
             if (idx == -1)
                 throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist); //  not a valid index so throw a DatFileException
@@ -265,7 +270,7 @@ namespace FshDatIO
             fshItem.Compressed = compress;
             this.files.Add(fshItem);
 
-            DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { IndexState = DatIndexState.New };
+            DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New };
             this.indexes.Add(addidx);
 
             this.dirty = true;
@@ -303,7 +308,7 @@ namespace FshDatIO
             fshItem.FileIndex = this.indexes.Count - GetDeletedIndexCount() - 1;
             this.files.Insert(fileIndex, fshItem);
 
-            DatIndex addidx = new DatIndex(0x7ab50e44, group, instance) { IndexState = DatIndexState.New };
+            DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New };
             this.indexes.Add(addidx);
 
             this.dirty = true;
@@ -318,7 +323,7 @@ namespace FshDatIO
         {
             int fIndex = -1;
 
-            int idx = indexes.Find(0x7ab50e44, group, instance);
+            int idx = indexes.Find(fshTypeId, group, instance);
             if (idx != -1)
             {
                 int fileIndex = files.FromDatIndex(idx);
@@ -386,7 +391,7 @@ namespace FshDatIO
                         DatIndex index = indexes[i];
                         if (index.IndexState != DatIndexState.Deleted && index.Type != 0xe86b1eef)
                         {
-                            if (index.IndexState == DatIndexState.New && index.Type == 0x7ab50e44)
+                            if (index.IndexState == DatIndexState.New && index.Type == fshTypeId)
                             {
                                 int fi = files.FromDatIndex(i);
 
@@ -502,14 +507,13 @@ namespace FshDatIO
                 }
             }
         }
-
         /// <summary>
         /// Gets the current Unix Timestamp for the DatHeader DateCreated and DateModified Date stamps 
         /// </summary>
         /// <returns>The datestamp in Unix format</returns> 
         private static uint GetCurrentUnixTimestamp()
         {
-            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1).ToUniversalTime());
+            TimeSpan t = (DateTime.UtcNow - unixEpochUTC);
             
             return (uint)t.TotalSeconds;
         }

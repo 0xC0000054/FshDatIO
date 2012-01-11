@@ -14,10 +14,10 @@ namespace FshDatIO
         /// </summary>
         /// <param name="compressedData">The byte array to decompress</param>
         /// <returns>A MemoryStream containing the decompressed data</returns>
-        public unsafe static MemoryStream Decomp(byte[] compressedData)
+        public unsafe static byte[] Decomp(byte[] compressedData)
         {
             if (compressedData == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("compressedData");
 
             int length = compressedData.Length;
 
@@ -31,7 +31,7 @@ namespace FshDatIO
                 startOffset = 4;
                 if (compressedData[4] != 16 && compressedData[5] != 0xfb)
                 {
-                    throw new NotSupportedException("Unsupported compression format");
+                    throw new NotSupportedException(FshDatIO.Properties.Resources.UnsupportedCompressionFormat);
                 }
             }
 
@@ -158,7 +158,7 @@ namespace FshDatIO
                 }
             }
 
-            return new MemoryStream(unCompressedData);
+            return unCompressedData;
         }
 
         private static unsafe void Copy(ref byte* src, ref byte* dst, int length)

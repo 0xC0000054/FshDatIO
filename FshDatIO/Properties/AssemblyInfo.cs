@@ -19,6 +19,7 @@ using System.Runtime.InteropServices;
 // COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
 [assembly: CLSCompliant(false)]
+[assembly: System.Resources.NeutralResourcesLanguage("en-US")]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("a5cdaa08-1a53-477d-8d47-47d6008d22b2")]
@@ -33,5 +34,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.2.0.5")]
-[assembly: AssemblyFileVersion("1.2.0.5")]
+[assembly: AssemblyVersion("1.2.0.6")]
+[assembly: AssemblyFileVersion("1.2.0.6")]

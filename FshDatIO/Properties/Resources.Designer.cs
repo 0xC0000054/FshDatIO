@@ -106,6 +106,15 @@ namespace FshDatIO.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unsupported compression format..
+        /// </summary>
+        internal static string UnsupportedCompressionFormat {
+            get {
+                return ResourceManager.GetString("UnsupportedCompressionFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Only 24-bit , 32-bit, DXT1 and DXT3 images are supported..
         /// </summary>
         internal static string UnsupportedFshType {

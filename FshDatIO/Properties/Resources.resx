@@ -135,6 +135,9 @@
     <value>Unable to find the Fsh file at index number {0}.</value>
     <comment>Thrown when the Fsh file is not found at the specified index in the DatFile</comment>
   </data>
+  <data name="UnsupportedCompressionFormat" xml:space="preserve">
+    <value>Unsupported compression format.</value>
+  </data>
   <data name="UnsupportedFshType" xml:space="preserve">
     <value>Only 24-bit , 32-bit, DXT1 and DXT3 images are supported.</value>
   </data>

@@ -21,58 +21,10 @@ namespace FshDatIO
         /// <param name="unCompressedSize">The uncompressed size of the entry.</param>
         public DirectoryEntry(uint type, uint group, uint instance, uint unCompressedSize)
         {
-            this.Type = type;
-            this.Group = group;
-            this.Instance = instance;
-            this.UncompressedSize = unCompressedSize;
-        }
-
-        public uint Type
-        {
-            get
-            {
-                return type;
-            }
-            private set
-            {
-                type = value;
-            }
-        }
-
-        public uint Group
-        {
-            get
-            {
-                return group;
-            }
-            private set
-            {
-                group = value;
-            }
-        }
-
-        public uint Instance
-        {
-            get
-            {
-                return instance;
-            }
-            private set
-            {
-                instance = value;
-            }
-        }
-
-        public uint UncompressedSize
-        {
-            get
-            {
-                return unCompressedSize;
-            }
-            private set
-            {
-                unCompressedSize = value;
-            }
+            this.type = type;
+            this.group = group;
+            this.instance = instance;
+            this.unCompressedSize = unCompressedSize;
         }
 
         public void Save(BinaryWriter bw)

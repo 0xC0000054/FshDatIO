@@ -255,6 +255,7 @@ namespace FshDatIO
                 throw new ArgumentNullException("fshItem", "fshItem is null.");
 
             fshItem.Compressed = compress;
+            fshItem.FileIndex = this.indexes.Count - GetDeletedIndexCount() - 1;
             this.files.Add(fshItem);
 
             DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New };

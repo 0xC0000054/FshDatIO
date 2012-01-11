@@ -22,7 +22,7 @@ namespace FshDatIO
 		private byte[] rawData;
 
 		/// <summary>
-		/// Gets the list of bitmaps.
+		/// Gets the collection of <see cref="BitmapEntry"/> items.
 		/// </summary>
 		public BitmapEntryCollection Bitmaps
 		{
@@ -53,15 +53,19 @@ namespace FshDatIO
 		/// <summary>
 		/// Gets the raw data.
 		/// </summary>
-		public byte[] RawData
+		public byte[] GetRawData()
 		{
+			return rawData;
+		}
+		internal uint RawDataLength
+		{ 
 			get
 			{
-				return rawData;
+				return (uint)rawData.Length;
 			}
 		}
 
-		private MemoryStream Decompress(byte[] imageBytes)
+		private byte[] Decompress(byte[] imageBytes)
 		{
 
 			if ((imageBytes[0] & 0xfe) == 16 && imageBytes[1] == 0xfb) // NFS 1 uses this offset
@@ -78,10 +82,17 @@ namespace FshDatIO
 				}
 			}
 
-			return new MemoryStream(imageBytes);
+			return imageBytes;
 		}
 
 
+		/// <summary>
+		/// Gets the size of the BMP data.
+		/// </summary>
+		/// <param name="width">The width if the image.</param>
+		/// <param name="height">The height of the image.</param>
+		/// <param name="code">The bitmap code of the image.</param>
+		/// <returns>The size of the bitmap data.</returns>
 		private static int GetBmpDataSize(int width, int height, int code)
 		{
 			int size = 0;
@@ -171,13 +182,13 @@ namespace FshDatIO
 				throw new FormatException(Resources.InvalidFshFile);
 			}
 
-			MemoryStream ms = null;
+			MemoryStream stream = null;
 
 			try
 			{
-				ms = Decompress(imageBytes);
-				this.rawData = ms.ToArray();
-				using (BinaryReader br = new BinaryReader(ms))
+				this.rawData = Decompress(imageBytes);
+                stream = new MemoryStream(this.rawData);
+				using (BinaryReader br = new BinaryReader(stream))
 				{
 					byte[] SHPI = br.ReadBytes(4);
 					if (Encoding.ASCII.GetString(SHPI) != "SHPI")
@@ -361,14 +372,14 @@ namespace FshDatIO
 					}
 
 				}
-				ms = null;
+				stream = null;
 			}
 			finally
 			{
-				if (ms != null)
+				if (stream != null)
 				{
-					ms.Dispose();
-					ms = null;
+					stream.Dispose();
+					stream = null;
 				}
 			}
 		}
@@ -600,7 +611,7 @@ namespace FshDatIO
 			}
 
 			FSHImageWrapper wrap = new FSHImageWrapper();
-			wrap.bitmaps =new BitmapEntryCollection(fsh.Bitmaps.Count);
+			wrap.bitmaps = new BitmapEntryCollection(fsh.Bitmaps.Count);
 
 			for (int i = 0; i < fsh.Bitmaps.Count; i++)
 			{
@@ -624,38 +635,32 @@ namespace FshDatIO
 		internal static bool CheckImageSize(byte[] imageBytes)
 		{
 			if (imageBytes == null)
-			{
-				throw new ArgumentNullException("stream");
-			}
+				throw new ArgumentNullException("imageBytes");
 
 			if (imageBytes.Length <= 4)
-			{
 				throw new FormatException(Resources.InvalidFshFile);
-			}
 
 			MemoryStream ms = null;
 
 			try
 			{
-				if ((imageBytes[0] & 0xfe) == 16 && imageBytes[1] == 0xfb) // NFS 1 uses this offset
+				byte[] rawData = null;
+				if (((imageBytes[0] & 0xfe) == 16 && imageBytes[1] == 0xfb) ||
+					((imageBytes[4] & 0xfe) == 16 && imageBytes[5] == 0xfb)) 
 				{
-					ms = QfsComp.Decomp(imageBytes);
+					rawData = QfsComp.Decomp(imageBytes);
 				}
 				else
 				{
-					if ((imageBytes[4] & 0xfe) == 16 && imageBytes[5] == 0xfb)
-					{
-						ms = QfsComp.Decomp(imageBytes);
-					}
-					else
-					{
-						ms = new MemoryStream(imageBytes);
-					}
-
+					rawData = imageBytes;
 				}
-			   
+								   
+				ms = new MemoryStream(rawData);
+
 				using (BinaryReader br = new BinaryReader(ms))
-				{
+				{				
+                    ms = null;
+
 					byte[] SHPI = br.ReadBytes(4);
 					if (Encoding.ASCII.GetString(SHPI) != "SHPI")
 					{
@@ -699,7 +704,6 @@ namespace FshDatIO
 					}
 				}
 
-				ms = null;
 			}
 			finally
 			{

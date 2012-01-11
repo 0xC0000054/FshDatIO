@@ -32,14 +32,14 @@ namespace FshDatIO
             this.disposed = false;
         }
         /// <summary>
-        /// Initilizes a new instance of the FshWrapper class with the specified FSHImage
+        /// Initilizes a new instance of the FshWrapper class with the specified FSHImageWrapper
         /// </summary>
-        /// <param name="fsh">The source image to use</param>
-        /// <exception cref="System.ArgumentNullException">The FSHImage is null.</exception>
+        /// <param name="fsh">The source FSHImageWrapper to use.</param>
+        /// <exception cref="System.ArgumentNullException">The FSHImageWrapper is null.</exception>
         public FshWrapper(FSHImageWrapper fsh)
         {
             if (fsh == null)
-                throw new ArgumentNullException("fsh", "fsh is null.");
+                throw new ArgumentNullException("fsh");
             image = fsh;
             compressed = fsh.IsCompressed;
             loaded = true;
@@ -56,7 +56,7 @@ namespace FshDatIO
         public void Load(Stream input)
         {
             if (input == null)
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("input");
 
             image = new FSHImageWrapper(input);
             compressed = image.IsCompressed;
@@ -65,14 +65,14 @@ namespace FshDatIO
         /// <summary>
         /// Loads a fsh file from the specified byte array.
         /// </summary>
-        /// <param name="bytes">The byte array to load.</param>
+        /// <param name="imageData">The byte array to load.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the byte array is null.</exception>
         /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
-        public void Load(byte[] bytes)
+        public void Load(byte[] imageData)
         {
-            image = new FSHImageWrapper(bytes);
+            image = new FSHImageWrapper(imageData);
             compressed = image.IsCompressed;
             this.loaded = true;
         }
@@ -82,17 +82,19 @@ namespace FshDatIO
         /// </summary>
         /// <param name="output">The output stream to save to.</param>
         /// <returns>The length of the saved data.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the output stream is null.</exception>
         [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, Flags = System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode)]
         public int Save(Stream output)
         {
             if (output == null)
-                throw new ArgumentNullException("output", "output is null.");
+                throw new ArgumentNullException("output");
 
-            if (image != null && image.RawData != null && image.RawData.Length > 0)
+            byte[] rawData = image.GetRawData();
+
+            if (image != null && rawData != null && rawData.Length > 0)
             {
                 int prevpos = (int)output.Position;
-
-                int datalen = image.RawData.Length;
+                int rawDataLength = rawData.Length;
 
                 if (useFshWrite && IsDXTFsh(image))
                 {
@@ -100,27 +102,26 @@ namespace FshDatIO
                 }
                 else
                 {
-                    byte[] rawData = image.RawData;
                     
-                    if (image.IsCompressed) // bypass FSHLib because it does not seem to save some images correctly
+                    if (image.IsCompressed) // bypass FSHLib because it does not seem to compress some images correctly
                     {
                         byte[] compbuf = QfsComp.Comp(rawData);
 
-                        if ((compbuf != null) && (compbuf.Length < image.RawData.Length)) // is compbuf not null and is its length less than the uncompressed data length
+                        if ((compbuf != null) && compbuf.Length < rawDataLength) 
                         {
-                            datalen = compbuf.Length;
+                            rawDataLength = compbuf.Length;
 
                             output.Write(compbuf, 0, compbuf.Length);
                         }
                         else
                         {
                             image.IsCompressed = false;
-                            output.Write(rawData, 0, rawData.Length); // write the uncompressed data to the stream if the data did not compress
+                            output.Write(rawData, 0, rawDataLength); // write the uncompressed data to the stream if the data did not compress
                         }
                     }
                     else
                     {
-                        output.Write(rawData, 0, rawData.Length);
+                        output.Write(rawData, 0, rawDataLength);
                     }
                     
                 }
@@ -143,15 +144,12 @@ namespace FshDatIO
         /// <returns>True if successful otherwise false</returns>
         private static bool IsDXTFsh(FSHImageWrapper image)
         {
-            bool result = true;
             foreach (BitmapEntry item in image.Bitmaps)
             {
                 if (item.BmpType != FSHBmpType.DXT3 && item.BmpType != FSHBmpType.DXT1)
-                {
-                    result = false;
-                }
+                    return false;
             }
-            return result;
+            return true;
         }
 
         /// <summary>
@@ -164,8 +162,6 @@ namespace FshDatIO
                 return image;
             }
         }
-
-
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="FshWrapper"/> is compressed.

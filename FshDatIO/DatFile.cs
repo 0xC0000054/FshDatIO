@@ -28,13 +28,7 @@ namespace FshDatIO
         /// <summary>
         /// The start date of unix time in UTC format
         /// </summary>
-        private static readonly DateTime unixEpochUTC;
-
-        static DatFile()
-        { 
-            unixEpochUTC = new DateTime(1970, 1, 1).ToUniversalTime();
-        }
-
+        private static readonly DateTime unixEpochUTC = new DateTime(1970, 1, 1).ToUniversalTime();
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is dirty.
@@ -66,12 +60,6 @@ namespace FshDatIO
             get 
             {
                 return datFileName;
-            }
-            private set
-            {
-                if (String.IsNullOrEmpty(value))
-                    throw new ArgumentException("value is null or empty.", "value");
-                datFileName = value;
             }
         }
 
@@ -205,7 +193,6 @@ namespace FshDatIO
                 byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
 
                 fsh.Load(fshbuf);
-                
             }
 
             return fsh;
@@ -378,7 +365,9 @@ namespace FshDatIO
                 fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
                 using (BinaryWriter bw = new BinaryWriter(fs))
-                {
+                {               
+                    fs = null;
+
                     DatHeader head = this.header;
                     head.DateCreated = GetCurrentUnixTimestamp();
                     head.Save(bw);
@@ -412,7 +401,7 @@ namespace FshDatIO
 
                                     if (fshw.Image.IsCompressed)
                                     {
-                                        compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)fshw.Image.RawData.Length));
+                                        compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)fshw.Image.RawDataLength));
                                     } 
                                 }
                                 else
@@ -467,8 +456,14 @@ namespace FshDatIO
                     if (compDirs.Count > 0)
                     {
                         location = (uint)bw.BaseStream.Position;
+
+                        int count = compDirs.Count;
+                        for (int i = 0; i < count; i++)
+                        {
+                            compDirs[i].Save(bw);
+                        }
                         
-                        size = (uint)(compDirs.Count * 16);
+                        size = (uint)(count * 16);
                         saveIndexes.Add(new DatIndex(0xe86b1eef, 0xe86b1eef, 0x286b1f03, location, size));
                     }
 
@@ -496,7 +491,6 @@ namespace FshDatIO
                     this.dirty = false;
                 }
                 
-                fs = null;
             }
             finally
             {

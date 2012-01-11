@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("null45")]
 [assembly: AssemblyProduct("FshDatIO")]
-[assembly: AssemblyCopyright("Copyright © 2011 Nicholas Hayes")]
+[assembly: AssemblyCopyright("Copyright © 2012 Nicholas Hayes")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

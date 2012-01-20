@@ -73,14 +73,11 @@ namespace FshDatIO
 				this.isCompressed = true;
 				return QfsComp.Decomp(imageBytes);
 			}
-			else
-			{
-				if ((imageBytes[4] & 0xfe) == 16 && imageBytes[5] == 0xfb)
-				{
-					this.isCompressed = true;
-					return QfsComp.Decomp(imageBytes);
-				}
-			}
+            else if ((imageBytes[4] & 0xfe) == 16 && imageBytes[5] == 0xfb)
+            {
+                this.isCompressed = true;
+                return QfsComp.Decomp(imageBytes);
+            }
 
 			return imageBytes;
 		}
@@ -459,7 +456,7 @@ namespace FshDatIO
 		}
 
 		/// <summary>
-		/// Gets the directory temp for the specified index.
+		/// Gets the directory entry for the specified index.
 		/// </summary>
 		/// <param name="index">The index of the temp.</param>
 		/// <returns>The FSHDirEntry at the specified index.</returns>
@@ -475,7 +472,7 @@ namespace FshDatIO
 		}
 
 		/// <summary>
-		/// Gets the temp header from the image.
+		/// Gets the entry header from the image.
 		/// </summary>
 		/// <param name="offset">The offset of the start of the header.</param>
 		/// <returns></returns>
@@ -540,6 +537,7 @@ namespace FshDatIO
 					}
 				}
 				fw.WriteFsh(output);
+                this.rawData = fw.GetRawData();
 
 				if (this.isCompressed && !fw.Compress)
 				{
@@ -548,16 +546,7 @@ namespace FshDatIO
 			}
 			else
 			{
-				FSHImage image = new FSHImage() { IsCompressed = this.isCompressed };
-				BitmapItem[] items = new BitmapItem[this.bitmaps.Count];
-				for (int i = 0; i < this.bitmaps.Count; i++)
-				{
-					items[i] = this.bitmaps[i].ToBitmapItem();
-				}
-
-				image.Bitmaps.AddRange(items);
-
-				image.Save(output); 
+				this.ToFSHImage().Save(output); 
 			}
 		}
 
@@ -565,7 +554,7 @@ namespace FshDatIO
 		/// Test if the fsh only contains DXT1 or DXT3 items
 		/// </summary>
 		/// <returns>True if successful otherwise false</returns>
-		private bool IsDXTFsh()
+		public bool IsDXTFsh()
 		{
 			foreach (BitmapEntry item in this.bitmaps)
 			{

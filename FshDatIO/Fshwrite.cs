@@ -104,6 +104,7 @@ namespace FshDatIO
         private List<byte[]> dirnames = null;
         private List<int> codelist = null;
         private bool compress = false;
+        private byte[] rawData = null;
 
         private static int GetBmpDataSize(Bitmap bmp, int code)
         {
@@ -164,6 +165,11 @@ namespace FshDatIO
                 compress = value;
             }
         }
+        public byte[] GetRawData()
+        {
+            return rawData;
+        }
+
         /// <summary>
         /// The function that writes the fsh
         /// </summary>
@@ -230,9 +236,10 @@ namespace FshDatIO
 
                     ms.Position = 4L;
                     ms.Write(BitConverter.GetBytes((int)ms.Length), 0, 4); // write the files length
+                    this.rawData = ms.ToArray();
                     if (compress)
                     {
-                        byte[] rawData = ms.ToArray();
+                        
                         byte[] compbuf = QfsComp.Comp(rawData);
                         if ((compbuf != null) && (compbuf.LongLength < ms.Length))
                         {

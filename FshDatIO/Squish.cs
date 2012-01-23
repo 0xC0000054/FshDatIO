@@ -29,8 +29,6 @@ namespace FshDatIO
     
     static class Squish
     {
-        
-
         private static bool Is64Bit()
         {
             return (Marshal.SizeOf(IntPtr.Zero) == 8);
@@ -39,15 +37,15 @@ namespace FshDatIO
         [System.Security.SuppressUnmanagedCodeSecurity]
         private static class Squish_32
         {
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("Squish_Win32.dll")]
-            internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_Win32.dll")]
+            internal static extern unsafe void CompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
                 
         [System.Security.SuppressUnmanagedCodeSecurity]
         private static class Squish_64
         {
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
-            internal static extern unsafe void SquishCompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
+            internal static extern unsafe void CompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
 
 
@@ -113,11 +111,11 @@ namespace FshDatIO
                 {
                     if (Is64Bit())
                     {
-                        Squish_64.SquishCompressImage(RGBA, width, height, Blocks, flags);
+                        Squish_64.CompressImage(RGBA, width, height, Blocks, flags);
                     }
                     else
                     {
-                        Squish_32.SquishCompressImage(RGBA, width, height, Blocks, flags);
+                        Squish_32.CompressImage(RGBA, width, height, Blocks, flags);
                     }
                 }
             }

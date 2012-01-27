@@ -19,7 +19,6 @@ namespace FshDatIO
     {
         private DatHeader header;
         private List<DatIndex> indexes;
-        private List<FshWrapper> files;
         private string datFileName;
         private bool loaded;
         private bool dirty;
@@ -104,7 +103,6 @@ namespace FshDatIO
         {
             this.header = new DatHeader();
             this.indexes = new List<DatIndex>();
-            this.files = new List<FshWrapper>();
             this.datFileName = string.Empty;
             this.loaded = false;
             this.dirty = false;
@@ -145,7 +143,6 @@ namespace FshDatIO
             int entryCount = (int)header.Entries;
 
             this.indexes = new List<DatIndex>(entryCount);
-            this.files = new List<FshWrapper>();
 
             reader.BaseStream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
             for (int i = 0; i < entryCount; i++)
@@ -156,11 +153,12 @@ namespace FshDatIO
                 uint location = reader.ReadUInt32();
                 uint size = reader.ReadUInt32();
 
+                DatIndex index = new DatIndex(type, group, instance, location, size);
                 if (type == fshTypeId) 
                 {
-                    files.Add(new FshWrapper() { FileIndex = i });
+                    index.FileItem = new FshWrapper();
                 }
-                indexes.Add(new DatIndex(type, group, instance, location, size)); 
+                indexes.Add(index); 
             }
 
             this.loaded = true;
@@ -173,8 +171,12 @@ namespace FshDatIO
         /// <returns>The loaded FshWrapper item</returns>
         /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile</exception>
         /// <exception cref="FshDatIO.DatFileException">Thrown when the Fsh file is not found at the specified index in the DatFile</exception>
+        /// <exception cref="System.ObjectDisposedException">Thrown when the method is called after the DatFile has been closed.</exception>
         public FshWrapper LoadFile(uint group, uint instance)
         {
+            if (this.disposed)
+                throw new ObjectDisposedException("DatFile");
+
             int idx = indexes.Find(fshTypeId, group, instance);
 
             if (idx == -1)  
@@ -182,8 +184,7 @@ namespace FshDatIO
 
             DatIndex index = indexes[idx];
 
-            int fileIndex = files.FromDatIndex(idx);
-            FshWrapper fsh = files[fileIndex];
+            FshWrapper fsh = index.FileItem;
             if (fsh == null)
                 throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnableToFindTheFshFileAtIndexNumber_Format, idx.ToString(CultureInfo.CurrentCulture)));
 
@@ -204,12 +205,14 @@ namespace FshDatIO
         /// <param name="index">The <see cref="FshDatIO.DatIndex"/> of the file to check.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the index is null.</exception>
+        /// <exception cref="System.ObjectDisposedException">Thrown when the method is called after the DatFile has been closed.</exception>
         public bool CheckImageSize(DatIndex index)
         {
+            if (this.disposed)
+                throw new ObjectDisposedException("DatFile");
+
             if (index == null)
-            {
                 throw new ArgumentNullException("index");
-            }
 
             reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
             byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
@@ -224,6 +227,7 @@ namespace FshDatIO
         /// <param name="instance">The instance id of the file.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
         /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile.</exception>
+        /// <exception cref="System.ObjectDisposedException">Thrown when the method is called after the DatFile has been closed.</exception>
         public bool CheckImageSize(uint group, uint instance)
         {
             int idx = indexes.Find(fshTypeId, group, instance);
@@ -251,6 +255,7 @@ namespace FshDatIO
         /// <exception cref="System.ArgumentNullException">Thrown when the FshWrapper item is null</exception>
         public void Add(FshWrapper fshItem, uint group, uint instance, bool compress)
         {
+
             if (fshItem == null)
                 throw new ArgumentNullException("fshItem");
 
@@ -492,14 +497,16 @@ namespace FshDatIO
                         reader = null;
                     }
 
-                    if (files.Count > 0)
+
+                    IEnumerable<DatIndex> files = this.indexes.Where(index => index.Type == fshTypeId);
+                    
+                    foreach (var item in files)
                     {
-                        foreach (var item in files)
-                        {
-                            item.Dispose();
-                        }
-                        files.Clear();
+                        item.FileItem.Dispose();
+                        item.FileItem = null;
                     }
+                    this.loaded = false;
+                    
                 }
                 disposed = true;
             }

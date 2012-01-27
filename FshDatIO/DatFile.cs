@@ -255,12 +255,8 @@ namespace FshDatIO
                 throw new ArgumentNullException("fshItem");
 
             fshItem.Compressed = compress;
-
-            fshItem.FileIndex = this.files.Count;
-
-            this.files.Add(fshItem);
-
-            DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New };
+           
+            DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New, FileItem = fshItem };
             this.indexes.Add(addidx);
 
             this.dirty = true;
@@ -281,57 +277,19 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Inserts the specified FSH item into the <see cref="FshDatIO.DatFile"/>.
-        /// </summary>
-        /// <param name="fshItem">The FSH item to insert.</param>
-        /// <param name="fileIndex">Index of the <see cref="FshDatIO.FshWrapper"/> item to replace.</param>
-        /// <param name="group">The group id.</param>
-        /// <param name="instance">The instance id.</param>
-        /// <param name="compress">if set to <c>true</c>the fshItem is compressed.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the FshWrapper item is null</exception>
-        public void Insert(FshWrapper fshItem, int fileIndex, uint group, uint instance, bool compress)
-        {
-            if (fshItem == null)
-                throw new ArgumentNullException("fshItem", "fshItem is null.");
-
-            fshItem.Compressed = compress;
-            fshItem.FileIndex = this.indexes.Count - GetDeletedIndexCount() - 1;
-            this.files.Insert(fileIndex, fshItem);
-
-            DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New };
-            this.indexes.Add(addidx);
-
-            this.dirty = true;
-        }
-        /// <summary>
         /// Removes the specified file from the DatFile
         /// </summary>
         /// <param name="group">The TGI group id to remove</param>
         /// <param name="instance">The TGI instance id to remove</param>
         /// <returns>The index of the removed file.</returns>
-        public int Remove(uint group, uint instance)
+        public void Remove(uint group, uint instance)
         {
-            int fIndex = -1;
-
             int idx = indexes.Find(fshTypeId, group, instance);
             if (idx != -1)
             {
-                int fileIndex = files.FromDatIndex(idx);
-                if (fileIndex >= 0)
-                {
-                    if (files[fileIndex] != null)
-                    {
-                        files.RemoveAt(fileIndex); // remove the file if it exists as we are replacing it.
-                        fIndex = fileIndex; 
-                    }
-                }
-
-
                 this.indexes[idx].IndexState = DatIndexState.Deleted;
                 this.dirty = true;
             }
-
-            return fIndex; // return the file index if it exists
         }
         /// <summary>
         /// Saves the currently loaded DatFile
@@ -387,9 +345,7 @@ namespace FshDatIO
                         {
                             if (index.IndexState == DatIndexState.New && index.Type == fshTypeId)
                             {
-                                int fi = files.FromDatIndex(i);
-
-                                FshWrapper fshw = files[fi];
+                                FshWrapper fshw = index.FileItem;
 #if DEBUG
                                 Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
 #endif

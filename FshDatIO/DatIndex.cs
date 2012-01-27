@@ -35,6 +35,7 @@ namespace FshDatIO
         private uint location;
         private uint fileSize;
         private DatIndexState indexState;
+        private FshWrapper fileItem;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DatIndex"/> class.
@@ -47,6 +48,7 @@ namespace FshDatIO
             this.Location = 0;
             this.FileSize = 0;
             this.IndexState = DatIndexState.None;
+            this.FileItem = null;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="DatIndex"/> class.
@@ -190,6 +192,24 @@ namespace FshDatIO
             set
             {
                 indexState = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the file item.
+        /// </summary>
+        /// <value>
+        /// The file item.
+        /// </value>
+        public FshWrapper FileItem
+        {
+            get
+            {
+                return fileItem;
+            }
+            set
+            {
+                fileItem = value;
             }
         }
     }

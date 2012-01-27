@@ -175,7 +175,7 @@ namespace FshDatIO
         public FshWrapper LoadFile(uint group, uint instance)
         {
             if (this.disposed)
-                throw new ObjectDisposedException("DatFile");
+                throw new ObjectDisposedException(GetType().FullName);
 
             int idx = indexes.Find(fshTypeId, group, instance);
 
@@ -209,7 +209,7 @@ namespace FshDatIO
         public bool CheckImageSize(DatIndex index)
         {
             if (this.disposed)
-                throw new ObjectDisposedException("DatFile");
+                throw new ObjectDisposedException(GetType().FullName);
 
             if (index == null)
                 throw new ArgumentNullException("index");

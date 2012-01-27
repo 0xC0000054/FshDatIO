@@ -160,7 +160,7 @@ namespace FshDatIO
                 {
                     files.Add(new FshWrapper() { FileIndex = i });
                 }
-                indexes.Add( new DatIndex(type, group, instance, location, size)); 
+                indexes.Add(new DatIndex(type, group, instance, location, size)); 
             }
 
             this.loaded = true;
@@ -271,7 +271,7 @@ namespace FshDatIO
             int count = 0;
             foreach (var item in this.indexes)
             {
-                if (item.IndexState == DatIndexState.Deleted)
+                if (item.IndexState == DatIndexState.Deleted || item.Type == 0xe86b1eef)
                 {
                     count++;
                 }
@@ -379,7 +379,7 @@ namespace FshDatIO
                     uint location = 0;
                     uint size = 0;
                     
-                    int indexCount = this.indexes.Count;
+                    int indexCount = this.indexes.Count - GetDeletedIndexCount();
                     for (int i = 0; i < indexCount; i++)
                     {
                         DatIndex index = indexes[i];

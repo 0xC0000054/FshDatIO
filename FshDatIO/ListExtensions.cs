@@ -20,25 +20,5 @@ namespace FshDatIO
 
             return -1;
         }
-        /// <summary>
-        /// Finds the FshWrapper for the specified DatIndex index
-        /// </summary>
-        /// <param name="files">The files to search.</param>
-        /// <param name="index">The index number to find</param>
-        /// <returns>
-        /// The FshWrapper at the specified index or null
-        /// </returns>
-        public static int FromDatIndex(this List<FshWrapper> files, int index)
-        {
-            int count = files.Count;
-            for (int i = 0; i < count; i++)
-            {
-                if (files[i].FileIndex == index)
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
     }
 }

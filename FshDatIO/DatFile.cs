@@ -252,10 +252,12 @@ namespace FshDatIO
         public void Add(FshWrapper fshItem, uint group, uint instance, bool compress)
         {
             if (fshItem == null)
-                throw new ArgumentNullException("fshItem", "fshItem is null.");
+                throw new ArgumentNullException("fshItem");
 
             fshItem.Compressed = compress;
-            fshItem.FileIndex = this.indexes.Count - GetDeletedIndexCount() - 1;
+
+            fshItem.FileIndex = this.files.Count;
+
             this.files.Add(fshItem);
 
             DatIndex addidx = new DatIndex(fshTypeId, group, instance) { IndexState = DatIndexState.New };
@@ -372,11 +374,13 @@ namespace FshDatIO
                     DatHeader head = this.header;
                     head.DateCreated = GetCurrentUnixTimestamp();
                     head.Save(bw);
-                    List<DatIndex> saveIndexes = new List<DatIndex>(this.indexes.Count + 2);
+                    List<DatIndex> saveIndices = new List<DatIndex>(this.indexes.Count + 2);
                     List<DirectoryEntry> compDirs = new List<DirectoryEntry>();
                     uint location = 0;
                     uint size = 0;
-                    for (int i = 0; i < this.indexes.Count; i++)
+                    
+                    int indexCount = this.indexes.Count;
+                    for (int i = 0; i < indexCount; i++)
                     {
                         DatIndex index = indexes[i];
                         if (index.IndexState != DatIndexState.Deleted && index.Type != 0xe86b1eef)
@@ -384,11 +388,6 @@ namespace FshDatIO
                             if (index.IndexState == DatIndexState.New && index.Type == fshTypeId)
                             {
                                 int fi = files.FromDatIndex(i);
-
-                                if (fi < 0 || fi >= files.Count)
-                                {
-                                    continue;
-                                }
 
                                 FshWrapper fshw = files[fi];
 #if DEBUG
@@ -444,7 +443,7 @@ namespace FshDatIO
                                     compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                                 }
                             }
-                            saveIndexes.Add(new DatIndex(index.Type, index.Group, index.Instance, location, size));
+                            saveIndices.Add(new DatIndex(index.Type, index.Group, index.Instance, location, size));
 
                         }
                         else
@@ -464,18 +463,19 @@ namespace FshDatIO
                             compDirs[i].Save(bw);
                         }
                         
-                        size = (uint)(count * 16);
-                        saveIndexes.Add(new DatIndex(0xe86b1eef, 0xe86b1eef, 0x286b1f03, location, size));
+                        size = (uint)(compDirs.Count * 16);
+                        saveIndices.Add(new DatIndex(0xe86b1eef, 0xe86b1eef, 0x286b1f03, location, size));
                     }
 
-                    saveIndexes.TrimExcess();
+                    saveIndices.TrimExcess();
 
-                    uint entryCount = (uint)saveIndexes.Count;
+                    uint entryCount = (uint)saveIndices.Count;
                     location = (uint)bw.BaseStream.Position;
                     size = (entryCount * 20U);
-                    for (int i = 0; i < saveIndexes.Count; i++)
+                    int length = saveIndices.Count;
+                    for (int i = 0; i < length; i++)
                     {
-                        saveIndexes[i].Save(bw);
+                        saveIndices[i].Save(bw);
                     }
                     head.Entries = entryCount;
                     head.IndexSize = size;
@@ -486,7 +486,7 @@ namespace FshDatIO
                     head.Save(bw);
 
                     this.header = head;
-                    this.indexes = saveIndexes;
+                    this.indexes = saveIndices;
                     this.datFileName = fileName;
 
                     this.dirty = false;

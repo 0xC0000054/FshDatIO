@@ -363,7 +363,10 @@ namespace FshDatIO
                                     if (fshw.Image.IsCompressed)
                                     {
                                         compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, (uint)fshw.Image.RawDataLength));
-                                    } 
+                                    }
+
+                                    fshw.Dispose();
+                                    fshw = null;
                                 }
                                 else
                                 {
@@ -497,14 +500,13 @@ namespace FshDatIO
                         reader = null;
                     }
 
+                    IEnumerable<DatIndex> files = this.indexes.Where(index => index.FileItem != null);
 
-                    IEnumerable<DatIndex> files = this.indexes.Where(index => index.Type == fshTypeId);
-                    
                     foreach (var item in files)
                     {
                         item.FileItem.Dispose();
                         item.FileItem = null;
-                    }
+                    }                 
                     this.loaded = false;
                     
                 }

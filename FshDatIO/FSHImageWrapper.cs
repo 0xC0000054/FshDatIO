@@ -187,6 +187,8 @@ namespace FshDatIO
                 stream = new MemoryStream(this.rawData);
 				using (BinaryReader br = new BinaryReader(stream))
 				{
+                    stream = null;
+
 					byte[] SHPI = br.ReadBytes(4);
 					if (Encoding.ASCII.GetString(SHPI) != "SHPI")
 					{

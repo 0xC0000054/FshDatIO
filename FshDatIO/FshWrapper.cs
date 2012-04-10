@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using FSHLib;
 using System.IO;
+using FSHLib;
 
 namespace FshDatIO
 {

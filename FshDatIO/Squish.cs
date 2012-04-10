@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Drawing.Imaging;
 using System.Drawing;
-using System.Diagnostics.CodeAnalysis;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using System.Security.Permissions;
 
 namespace FshDatIO

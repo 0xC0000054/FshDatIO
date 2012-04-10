@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using FSHLib;
-using System.Diagnostics;
-using FshDatIO.Properties;
-using System.Globalization;
-using System.Collections.ObjectModel;
 using System.Security.Permissions;
+using FshDatIO.Properties;
 
 namespace FshDatIO
 {

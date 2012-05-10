@@ -13,7 +13,7 @@ namespace FshDatIO
 	/// </summary>
 	public sealed class FSHImageWrapper : IDisposable
 	{
-		private FshHeader header;
+		private FSHHeader header;
 		private BitmapEntryCollection bitmaps;
 		private FSHDirEntry[] dirs;
 		private bool isCompressed;
@@ -191,7 +191,7 @@ namespace FshDatIO
 					{
 						throw new FormatException(Resources.InvalidFshHeader);
 					}
-					this.header = new FshHeader();
+					this.header = new FSHHeader();
 					header.SHPI = SHPI;
 					header.size = br.ReadInt32();
 					header.imageCount = br.ReadInt32();
@@ -1013,7 +1013,7 @@ namespace FshDatIO
 					{
 						throw new FormatException(Resources.InvalidFshHeader);
 					}
-					FshHeader header = new FshHeader();
+					FSHHeader header = new FSHHeader();
 					header.SHPI = SHPI;
 					header.size = br.ReadInt32();
 					header.imageCount = br.ReadInt32();

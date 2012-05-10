@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Text;
-using FSHLib;
 
 namespace FshDatIO
 {
@@ -12,8 +11,11 @@ namespace FshDatIO
     {
         private Bitmap bitmap;
         private Bitmap alpha;
-        private FSHBmpType bmpType;
+        private FshImageFormat bmpType;
         private string dirName;
+        private int embeddedMipmapCount;
+        internal bool packedMbp;
+        internal ushort[] miscHeader;
 
         /// <summary>
         /// Gets or sets the bitmap.
@@ -57,7 +59,7 @@ namespace FshDatIO
         /// <value>
         /// The FSHBitmapType.
         /// </value>
-        public FSHBmpType BmpType
+        public FshImageFormat BmpType
         {
             get
             {
@@ -87,6 +89,18 @@ namespace FshDatIO
             }
         }
 
+        public int EmbeddMipmapCount
+        { 
+            get
+            {
+                return embeddedMipmapCount;
+            }
+            set
+            {
+                embeddedMipmapCount = value;
+            }
+        }
+
         private BitmapEntry(BitmapEntry cloneMe)
         {
             this.bitmap = cloneMe.bitmap.Clone() as Bitmap;
@@ -111,7 +125,11 @@ namespace FshDatIO
         {
             this.bitmap = null;
             this.alpha = null;
-            this.bmpType = FSHBmpType.DXT1;
+            this.bmpType = FshImageFormat.DXT1;
+            this.dirName = string.Empty;
+            this.embeddedMipmapCount = 0;
+            this.packedMbp = false;
+            this.miscHeader = null;
             this.disposed = false;
         }
 
@@ -141,55 +159,28 @@ namespace FshDatIO
 
         }
 
-        /// <summary>
-        /// Converts the <see cref="BitmapEntry"/> into a new <see cref="FSHLib.BitmapItem"/>.
-        /// </summary>
-        /// <returns></returns>
-        public BitmapItem ToBitmapItem()
+
+        public void CalculateMipmapCount()
         {
-            BitmapItem item = new BitmapItem();
-            item.Bitmap = this.bitmap.Clone() as Bitmap;
-            item.Alpha = this.alpha.Clone() as Bitmap;
-            item.BmpType = this.bmpType;
+            int width = bitmap.Width;
+            int height = bitmap.Height;
 
-            if (!string.IsNullOrEmpty(this.dirName))
+            int mips = 0;
+
+            while (width > 1 || height > 1)
             {
-                item.SetDirName(this.dirName);
-            }
-            else
-            {
-                item.SetDirName("FiSH");
+                mips++;
+                width /= 2;
+                height /= 2;
             }
 
-            return item;
+            if (bmpType == FshImageFormat.DXT1)
+            {
+                packedMbp = true;
+            }
+
+            embeddedMipmapCount = mips;
         }
 
-        /// <summary>
-        /// Creates a new BitmapEntry from the specified BitmapItem.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <returns>The new BitmapEntry or null.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the item is null.</exception>
-        public static BitmapEntry FromBitmapItem(BitmapItem item)
-        {
-            if (item == null)
-            {
-                throw new ArgumentNullException("item");
-            }
-
-            BitmapEntry entry = null;
-            using (BitmapEntry temp = new BitmapEntry())
-            {
-                Rectangle cloneRect = new Rectangle(0, 0, item.Bitmap.Width, item.Bitmap.Height);
-                temp.bitmap = item.Bitmap.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                temp.alpha = item.Alpha.Clone(cloneRect, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                temp.bmpType = item.BmpType;
-                temp.dirName = Encoding.ASCII.GetString(item.DirName);
-
-                entry = temp.Clone();
-            }
-
-            return entry; 
-        }
     }
 }

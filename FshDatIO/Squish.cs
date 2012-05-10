@@ -46,53 +46,40 @@ namespace FshDatIO
 
 
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
-        public static unsafe byte[] CompressImage(Bitmap image, int flags)
+        public static unsafe byte[] CompressImage(byte* scan0, int srcStride, int width, int height, int flags)
         {
-            if (image == null)
-                throw new ArgumentNullException("image", "image is null.");
 
-            byte[] pixelData = new byte[image.Width * image.Height * 4];
+            byte[] pixelData = new byte[width * height * 4 + 2000];
 
-            BitmapData data = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try
+            int dstStride = width * 4;
+            fixed (byte* ptr = pixelData)
             {
-                byte* scan0 = (byte*)data.Scan0.ToPointer();
-                int srcStride = data.Stride;
-                int dstStride = (image.Width * 4);
-                fixed (byte* ptr = pixelData)
+                for (int y = 0; y < height; y++)
                 {
-                    for (int y = 0; y < image.Height; y++)
+                    byte* p = scan0 + (y * srcStride);
+                    byte* q = ptr + (y * dstStride);
+                    for (int x = 0; x < width; x++)
                     {
-                        byte* p = scan0 + (y * srcStride);
-                        byte* q = ptr + (y * dstStride);
-                        for (int x = 0; x < image.Width; x++)
-                        {
-                            q[0] = p[2];
-                            q[1] = p[1];
-                            q[2] = p[0];
-                            q[3] = p[3];
+                        q[0] = p[2];
+                        q[1] = p[1];
+                        q[2] = p[0];
+                        q[3] = p[3];
 
-                            p += 4;
-                            q += 4;
-                        }
+                        p += 4;
+                        q += 4;
                     }
                 }
             }
-            finally
-            {
-                image.UnlockBits(data);
-            }
 
             // Compute size of compressed block area, and allocate 
-            int blockCount = ((image.Width + 3) / 4) * ((image.Height + 3) / 4);
+            int blockCount = ((width + 3) / 4) * ((height + 3) / 4);
             int blockSize = ((flags & (int)SquishFlags.kDxt1) != 0) ? 8 : 16;
 
             // Allocate room for compressed blocks
             byte[] blockData = new byte[blockCount * blockSize];
 
             // Invoke squish::CompressImage() with the required parameters
-            CompressImageWrapper(pixelData, image.Width, image.Height, blockData, flags);
+            CompressImageWrapper(pixelData, width, height, blockData, flags);
 
             // Return our block data to caller..
             return blockData;

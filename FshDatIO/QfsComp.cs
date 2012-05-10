@@ -116,7 +116,7 @@ namespace FshDatIO
                     else
                     {
 #if DEBUG
-                    if ((input.Position + 1L) >= input.Length)
+                    if ((index + 1L) >= length)
                     {
                         Debugger.Break();
 

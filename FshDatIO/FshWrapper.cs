@@ -127,7 +127,7 @@ namespace FshDatIO
                 int len = ((int)output.Position - prevpos);
 
 #if DEBUG
-                System.Diagnostics.Debug.WriteLine(string.Format("datalen = {0} len = {1}", datalen.ToString(), len.ToString())); 
+                System.Diagnostics.Debug.WriteLine(string.Format("rawDataLength = {0} len = {1}", rawDataLength.ToString(), len.ToString())); 
 #endif
 
                 return len;

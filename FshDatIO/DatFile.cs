@@ -349,7 +349,7 @@ namespace FshDatIO
                             {
                                 FshWrapper fshw = index.FileItem;
 #if DEBUG
-                                Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
+                                System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
 #endif
                                 if (fshw.Image != null)
                                 {
@@ -376,7 +376,7 @@ namespace FshDatIO
                                 size = index.FileSize;
 
 #if DEBUG
-                                Debug.WriteLine(string.Format("Index {0} Type = {1} Compressed = {2}", i.ToString(), index.Type.ToString("X"), index.Compressed.ToString()));
+                                System.Diagnostics.Debug.WriteLine(string.Format("Index {0} Type = {1}", i.ToString(), index.Type.ToString("X")));
 #endif
 
                                 byte[] rawbuf = new byte[size];
@@ -395,7 +395,7 @@ namespace FshDatIO
                                 }
 
 #if DEBUG
-                                Debug.WriteLine(string.Format("CompSig = {0}{1}", rawbuf[4].ToString("X"), rawbuf[5].ToString("X")));
+                                System.Diagnostics.Debug.WriteLine(string.Format("CompSig = {0}{1}", rawbuf[4].ToString("X"), rawbuf[5].ToString("X")));
 #endif
                                 bw.Write(rawbuf);
 

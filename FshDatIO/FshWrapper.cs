@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using FSHLib;
 
 namespace FshDatIO
 {
@@ -144,7 +143,7 @@ namespace FshDatIO
         {
             foreach (BitmapEntry item in image.Bitmaps)
             {
-                if (item.BmpType != FSHBmpType.DXT3 && item.BmpType != FSHBmpType.DXT1)
+                if (item.BmpType != FshImageFormat.DXT3 && item.BmpType != FshImageFormat.DXT1)
                     return false;
             }
             return true;

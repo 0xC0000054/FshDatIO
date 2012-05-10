@@ -72,7 +72,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="FSHLib.FSHDirEntry"/> dir.
+        /// Gets or sets the name of the <see cref="FSHDirEntry"/> dir.
         /// </summary>
         /// <value>
         /// The name of the dir.
@@ -89,7 +89,13 @@ namespace FshDatIO
             }
         }
 
-        public int EmbeddMipmapCount
+        /// <summary>
+        /// Gets or sets the embedded mipmap count.
+        /// </summary>
+        /// <value>
+        /// The embedded mipmap count.
+        /// </value>
+        public int EmbeddedMipmapCount
         { 
             get
             {
@@ -160,6 +166,9 @@ namespace FshDatIO
         }
 
 
+        /// <summary>
+        /// Calculates the mipmap count for the item.
+        /// </summary>
         public void CalculateMipmapCount()
         {
             int width = bitmap.Width;

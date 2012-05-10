@@ -16,6 +16,9 @@ namespace FshDatIO
     // .                                                                           //
     /////////////////////////////////////////////////////////////////////////////////
 
+    /// <summary>
+    /// The Paint.NET class that provides image resizing using super sampling
+    /// </summary>
     public static class SuperSample
     {
         [StructLayout(LayoutKind.Explicit)]

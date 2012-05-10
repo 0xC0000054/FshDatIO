@@ -344,7 +344,7 @@ namespace FshDatIO
 							BitmapEntry entry = new BitmapEntry() { 
                                 BmpType = format, 
                                 DirName = Encoding.ASCII.GetString(dir.name),
-                                EmbeddMipmapCount = numScales,
+                                EmbeddedMipmapCount = numScales,
                                 packedMbp = packedMbp,
                                 miscHeader = eHeader.Misc
                             };
@@ -726,7 +726,7 @@ namespace FshDatIO
 
                     fshlen += 16; // skip the entry header length
                     
-                    mipCount = entry.EmbeddMipmapCount;
+                    mipCount = entry.EmbeddedMipmapCount;
                     format = entry.BmpType;
                     width = entry.Bitmap.Width;
                     height = entry.Bitmap.Height;
@@ -769,7 +769,7 @@ namespace FshDatIO
                     ms.Write(BitConverter.GetBytes((ushort)width), 0, 2); // write width
                     ms.Write(BitConverter.GetBytes((ushort)height), 0, 2); //write height
 
-                    mipCount = entry.EmbeddMipmapCount;
+                    mipCount = entry.EmbeddedMipmapCount;
                     ushort[] misc = entry.miscHeader;
                     if (misc == null)
                     {

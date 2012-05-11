@@ -93,35 +93,7 @@ namespace FshDatIO
                 int prevpos = (int)output.Position;
                 int rawDataLength = rawData.Length;
 
-                if (useFshWrite && IsDXTFsh(image))
-                {
-                    image.Save(output, true);
-                }
-                else
-                {
-                    
-                    if (image.IsCompressed) // bypass FSHLib because it does not seem to compress some images correctly
-                    {
-                        byte[] compbuf = QfsComp.Comp(rawData);
-
-                        if ((compbuf != null) && compbuf.Length < rawDataLength) 
-                        {
-                            rawDataLength = compbuf.Length;
-
-                            output.Write(compbuf, 0, compbuf.Length);
-                        }
-                        else
-                        {
-                            image.IsCompressed = false;
-                            output.Write(rawData, 0, rawDataLength); // write the uncompressed data to the stream if the data did not compress
-                        }
-                    }
-                    else
-                    {
-                        output.Write(rawData, 0, rawDataLength);
-                    }
-                    
-                }
+                image.Save(output, useFshWrite);
 
                 int len = ((int)output.Position - prevpos);
 

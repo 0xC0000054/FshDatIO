@@ -179,7 +179,7 @@ namespace FshDatIO
 
             int mips = 0;
 
-            while (width > 1 || height > 1)
+            while (width > 1 && height > 1)
             {
                 mips++;
                 width /= 2;

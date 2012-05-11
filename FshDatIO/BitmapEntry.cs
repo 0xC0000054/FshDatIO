@@ -113,6 +113,9 @@ namespace FshDatIO
             this.alpha = cloneMe.alpha.Clone() as Bitmap;
             this.bmpType = cloneMe.bmpType;
             this.dirName = cloneMe.dirName;
+            this.embeddedMipmapCount = cloneMe.embeddedMipmapCount;
+            this.miscHeader = cloneMe.miscHeader;
+            this.packedMbp = cloneMe.packedMbp;
         }
 
         /// <summary>

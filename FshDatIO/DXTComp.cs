@@ -70,6 +70,7 @@ namespace FshDatIO
 
             return pixelData;
         }
+        #region Squish Decompression
 
         /// <summary>
         /// Decompresses the DXT compressed block.
@@ -94,7 +95,6 @@ namespace FshDatIO
             }
 
         }
-        #region Squish Decompression
 
         /// <summary>
         /// Unpacks 565 packed color values.
@@ -223,15 +223,16 @@ namespace FshDatIO
                     stride++;
                 }
                 ulong* dxtPixels = stackalloc ulong[16];
+                int row, col, ofs, row2;
+                int width2 = width / 4;
+                int height2 = height / 4;
                 fixed (byte* ptr = comp)
                 {
-                    int row, col, ofs, row2;
-                    int w2 = width / 4;
-                    int h2 = height / 4;
-                    for (int y = 0; y < w2; y++)
+                    
+                    for (int y = 0; y < height2; y++)
                     {
                         row = 4 * y;
-                        for (int x = 0; x < h2; x++)
+                        for (int x = 0; x < width2; x++)
                         {
                             col = 16 * x;
                             for (int i = 0; i < 4; i++)
@@ -259,8 +260,8 @@ namespace FshDatIO
         {
             byte[] comp = new byte[(width * height) + 2000];
 
-            int h = height / 4;
-            int w = width / 4;
+            int height2 = height / 4;
+            int width2 = width / 4;
             int row, col, ofs, row2;
 
 
@@ -270,14 +271,14 @@ namespace FshDatIO
                 stride++;
             }
 
-            fixed (byte* dst = comp)
+            fixed (byte* ptr = comp)
             {
                 ulong* dxtPixels = stackalloc ulong[16];
 
-                for (int y = 0; y < h; y++)
+                for (int y = 0; y < height2; y++)
                 {
                     row = 4 * y;
-                    for (int x = 0; x < w; x++)
+                    for (int x = 0; x < width2; x++)
                     {
                         col = 16 * x;
                         for (int i = 0; i < 4; i++)
@@ -293,14 +294,14 @@ namespace FshDatIO
                             }
                         }
 
-                        PackDXT(dxtPixels, dst + ((row * width) + col) + 8);
+                        PackDXT(dxtPixels, ptr + ((row * width) + col) + 8);
                     }
                 }
 
-                for (int y = 0; y < h; y++)
+                for (int y = 0; y < height2; y++)
                 {
                     row = 4 * y;
-                    for (int x = 0; x < w; x++)
+                    for (int x = 0; x < width2; x++)
                     {
                         ofs = 16 * x;
                         col = ofs + 3; // get the alpha offset
@@ -308,7 +309,7 @@ namespace FshDatIO
                         for (int i = 0; i < 4; i++)
                         {
                             byte* p = (scan0 + ((row + i) * stride)) + col;
-                            byte* tgt = dst + (row2 + ofs) + 2 * i;
+                            byte* tgt = ptr + (row2 + ofs) + 2 * i;
 
                             tgt[0] = (byte)(((p[0] & 0xf0) >> 4) + (p[4] & 0xf0));
                             tgt[1] = (byte)(((p[8] & 0xf0) >> 4) + (p[12] & 0xf0));

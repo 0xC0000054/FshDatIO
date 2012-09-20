@@ -55,6 +55,15 @@ namespace FshDatIO
 		{
 			return rawData;
 		}
+
+        public FSHHeader Header
+        {
+            get
+            {
+                return header;
+            }
+        }
+
 		internal uint RawDataLength
 		{ 
 			get

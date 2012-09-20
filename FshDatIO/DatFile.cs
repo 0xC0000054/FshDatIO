@@ -211,6 +211,9 @@ namespace FshDatIO
             if (index == null)
                 throw new ArgumentNullException("index");
 
+            if (index.Type != fshTypeId)
+                return false;
+
             reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
             byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
 

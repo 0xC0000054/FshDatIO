@@ -38,12 +38,13 @@ namespace FshDatIO
                             // write the decompressed pixels to the correct image locations
                             sourcePixel = targetRGBA;
                             for (int py = 0; py < 4; py++)
-                            {
+                            {                                    
+                                int sy = y + py;
+
                                 for (int px = 0; px < 4; px++)
                                 {
                                     // get the target location
                                     int sx = x + px;
-                                    int sy = y + py;
 
                                     if (sy < width && sy < height)
                                     {
@@ -242,7 +243,7 @@ namespace FshDatIO
                                 for (int j = 0; j < 4; j++)
                                 {
                                     ofs = 4 * j;
-                                    dxtPixels[row2 + j] = (ulong)((p[ofs] + (256 * p[ofs + 1])) + (65536 * p[ofs + 2]));
+                                    dxtPixels[row2 + j] = (ulong)((p[ofs] + (p[ofs + 1] << 8)) + (p[ofs + 2] << 16));
                                 }
                             }
 
@@ -289,8 +290,7 @@ namespace FshDatIO
                             for (int j = 0; j < 4; j++)
                             {
                                 ofs = 4 * j;
-
-                                dxtPixels[row2 + j] = (p[ofs] + (256U * p[ofs + 1]) + (65536U * p[ofs + 2]));
+                                dxtPixels[row2 + j] = (ulong)(p[ofs] + (p[ofs + 1] << 8) + (p[ofs + 2] << 16));
                             }
                         }
 

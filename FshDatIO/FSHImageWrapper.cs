@@ -56,6 +56,9 @@ namespace FshDatIO
 			return rawData;
 		}
 
+        /// <summary>
+        /// Gets the FSH image header.
+        /// </summary>
         public FSHHeader Header
         {
             get

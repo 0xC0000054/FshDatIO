@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace FshDatIO
 {
@@ -35,7 +33,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Scales a Bitmap to the specified size using the SuperSampling alithogram from Paint.NET 
+        /// Scales a Bitmap to the specified size using the SuperSampling algorithm from Paint.NET 
         /// </summary>
         /// <param name="source">The source bitmap to scale</param>
         /// <param name="width">The width to scale to</param>
@@ -234,10 +232,12 @@ namespace FshDatIO
 
             return destImage;
         }
-        static unsafe Color* GetPoint(void* scan0,int stride, int x, int y)
+        
+        static unsafe Color* GetPoint(void* scan0, int stride, int x, int y)
         { 
             return (Color*)((byte*)scan0 + (y * stride) + (x * 4));
         }
+        
         static byte Clamp(uint b)
         {
             if (b < 0)
@@ -250,7 +250,6 @@ namespace FshDatIO
             }
             
             return (byte)b;
-            
         }
     }
 }

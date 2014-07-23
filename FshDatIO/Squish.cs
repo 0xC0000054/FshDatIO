@@ -25,25 +25,19 @@ namespace FshDatIO
     
     static class Squish
     {
-        private static bool Is64Bit()
-        {
-            return (Marshal.SizeOf(IntPtr.Zero) == 8);
-        }
-
         [System.Security.SuppressUnmanagedCodeSecurity]
         private static class Squish_32
         {
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_Win32.dll")]
+            [DllImport("squish_Win32.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass")]
             internal static extern unsafe void CompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
                 
         [System.Security.SuppressUnmanagedCodeSecurity]
         private static class Squish_64
         {
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass"), DllImport("squish_x64.dll")]
+            [DllImport("squish_x64.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1060:MovePInvokesToNativeMethodsClass")]
             internal static extern unsafe void CompressImage(byte* rgba, int width, int height, byte* blocks, int flags);
         }
-
 
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public static unsafe byte[] CompressImage(byte* scan0, int srcStride, int width, int height, int flags)
@@ -56,17 +50,17 @@ namespace FshDatIO
             {
                 for (int y = 0; y < height; y++)
                 {
-                    byte* p = scan0 + (y * srcStride);
-                    byte* q = ptr + (y * dstStride);
+                    byte* src = scan0 + (y * srcStride);
+                    byte* dst = ptr + (y * dstStride);
                     for (int x = 0; x < width; x++)
                     {
-                        q[0] = p[2];
-                        q[1] = p[1];
-                        q[2] = p[0];
-                        q[3] = p[3];
+                        dst[0] = src[2];
+                        dst[1] = src[1];
+                        dst[2] = src[0];
+                        dst[3] = src[3];
 
-                        p += 4;
-                        q += 4;
+                        src += 4;
+                        dst += 4;
                     }
                 }
             }
@@ -92,7 +86,7 @@ namespace FshDatIO
             {
                 fixed (byte* Blocks = blocks)
                 {
-                    if (Is64Bit())
+                    if (IntPtr.Size == 8)
                     {
                         Squish_64.CompressImage(RGBA, width, height, Blocks, flags);
                     }

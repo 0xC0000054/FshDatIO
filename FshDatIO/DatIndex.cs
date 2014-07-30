@@ -33,12 +33,14 @@ namespace FshDatIO
         private uint location;
         private uint fileSize;
         private DatIndexState indexState;
-        private FshWrapper fileItem;
+        private FshFileItem fileItem;
+
+        internal const uint SizeOf = 20U;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DatIndex"/> class.
         /// </summary>
-        public DatIndex()
+        internal DatIndex()
         {
             this.Type = 0;
             this.Group = 0;
@@ -48,6 +50,7 @@ namespace FshDatIO
             this.IndexState = DatIndexState.None;
             this.FileItem = null;
         }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DatIndex"/> class.
         /// </summary>
@@ -56,7 +59,7 @@ namespace FshDatIO
         /// <param name="instance">The instance id of the entry.</param>
         /// <param name="location">The location of the entry.</param>
         /// <param name="fileSize">Size of the entry.</param>
-        public DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
+        internal DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
         {
             this.Type = type;
             this.Group = group;
@@ -65,20 +68,27 @@ namespace FshDatIO
             this.FileSize = fileSize;
             this.IndexState = DatIndexState.None;
         }
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="DatIndex"/> class.
         /// </summary>
         /// <param name="type">The type id of the entry.</param>
         /// <param name="group">The group id of the entry.</param>
         /// <param name="instance">The instance id of the entry.</param>
-        public DatIndex(uint type, uint group, uint instance)
+        internal DatIndex(uint type, uint group, uint instance, FshFileItem fileItem)
         {
+            if (fileItem == null)
+            {
+                throw new ArgumentNullException("fileItem");
+            }
+
             this.Type = type;
             this.Group = group;
             this.Instance = instance;
             this.Location = 0;
             this.FileSize = 0;
-            this.IndexState = DatIndexState.None;
+            this.IndexState = DatIndexState.New;
+            this.FileItem = fileItem;
         }
 
         /// <summary>
@@ -86,10 +96,13 @@ namespace FshDatIO
         /// </summary>
         /// <param name="bw">The <see cref="System.IO.BinaryWriter"/> to save to.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
-        public void Save(BinaryWriter bw)
+        internal void Save(BinaryWriter bw)
         {
             if (bw == null)
+            {
                 throw new ArgumentNullException("bw", "bw is null.");
+            }
+
             bw.Write(this.type);
             bw.Write(this.group);
             bw.Write(this.instance);
@@ -199,7 +212,7 @@ namespace FshDatIO
         /// <value>
         /// The file item.
         /// </value>
-        public FshWrapper FileItem
+        public FshFileItem FileItem
         {
             get
             {

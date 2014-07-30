@@ -6,10 +6,9 @@ namespace FshDatIO
     {
         public static void ProperRead(this Stream s, byte[] buffer, int offset, int count)
         {
-            s.Seek((long)offset, SeekOrigin.Begin);
-
             int numBytesToRead = count;
-            int numBytesRead = 0;
+            int numBytesRead = 0 + offset;
+
             while (numBytesToRead > 0)
             {
                 // Read may return anything from 0 to numBytesToRead.
@@ -22,5 +21,26 @@ namespace FshDatIO
             }
         }
 
+        public static void WriteUInt16(this Stream s, ushort value)
+        {
+            s.WriteByte((byte)(value & 0xff));
+            s.WriteByte((byte)((value >> 8) & 0xff));
+        }
+
+        public static void WriteUInt32(this Stream s, uint value)
+        {
+            s.WriteByte((byte)(value & 0xff));
+            s.WriteByte((byte)((value >> 8) & 0xff));
+            s.WriteByte((byte)((value >> 16) & 0xff));
+            s.WriteByte((byte)((value >> 24) & 0xff));
+        }
+
+        public static void WriteInt32(this Stream s, int value)
+        {
+            s.WriteByte((byte)(value & 0xff));
+            s.WriteByte((byte)((value >> 8) & 0xff));
+            s.WriteByte((byte)((value >> 16) & 0xff));
+            s.WriteByte((byte)((value >> 24) & 0xff));
+        }
     }
 }

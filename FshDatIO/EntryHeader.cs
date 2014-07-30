@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
 
 namespace FshDatIO
 {
     /// <summary>
     /// The header for the images within a fsh file. 
     /// </summary>
-    public struct EntryHeader
+    public sealed class EntryHeader
     {
         private int code;
         private ushort width;
@@ -24,7 +25,7 @@ namespace FshDatIO
             {
                 return code;
             }
-            set
+            internal set
             {
                 code = value;
             }
@@ -42,7 +43,7 @@ namespace FshDatIO
             {
                 return width;
             }
-            set
+            internal set
             {
                 width = value;
             }
@@ -60,7 +61,7 @@ namespace FshDatIO
             {
                 return height;
             }
-            set
+            internal set
             {
                 height = value;
             }
@@ -78,18 +79,33 @@ namespace FshDatIO
             {
                 return misc;
             }
-            set
+            internal set
             {
                 misc = value;
             }
         }
 
+        internal EntryHeader()
+        {
+            this.code = 0;
+            this.width = 0;
+            this.height = 0;
+            this.misc = new ushort[4];
+        }
+
+        internal EntryHeader(FshImageFormat format, int width, int height, ushort[] misc)
+        {
+            this.code = (int)format;
+            this.width = (ushort)width;
+            this.height = (ushort)height;
+            this.misc = misc;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EntryHeader"/> struct from the specified BinaryReader.
         /// </summary>
         /// <param name="br">The BinaryReader to read from.</param>
-        internal EntryHeader(System.IO.BinaryReader br)
+        internal EntryHeader(BinaryReader br)
         {
             if (br == null)
             {
@@ -100,9 +116,21 @@ namespace FshDatIO
             this.width = br.ReadUInt16();
             this.height = br.ReadUInt16();
             this.misc = new ushort[4];
-            for (int m = 0; m < 4; m++)
+            for (int i = 0; i < 4; i++)
             {
-                this.misc[m] = br.ReadUInt16();
+                this.misc[i] = br.ReadUInt16();
+            }
+        }
+
+        internal void Save(Stream stream)
+        {
+            stream.WriteInt32(this.code);
+            stream.WriteUInt16(this.width);
+            stream.WriteUInt16(this.height);
+
+            for (int i = 0; i < 4; i++)
+            {
+                stream.WriteUInt16(misc[i]);
             }
         }
 

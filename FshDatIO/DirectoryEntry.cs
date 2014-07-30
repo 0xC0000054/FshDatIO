@@ -12,6 +12,8 @@ namespace FshDatIO
         private uint instance;
         private uint unCompressedSize;
 
+        public const int SizeOf = 16;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryEntry"/> class.
         /// </summary>

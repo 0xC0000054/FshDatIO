@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace FshDatIO
 {
     /// <summary>
@@ -17,6 +18,11 @@ namespace FshDatIO
         /// <returns>The decompressed pixels.</returns>
         public static unsafe byte[] UnpackDXTImage(byte[] blocks, int width, int height, bool dxt1)
         {
+            if (blocks == null)
+            {
+                throw new ArgumentNullException("blocks");
+            }
+
             byte[] pixelData = new byte[(width * height) * 4];
 
             fixed (byte* rgba = pixelData)
@@ -38,7 +44,7 @@ namespace FshDatIO
                             // write the decompressed pixels to the correct image locations
                             sourcePixel = targetRGBA;
                             for (int py = 0; py < 4; py++)
-                            {                                    
+                            {
                                 int sy = y + py;
 
                                 for (int px = 0; px < 4; px++)
@@ -138,7 +144,7 @@ namespace FshDatIO
                 int c = codes[i];
                 int d = codes[4 + i];
 
-                if (isDxt1 && a <= b) // dxt 1 alpha is a special case
+                if (isDxt1 && a <= b) // dxt1 alpha is a special case
                 {
                     codes[8 + i] = (byte)((c + d) / 2);
                     codes[12 + i] = 0;
@@ -146,6 +152,7 @@ namespace FshDatIO
                 else
                 {
                     // handle the other mask cases from FSHTool.
+
                     if (a > b)
                     {
                         codes[8 + i] = (byte)((2 * c + d) / 3);
@@ -169,13 +176,13 @@ namespace FshDatIO
 
             for (int i = 0; i < 4; i++)
             {
-                byte* ind = indices + 4 * i;
+                byte* index = indices + 4 * i;
                 byte packed = blocks[4 + i];
 
-                ind[0] = (byte)(packed & 3);
-                ind[1] = (byte)((packed >> 2) & 3);
-                ind[2] = (byte)((packed >> 4) & 3);
-                ind[3] = (byte)((packed >> 6) & 3);
+                index[0] = (byte)(packed & 3);
+                index[1] = (byte)((packed >> 2) & 3);
+                index[2] = (byte)((packed >> 4) & 3);
+                index[3] = (byte)((packed >> 6) & 3);
             }
             // store out the colors
             for (int i = 0; i < 16; i++)
@@ -208,47 +215,49 @@ namespace FshDatIO
                 rgba[index + 3] = (byte)(lo | (lo << 4));
                 rgba[index + 7] = (byte)(hi | (hi >> 4));
             }
-        } 
+        }
         #endregion
 
         public static unsafe byte[] CompressFSHToolDXT1(byte* scan0, int width, int height)
         {
+            if ((width & 3) != 0 || (height & 3) != 0)
+            {
+                throw new NotSupportedException(Properties.Resources.DXT1InvalidSize);
+            }
+
             byte[] comp = new byte[((width * height) / 2) + 2000];
 
-
-            if (((height & 3) <= 0) && ((height & 3) <= 0))
+            int stride = 4 * width;
+            while ((stride & 4) > 0)
             {
-                int stride = 4 * width;
-                while ((stride & 4) > 0)
-                {
-                    stride++;
-                }
-                ulong* dxtPixels = stackalloc ulong[16];
-                int row, col, ofs, row2;
-                int width2 = width / 4;
-                int height2 = height / 4;
-                fixed (byte* ptr = comp)
-                {
-                    
-                    for (int y = 0; y < height2; y++)
-                    {
-                        row = 4 * y;
-                        for (int x = 0; x < width2; x++)
-                        {
-                            col = 16 * x;
-                            for (int i = 0; i < 4; i++)
-                            {
-                                row2 = 4 * i;
-                                byte* p = (scan0 + ((row + i) * stride)) + col;
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    ofs = 4 * j;
-                                    dxtPixels[row2 + j] = (ulong)((p[ofs] + (p[ofs + 1] << 8)) + (p[ofs + 2] << 16));
-                                }
-                            }
+                stride++;
+            }
+            int row, col, ofs, dxtRow;
+            int blockWidth = width / 4;
+            int blockHeight = height / 4;
 
-                            PackDXT(dxtPixels, (ptr + ((2 * y) * width)) + (8 * x));
+            fixed (byte* ptr = comp)
+            {
+                uint* dxtPixels = stackalloc uint[16];
+
+                for (int y = 0; y < blockHeight; y++)
+                {
+                    row = 4 * y;
+                    for (int x = 0; x < blockWidth; x++)
+                    {
+                        col = 16 * x;
+                        for (int i = 0; i < 4; i++)
+                        {
+                            dxtRow = 4 * i;
+                            byte* p = (scan0 + ((row + i) * stride)) + col;
+                            for (int j = 0; j < 4; j++)
+                            {
+                                ofs = 4 * j;
+                                dxtPixels[dxtRow + j] = (uint)((p[ofs] + (p[ofs + 1] << 8)) + (p[ofs + 2] << 16));
+                            }
                         }
+
+                        PackDXT(dxtPixels, (ptr + ((2 * y) * width)) + (8 * x));
                     }
                 }
             }
@@ -261,9 +270,9 @@ namespace FshDatIO
         {
             byte[] comp = new byte[(width * height) + 2000];
 
-            int height2 = height / 4;
-            int width2 = width / 4;
-            int row, col, ofs, row2;
+            int blockHeight = height / 4;
+            int blockWidth = width / 4;
+            int row, col, ofs, dxtRow;
 
 
             int stride = 4 * width;
@@ -274,23 +283,23 @@ namespace FshDatIO
 
             fixed (byte* ptr = comp)
             {
-                ulong* dxtPixels = stackalloc ulong[16];
+                uint* dxtPixels = stackalloc uint[16];
 
-                for (int y = 0; y < height2; y++)
+                for (int y = 0; y < blockHeight; y++)
                 {
                     row = 4 * y;
-                    for (int x = 0; x < width2; x++)
+                    for (int x = 0; x < blockWidth; x++)
                     {
                         col = 16 * x;
                         for (int i = 0; i < 4; i++)
                         {
-                            row2 = 4 * i;
+                            dxtRow = 4 * i;
                             byte* p = (scan0 + ((row + i) * stride)) + col;
 
                             for (int j = 0; j < 4; j++)
                             {
                                 ofs = 4 * j;
-                                dxtPixels[row2 + j] = (ulong)(p[ofs] + (p[ofs + 1] << 8) + (p[ofs + 2] << 16));
+                                dxtPixels[dxtRow + j] = (uint)(p[ofs] + (p[ofs + 1] << 8) + (p[ofs + 2] << 16));
                             }
                         }
 
@@ -298,18 +307,18 @@ namespace FshDatIO
                     }
                 }
 
-                for (int y = 0; y < height2; y++)
+                for (int y = 0; y < blockHeight; y++)
                 {
                     row = 4 * y;
-                    for (int x = 0; x < width2; x++)
+                    for (int x = 0; x < blockWidth; x++)
                     {
                         ofs = 16 * x;
                         col = ofs + 3; // get the alpha offset
-                        row2 = row * width;
+                        dxtRow = row * width;
                         for (int i = 0; i < 4; i++)
                         {
                             byte* p = (scan0 + ((row + i) * stride)) + col;
-                            byte* tgt = ptr + (row2 + ofs) + 2 * i;
+                            byte* tgt = ptr + (dxtRow + ofs) + 2 * i;
 
                             tgt[0] = (byte)(((p[0] & 0xf0) >> 4) + (p[4] & 0xf0));
                             tgt[1] = (byte)(((p[8] & 0xf0) >> 4) + (p[12] & 0xf0));
@@ -323,22 +332,22 @@ namespace FshDatIO
         }
 
         #region FSHTool DXT code
-        private static unsafe void PackDXT(ulong* px, byte* dest)
+        private static unsafe void PackDXT(uint* px, byte* dest)
         {
-            ulong[] uniq = new ulong[0x10];
+            uint[] uniq = new uint[0x10];
 
             int i, j;
-            ulong col1;
-            ulong col2;
+            uint col1;
+            uint col2;
             int nstep = 0;
             int bestErr = 0;
-            ulong bestCol1 = 0L;
-            ulong bestCol2 = 0L;
+            uint bestCol1 = 0U;
+            uint bestCol2 = 0U;
             int nColors = 0;
 
             for (i = 0; i < 0x10; i++)
             {
-                col1 = px[i] & 0xf8fcf8UL;
+                col1 = px[i] & 0xf8fcf8U;
                 j = 0;
                 while (j < nColors)
                 {
@@ -406,7 +415,7 @@ namespace FshDatIO
             ScoreDXT(px, nstep, bestCol1, bestCol2, (ulong*)(dest + 4));
         }
 
-        private static unsafe int ScoreDXT(ulong* px, int nstep, ulong col1, ulong col2, ulong* pack)
+        private static unsafe int ScoreDXT(uint* px, int nstep, uint col1, uint col2, ulong* pack)
         {
             int[] vec = new int[3];
             int[] vdir = new int[3];
@@ -468,15 +477,6 @@ namespace FshDatIO
             }
 
             return score;
-        }
-
-        private static int LengthSquared(int[] vec)
-        {
-            return LengthSquared(vec, vec);
-        }
-        private static int LengthSquared(int[] lhs, int[] rhs)
-        {
-            return ((lhs[0] * rhs[0]) + (lhs[1] * rhs[1]) + (lhs[2] * rhs[2]));
         }
         #endregion
     }

@@ -362,7 +362,7 @@ namespace FshDatIO
                 throw new ArgumentNullException("fileName");
             }
 
-            if ((fileName == this.datFileName) && (this.reader != null))
+            if (fileName == this.datFileName && this.reader != null)
             {
                 this.reader.Close(); // if the fileName is the same close the BinaryReader
                 this.reader = null;
@@ -524,19 +524,18 @@ namespace FshDatIO
             {
                 if (disposing)
                 {
-                    if (reader != null)
+                    if (this.reader != null)
                     {
-                        reader.Close();
-                        reader = null;
+                        this.reader.Close();
+                        this.reader = null;
                     }
 
-                    IEnumerable<DatIndex> files = this.indices.Where(index => index.FileItem != null);
-
-                    foreach (var item in files)
+                    if (this.indices != null)
                     {
-                        item.FileItem.Dispose();
-                        item.FileItem = null;
+                        this.indices.Dispose();
+                        this.indices = null;
                     }
+                    
                     this.loaded = false;
 
                 }

@@ -5,7 +5,7 @@ using System.Text;
 namespace FshDatIO
 {
 	/// <summary>
-	/// The structure that represents the FSH directory header.
+	/// The class that represents the FSH directory header.
 	/// </summary>
 	public sealed class FSHDirEntry
 	{

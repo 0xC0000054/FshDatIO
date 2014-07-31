@@ -13,6 +13,8 @@ namespace FshDatIO
         private ushort height;
         private ushort[] misc;
 
+        internal const int SizeOf = 16;
+
         /// <summary>
         /// Gets or sets the entry code.
         /// </summary>

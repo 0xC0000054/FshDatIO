@@ -9,7 +9,6 @@ namespace FshDatIO
 	{
 		private EntryHeader header;
 		private byte[] data;
-		private bool binaryData;
 
 		public EntryHeader Header
 		{
@@ -23,20 +22,11 @@ namespace FshDatIO
 		{
 			return data;
 		}
-
-		public bool BinaryData
-		{
-			get
-			{
-				return binaryData;
-			}
-		}
-
-		internal FshAttachment(EntryHeader header, byte[] data, bool binaryData)
+		
+		internal FshAttachment(EntryHeader header, byte[] data)
 		{
 			this.header = header;
 			this.data = data;
-			this.binaryData = binaryData;
 		}
 	}
 }

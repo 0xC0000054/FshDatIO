@@ -121,6 +121,15 @@
     <value>The header identifier is invalid.</value>
     <comment>Thrown when the DatHeader identifier is invalid </comment>
   </data>
+  <data name="DXT1InvalidSize" xml:space="preserve">
+    <value>The width and height of DXT1 images must be a multiple of four.</value>
+  </data>
+  <data name="DXT3InvalidSize" xml:space="preserve">
+    <value>The width and height of DXT3 images must be a multiple of four.</value>
+  </data>
+  <data name="ImageNotLoaded" xml:space="preserve">
+    <value>The image has not been loaded.</value>
+  </data>
   <data name="InvalidFshFile" xml:space="preserve">
     <value>The file is truncated and invalid.</value>
   </data>

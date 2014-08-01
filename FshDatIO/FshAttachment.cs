@@ -32,11 +32,11 @@ namespace FshDatIO
 			return data;
 		}
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FshAttachment"/> class.
-        /// </summary>
-        /// <param name="header">The header.</param>
-        /// <param name="data">The data.</param>
+		/// <summary>
+		/// Initializes a new instance of the <see cref="FshAttachment"/> class.
+		/// </summary>
+		/// <param name="header">The header.</param>
+		/// <param name="data">The data.</param>
 		internal FshAttachment(EntryHeader header, byte[] data)
 		{
 			this.header = header;

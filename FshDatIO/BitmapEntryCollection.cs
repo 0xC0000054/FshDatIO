@@ -11,14 +11,14 @@ namespace FshDatIO
         /// <summary>
         /// Initializes a new instance of the <see cref="BitmapEntryCollection"/> class.
         /// </summary>
-        public BitmapEntryCollection() : base()
+        internal BitmapEntryCollection() : base()
         {
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="BitmapEntryCollection"/> class.
         /// </summary>
         /// <param name="capacity">The capacity.</param>
-        public BitmapEntryCollection(int capacity) : base(new List<BitmapEntry>(capacity))
+        internal BitmapEntryCollection(int capacity) : base(new List<BitmapEntry>(capacity))
         {
         }
     }

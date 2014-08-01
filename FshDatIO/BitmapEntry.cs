@@ -18,6 +18,8 @@ namespace FshDatIO
         internal bool packedMbp;
         internal ushort[] miscHeader;
 
+        private bool disposed;
+
         /// <summary>
         /// Gets or sets the bitmap.
         /// </summary>
@@ -26,13 +28,19 @@ namespace FshDatIO
         /// </value>
         public Bitmap Bitmap
         {
-            get 
+            get
             {
                 return bitmap;
             }
-            set 
+            set
             {
-                bitmap = value;
+                if (this.bitmap != null)
+                {
+                    this.bitmap.Dispose();
+                    this.bitmap = null;
+                }
+
+                this.bitmap = value;
             }
         }
 
@@ -50,12 +58,18 @@ namespace FshDatIO
             }
             set
             {
-                alpha = value;
+                if (this.alpha != null)
+                {
+                    this.alpha.Dispose();
+                    this.alpha = null;
+                }
+
+                this.alpha = value;
             }
         }
 
         /// <summary>
-        /// Gets or sets the FSHBitmapType of the entry.
+        /// Gets or sets the <see cref="FshImageFormat"/> of the entry.
         /// </summary>
         /// <value>
         /// The FSHBitmapType.
@@ -73,10 +87,10 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="FSHDirEntry"/> dir.
+        /// Gets or sets the name of the <see cref="FSHDirEntry"/> directory.
         /// </summary>
         /// <value>
-        /// The name of the dir.
+        /// The name of the directory.
         /// </value>
         public string DirName
         {
@@ -91,13 +105,13 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets or sets the embedded mipmap count.
+        /// Gets the embedded mipmap count.
         /// </summary>
         /// <value>
         /// The embedded mipmap count.
         /// </value>
         public int EmbeddedMipmapCount
-        { 
+        {
             get
             {
                 return embeddedMipmapCount;
@@ -108,6 +122,12 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Gets the attachments.
+        /// </summary>
+        /// <value>
+        /// The attachments.
+        /// </value>
         public ReadOnlyCollection<FshAttachment> Attachments
         {
             get
@@ -129,6 +149,7 @@ namespace FshDatIO
             this.embeddedMipmapCount = cloneMe.embeddedMipmapCount;
             this.miscHeader = cloneMe.miscHeader;
             this.packedMbp = cloneMe.packedMbp;
+            this.attachments = cloneMe.attachments;
         }
 
         /// <summary>
@@ -136,7 +157,7 @@ namespace FshDatIO
         /// </summary>
         /// <returns></returns>
         public BitmapEntry Clone()
-        { 
+        {
             return new BitmapEntry(this);
         }
 
@@ -152,35 +173,37 @@ namespace FshDatIO
             this.embeddedMipmapCount = 0;
             this.packedMbp = false;
             this.miscHeader = null;
+            this.attachments = null;
             this.disposed = false;
         }
-
-        private bool disposed;
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                if (bitmap != null)
-                {
-                    bitmap.Dispose();
-                    bitmap = null;
-                }
-
-                if (alpha != null)
-                {
-                    alpha.Dispose();
-                    alpha = null;
-                }
-
-                this.disposed = true;
-            }
+            Dispose(true);
             GC.SuppressFinalize(this);
-
         }
 
+        private void Dispose(bool disposing)
+        {
+            if (!disposed && disposing)
+            {
+                this.disposed = true;
+
+                if (this.bitmap != null)
+                {
+                    this.bitmap.Dispose();
+                    this.bitmap = null;
+                }
+
+                if (this.alpha != null)
+                {
+                    this.alpha.Dispose();
+                    this.alpha = null;
+                }
+            }
+        }
 
         /// <summary>
         /// Calculates the mipmap count for the item.

@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Drawing;
-using System.Text;
 
 namespace FshDatIO
 {
     /// <summary>
-    /// Encapsualtes the images within a FSHImageWrapper
+    /// Encapsulates the images within a FSHImageWrapper
     /// </summary>
     public sealed class BitmapEntry : IDisposable
     {
@@ -14,6 +14,7 @@ namespace FshDatIO
         private FshImageFormat bmpType;
         private string dirName;
         private int embeddedMipmapCount;
+        private ReadOnlyCollection<FshAttachment> attachments;
         internal bool packedMbp;
         internal ushort[] miscHeader;
 
@@ -101,9 +102,21 @@ namespace FshDatIO
             {
                 return embeddedMipmapCount;
             }
-            set
+            internal set
             {
                 embeddedMipmapCount = value;
+            }
+        }
+
+        public ReadOnlyCollection<FshAttachment> Attachments
+        {
+            get
+            {
+                return attachments;
+            }
+            internal set
+            {
+                this.attachments = value;
             }
         }
 
@@ -186,12 +199,17 @@ namespace FshDatIO
                 height /= 2;
             }
 
-            if (bmpType == FshImageFormat.DXT1)
+            if (mips > 15)
             {
-                packedMbp = true;
+                mips = 0; // FSH images can have a maximum of 15 mipmaps.
             }
 
-            embeddedMipmapCount = mips;
+            if (bmpType == FshImageFormat.DXT1)
+            {
+                this.packedMbp = true;
+            }
+
+            this.embeddedMipmapCount = mips;
         }
 
     }

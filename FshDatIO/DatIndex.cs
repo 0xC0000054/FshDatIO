@@ -68,13 +68,15 @@ namespace FshDatIO
             this.FileSize = fileSize;
             this.IndexState = DatIndexState.None;
         }
-        
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="DatIndex"/> class.
+        /// Initializes a new instance of the <see cref="DatIndex" /> class.
         /// </summary>
         /// <param name="type">The type id of the entry.</param>
         /// <param name="group">The group id of the entry.</param>
         /// <param name="instance">The instance id of the entry.</param>
+        /// <param name="fileItem">The file item.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="fileItem"/> is null.</exception>
         internal DatIndex(uint type, uint group, uint instance, FshFileItem fileItem)
         {
             if (fileItem == null)

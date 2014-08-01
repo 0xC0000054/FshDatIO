@@ -40,6 +40,7 @@ namespace FshDatIO
         /// Initializes a new instance of the FshWrapper class with the specified FSHImageWrapper
         /// </summary>
         /// <param name="fsh">The source FSHImageWrapper to use.</param>
+        /// <param name="useFshWrite">if set to <c>true</c> use FshWrite Compression when saving the image; otherwise <c>false</c>.</param>
         /// <exception cref="System.ArgumentNullException">The FSHImageWrapper is null.</exception>
         public FshFileItem(FSHImageWrapper fsh, bool useFshWrite)
         {
@@ -52,6 +53,7 @@ namespace FshDatIO
             this.compressed = fsh.IsCompressed;
             this.useFshWrite = useFshWrite;
             this.loaded = true;
+            this.disposed = false;
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace FshDatIO
         /// <exception cref="System.ArgumentNullException">Thrown when the byte array is null.</exception>
         /// <exception cref="System.FormatException">Thrown when the file is invalid.</exception>
         /// <exception cref="System.FormatException">Thrown when the header of the fsh file is invalid.</exception>
-        /// <exception cref="System.FormatException">Thrown when the fsh file contains an unhandled image format.</exception>
+        /// <exception cref="System.FormatException">Thrown when the fsh file contains an unsupported image format.</exception>
         internal void Load(byte[] imageData)
         {
             if (imageData == null)
@@ -129,9 +131,9 @@ namespace FshDatIO
             set
             {
                 this.compressed = value;
-                if (image != null)
+                if (this.image != null)
                 {
-                    image.IsCompressed = this.compressed;
+                    this.image.IsCompressed = this.compressed;
                 }
             }
         }
@@ -160,7 +162,7 @@ namespace FshDatIO
             }
             set
             {
-                useFshWrite = value;
+                this.useFshWrite = value;
             }
         }
 
@@ -169,17 +171,23 @@ namespace FshDatIO
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                if (image != null)
-                {
-                    image.Dispose();
-                    image = null;
-                }
-
-                this.disposed = true;
-            }
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
+
+        private void Dispose(bool disposing)
+        {
+            if (!this.disposed && disposing)
+            {
+                this.disposed = true;
+
+                if (this.image != null)
+                {
+                    this.image.Dispose();
+                    this.image = null;
+                }
+            }
+        }
+
     }
 }

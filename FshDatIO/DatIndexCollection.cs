@@ -17,7 +17,7 @@ namespace FshDatIO
             this.disposed = false;
         }
 
-        public int Find(uint type, uint group, uint instance)
+        public DatIndex Find(uint type, uint group, uint instance)
         {
             IList<DatIndex> indices = base.Items;
 
@@ -26,11 +26,40 @@ namespace FshDatIO
                 DatIndex index = indices[i];
                 if (index.Type == type && index.Group == group && index.Instance == instance)
                 {
-                    return i;
+                    return index;
                 }
             }
 
+            return null;
+        }
+
+        internal int IndexOf(uint type, uint group, uint instance)
+        {
+            return IndexOf(type, group, instance, 0);
+        }
+
+        internal int IndexOf(uint type, uint group, uint instance, int startIndex)
+        {
+            if (startIndex >= 0 && startIndex < base.Items.Count)
+            {
+                IList<DatIndex> indices = base.Items;
+
+                for (int i = startIndex; i < indices.Count; i++)
+                {
+                    DatIndex index = indices[i];
+                    if (index.Type == type && index.Group == group && index.Instance == instance)
+                    {
+                        return i;
+                    }
+                } 
+            }
+
             return -1;
+        }
+
+        public void RemoveAll(Predicate<DatIndex> predicate)
+        {
+            ((List<DatIndex>)base.Items).RemoveAll(predicate);
         }
 
         public ReadOnlyCollection<DatIndex> AsReadOnly()

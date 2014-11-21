@@ -113,9 +113,9 @@ namespace FshDatIO
         {
             int value = packed[0] | (packed[1] << 8);
 
-            byte red = (byte)((value >> 11) & 0x1f);
-            byte green = (byte)((value >> 5) & 0x3f);
-            byte blue = (byte)(value & 0x1f);
+            int red = (value >> 11) & 0x1f;
+            int green = (value >> 5) & 0x3f;
+            int blue = (value & 0x1f);
 
             colors[0] = (byte)((red << 3) | (red >> 2));
             colors[1] = (byte)((green << 2) | (green >> 4));

@@ -20,7 +20,7 @@ namespace FshDatIO
         private bool loaded;
         private bool dirty;
         private BinaryReader reader;
-        private const uint fshTypeId = 0x7ab50e44;
+        private const uint FshTypeID = 0x7ab50e44;
         private const uint CompressionDirectoryType = 0xe86b1eef;
         /// <summary>
         /// The start date of unix time in UTC format
@@ -161,7 +161,7 @@ namespace FshDatIO
                 uint size = reader.ReadUInt32();
 
                 DatIndex index = new DatIndex(type, group, instance, location, size);
-                if (type == fshTypeId)
+                if (type == FshTypeID)
                 {
                     index.FileItem = new FshFileItem();
                 }
@@ -187,14 +187,12 @@ namespace FshDatIO
                 throw new ObjectDisposedException("DatFile");
             }
 
-            int idx = this.indices.Find(fshTypeId, group, instance);
+            DatIndex index = this.indices.Find(FshTypeID, group, instance);
 
-            if (idx == -1)
+            if (index == null)
             {
                 throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist);
             }
-
-            DatIndex index = indices[idx];
 
             FshFileItem fsh = index.FileItem;
 
@@ -228,7 +226,7 @@ namespace FshDatIO
                 throw new ArgumentNullException("index");
             }
 
-            if (index.Type != fshTypeId)
+            if (index.Type != FshTypeID)
             {
                 return false;
             }
@@ -254,14 +252,14 @@ namespace FshDatIO
                 throw new ObjectDisposedException("DatFile");
             }
 
-            int index = this.indices.Find(fshTypeId, group, instance);
+            DatIndex index = this.indices.Find(FshTypeID, group, instance);
 
-            if (index == -1)
+            if (index == null)
             {
                 throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist);
             }
 
-            return CheckImageSize(this.indices[index]);
+            return CheckImageSize(index);
         }
 
         /// <summary>
@@ -289,7 +287,7 @@ namespace FshDatIO
 
             fshItem.Compressed = compress;
 
-            DatIndex index = new DatIndex(fshTypeId, group, instance, fshItem);
+            DatIndex index = new DatIndex(FshTypeID, group, instance, fshItem);
             this.indices.Add(index);
 
             this.dirty = true;
@@ -300,13 +298,17 @@ namespace FshDatIO
         /// </summary>
         /// <param name="group">The TGI group id to remove</param>
         /// <param name="instance">The TGI instance id to remove</param>
-        /// <returns>The index of the removed file.</returns>
         public void Remove(uint group, uint instance)
         {
-            int idx = this.indices.Find(fshTypeId, group, instance);
-            if (idx != -1)
+            int index = this.indices.IndexOf(FshTypeID, group, instance);
+            if (index != -1)
             {
-                this.indices[idx].IndexState = DatIndexState.Deleted;
+                // Loop to remove any additional files with the same TGI, this should never happen but check anyway.
+                while (index >= 0)
+                { 
+                    this.indices[index].IndexState = DatIndexState.Deleted;
+                    index = this.indices.IndexOf(FshTypeID, group, instance, index + 1);
+                }
                 this.dirty = true;
             }
         }
@@ -316,26 +318,11 @@ namespace FshDatIO
         /// </summary>
         private void TrimDeletedItems()
         {
-            if (indices.Count > 0)
+            if (this.indices.Count > 0)
             {
-                List<int> deletedItems = new List<int>();
-
-                for (int i = 0; i < this.indices.Count; i++)
-                {
-                    DatIndex index = this.indices[i];
-                    if (index.IndexState == DatIndexState.Deleted || index.Type == CompressionDirectoryType)
-                    {
-                        deletedItems.Add(i);
-                    }
-                }
-
-                for (int i = 0; i < deletedItems.Count; i++)
-                {
-                    this.indices.RemoveAt(deletedItems[i]);
-                }
+                this.indices.RemoveAll(new Predicate<DatIndex>(index => (index.IndexState == DatIndexState.Deleted || index.Type == CompressionDirectoryType)));
             }
         }
-
 
         /// <summary>
         /// Saves the currently loaded DatFile
@@ -393,7 +380,7 @@ namespace FshDatIO
                     {
                         DatIndex index = indices[i];
 
-                        if (index.IndexState == DatIndexState.New && index.Type == fshTypeId)
+                        if (index.IndexState == DatIndexState.New && index.Type == FshTypeID)
                         {
                             FshFileItem fshw = index.FileItem;
 #if DEBUG

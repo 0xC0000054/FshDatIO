@@ -10,7 +10,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="compressedData">The byte array to decompress</param>
         /// <returns>A byte array containing the decompressed data</returns>
-        public unsafe static byte[] Decompress(byte[] compressedData)
+        public static byte[] Decompress(byte[] compressedData)
         {
             if (compressedData == null)
             {
@@ -19,31 +19,23 @@ namespace FshDatIO
 
             int startOffset = 0;
 
-            if ((compressedData[0] & 0xfe) != 0x10 || compressedData[1] != 0xfb)
+            if ((compressedData[0] & 0xFE) != 0x10 || compressedData[1] != 0xFB)
             {
-                startOffset = 4;
-                if ((compressedData[4] & 0xfe) != 0x10 && compressedData[5] != 0xfb)
+                if (compressedData[4] != 0x10 && compressedData[5] != 0xFB)
                 {
                     throw new NotSupportedException(FshDatIO.Properties.Resources.UnsupportedCompressionFormat);
                 }
+                startOffset = 4;
             }
 
-            int length = compressedData.Length;
-
-            int outIndex = 0;
-            int outLength = 0;
-
-            byte hi = compressedData[startOffset + 2];
-            byte mid = compressedData[startOffset + 3];
-            byte lo = compressedData[startOffset + 4];
-
-            outLength = ((hi << 16) | (mid << 8)) | lo;
+            int outLength = ((compressedData[startOffset + 2] << 16) | (compressedData[startOffset + 3] << 8)) | compressedData[startOffset + 4];
 
             byte[] unCompressedData = new byte[outLength];
 
             int index = startOffset + 5;
-            if ((compressedData[startOffset] & 1) != 0)
+            if (index == 5 && (compressedData[0] & 1) != 0)
             {
+                // Some NFS files may need to be aligned to an 4 byte boundary.
                 index = 8;
             }
 
@@ -52,111 +44,86 @@ namespace FshDatIO
             byte ccbyte3 = 0; // control char 2
             byte ccbyte4 = 0; // control char 3
 
+            int outIndex = 0;
             int plainCount = 0;
             int copyCount = 0;
             int copyOffset = 0;
 
-            int srcIndex = 0;
-            fixed (byte* compressed = compressedData, uncompressed = unCompressedData)
+            int length = compressedData.Length;
+
+            while (index < length && compressedData[index] < 0xFC)
             {
-                byte* compData = compressed + index;
-                byte* unCompData = uncompressed;
+                ccbyte1 = compressedData[index++];
 
-                while (index < length && outIndex < outLength) // code adapted from http://simswiki.info/wiki.php?title=DBPF_Compression
+                if (ccbyte1 >= 0xE0) // 1 byte op code 0xE0 - 0xFB
                 {
-                    ccbyte1 = *compData++;
+                    plainCount = ((ccbyte1 & 0x1F) << 2) + 4;
+                    copyCount = 0;
+                    copyOffset = 0;
+                }
+                else if (ccbyte1 >= 0xC0) // 4 byte op code 0xC0 - 0xDF
+                {
+                    ccbyte2 = compressedData[index++];
+                    ccbyte3 = compressedData[index++];
+                    ccbyte4 = compressedData[index++];
+
+                    plainCount = (ccbyte1 & 3);
+                    copyCount = ((ccbyte1 & 0x0C) << 6) + ccbyte4 + 5;
+                    copyOffset = (((ccbyte1 & 0x10) << 12) + (ccbyte2 << 8)) + ccbyte3 + 1;
+                }
+                else if (ccbyte1 >= 0x80) // 3 byte op code 0x80 - 0xBF
+                {
+                    ccbyte2 = compressedData[index++];
+                    ccbyte3 = compressedData[index++];
+
+                    plainCount = (ccbyte2 & 0xC0) >> 6;
+                    copyCount = (ccbyte1 & 0x3F) + 4;
+                    copyOffset = ((ccbyte2 & 0x3F) << 8) + ccbyte3 + 1;
+                }
+                else // 2 byte op code 0x00 - 0x7F
+                {
+                    ccbyte2 = compressedData[index++];
+
+                    plainCount = (ccbyte1 & 3);
+                    copyCount = ((ccbyte1 & 0x1C) >> 2) + 3;
+                    copyOffset = ((ccbyte1 >> 5) << 8) + ccbyte2 + 1;
+                }
+
+                for (int i = 0; i < plainCount; i++)
+                {
+                    unCompressedData[outIndex] = compressedData[index];
                     index++;
+                    outIndex++;
+                }
 
-                    if (ccbyte1 >= 0xFC) // 1 byte EOF op code 0xFC - 0xFF 
+                if (copyCount > 0)
+                {
+                    int srcIndex = outIndex - copyOffset;
+
+                    for (int i = 0; i < copyCount; i++)
                     {
-                        plainCount = (ccbyte1 & 3);
-
-                        if ((index + plainCount) > length)
-                        {
-                            plainCount = length - index;
-                        }
-
-
-                        copyCount = 0;
-                        copyOffset = 0;
+                        unCompressedData[outIndex] = unCompressedData[srcIndex];
+                        srcIndex++;
+                        outIndex++;
                     }
-                    else if (ccbyte1 >= 0xE0) // 1 byte op code 0xE0 - 0xFB
-                    {
-                        plainCount = ((ccbyte1 & 0x1F) << 2) + 4;
+                }
+            }
 
-                        copyCount = 0;
-                        copyOffset = 0;
-                    }
-                    else if (ccbyte1 >= 0xC0) // 4 byte op code 0xC0 - 0xDF
-                    {
-                        ccbyte2 = *compData++;
-                        ccbyte3 = *compData++;
-                        ccbyte4 = *compData++;
+            // Write the trailing bytes.
+            if (index < length && outIndex < outLength)
+            {
+                // 1 byte EOF op code 0xFC - 0xFF.
+                plainCount = (compressedData[index++] & 3);
 
-                        index += 3;
-
-                        plainCount = (ccbyte1 & 3);
-
-                        copyCount = ((ccbyte1 & 0x0C) << 6) + ccbyte4 + 5;
-                        copyOffset = (((ccbyte1 & 0x10) << 12) + (ccbyte2 << 8)) + ccbyte3 + 1;
-                    }
-                    else if (ccbyte1 >= 0x80) // 3 byte op code 0x80 - 0xBF
-                    {
-                        ccbyte2 = *compData++;
-                        ccbyte3 = *compData++;
-                        index += 2;
-
-                        plainCount = (ccbyte2 & 0xC0) >> 6;
-
-                        copyCount = (ccbyte1 & 0x3F) + 4;
-                        copyOffset = ((ccbyte2 & 0x3F) << 8) + ccbyte3 + 1;
-                    }
-                    else // 2 byte op code 0x00 - 0x7F
-                    {
-#if DEBUG
-                        if ((index + 1) >= compressedData.Length)
-                        {
-                            System.Diagnostics.Debugger.Break();
-                            System.Diagnostics.Debug.WriteLine(ccbyte1.ToString("X1"));
-                        }
-#endif
-
-                        ccbyte2 = *compData++;
-                        index++;
-
-                        plainCount = (ccbyte1 & 3);
-
-                        copyCount = ((ccbyte1 & 0x1C) >> 2) + 3;
-                        copyOffset = ((ccbyte1 >> 5) << 8) + ccbyte2 + 1;
-                    }
-
-                    byte* pDst = unCompData + outIndex;
-                    Copy(ref compData, ref pDst, plainCount);
-
-                    index += plainCount;
-                    outIndex += plainCount;
-
-                    srcIndex = outIndex - copyOffset;
-
-                    byte* src = unCompData + srcIndex;
-                    byte* dst = unCompData + outIndex;
-                    Copy(ref src, ref dst, copyCount);
-
-                    srcIndex += copyCount;
-                    outIndex += copyCount;
-
+                for (int i = 0; i < plainCount; i++)
+                {
+                    unCompressedData[outIndex] = compressedData[index];
+                    index++;
+                    outIndex++;
                 }
             }
 
             return unCompressedData;
-        }
-
-        private static unsafe void Copy(ref byte* src, ref byte* dst, int length)
-        {
-            while (length-- > 0)
-            {
-                *dst++ = *src++;
-            }
         }
 
         const int QfsMaxIterCount = 50;

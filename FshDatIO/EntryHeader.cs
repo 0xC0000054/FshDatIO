@@ -70,29 +70,41 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets or sets the miscellaneous entry data.
+        /// Gets the miscellaneous entry data.
         /// </summary>
         /// <value>
         /// The misc.
         /// </value>
-        public ushort[] Misc
+        public ushort[] GetMiscData()
         {
-            get
-            {
-                return misc;
-            }
-            internal set
-            {
-                misc = value;
-            }
+            return misc;
         }
 
-        internal EntryHeader()
+        internal void SetMiscData(ushort[] data)
         {
-            this.code = 0;
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            this.misc = data;
+        }
+
+        internal EntryHeader(int auxHeaderCode)
+        {
+            this.code = auxHeaderCode;
             this.width = 0;
             this.height = 0;
+            this.misc = null;
+        }
+        
+        internal EntryHeader(byte[] rawData, int offset)
+        {
+            this.code = BitConverter.ToInt32(rawData, offset);
+            this.width = BitConverter.ToUInt16(rawData, offset + 4);
+            this.height = BitConverter.ToUInt16(rawData, offset + 6);
             this.misc = new ushort[4];
+            Array.Copy(rawData, offset + 8, this.misc, 0, 4);
         }
 
         internal EntryHeader(FshImageFormat format, int width, int height, ushort[] misc)

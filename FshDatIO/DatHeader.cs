@@ -236,7 +236,7 @@ namespace FshDatIO
         {
             if (reader == null)
             {
-                throw new ArgumentNullException("br", "br is null.");
+                throw new ArgumentNullException("reader");
             }
             
             uint sig = reader.ReadUInt32();
@@ -270,7 +270,7 @@ namespace FshDatIO
         {
             if (writer == null)
             {
-                throw new ArgumentNullException("bw", "bw is null.");
+                throw new ArgumentNullException("writer");
             }
             
             writer.Write(DBPFSignature);

@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 
 namespace FshDatIO
 {
-    internal sealed class DatIndexCollection : Collection<DatIndex>
+    internal sealed class DatIndexCollection : Collection<DatIndex>, IDisposable
     {
         private bool disposed;
 

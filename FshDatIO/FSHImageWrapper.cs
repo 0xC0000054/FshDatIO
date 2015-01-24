@@ -78,13 +78,7 @@ namespace FshDatIO
 
 		private byte[] Decompress(byte[] imageBytes)
 		{
-
-			if ((imageBytes[0] & 0xfe) == 0x10 && imageBytes[1] == 0xfb) // NFS 1 uses this offset
-			{
-				this.isCompressed = true;
-				return QfsComp.Decompress(imageBytes);
-			}
-			else if ((imageBytes[4] & 0xfe) == 0x10 && imageBytes[5] == 0xfb)
+			if ((imageBytes[0] & 0xFE) == 0x10 && imageBytes[1] == 0xFB || imageBytes[4] == 0x10 && imageBytes[5] == 0xFB)
 			{
 				this.isCompressed = true;
 				return QfsComp.Decompress(imageBytes);
@@ -173,7 +167,7 @@ namespace FshDatIO
 
 						for (int j = 0; j < imageCount; j++)
 						{
-							if (dirs[j].Offset < nextOffset && dirs[j].Offset > nextOffset)
+							if (dirs[j].Offset > dir.Offset && dirs[j].Offset < nextOffset)
 							{
 								nextOffset = dirs[j].Offset;
 							}
@@ -184,7 +178,7 @@ namespace FshDatIO
 
 						int code = (eHeader.Code & 0x7f);
 
-						if ((code == 0x7b) || (code == 0x7e) || (code == 0x78) || (code == 0x6d))
+						if (code == 0x7b || code == 0x7e || code == 0x78 || code == 0x6d)
 						{
 							throw new FormatException(Resources.UnsupportedFshType); // bail on the non SC4 formats
 						}
@@ -218,7 +212,7 @@ namespace FshDatIO
 
 							int numScales = 0;
 							bool packedMbp = false;
-							if ((eHeader.Misc[3] & 0x0fff) == 0 && !entryCompressed)
+							if (!entryCompressed && (eHeader.Misc[3] & 0x0fff) == 0)
 							{
 								numScales = (eHeader.Misc[3] >> 12) & 0x0f;
 
@@ -229,46 +223,35 @@ namespace FshDatIO
 
 								if (numScales > 0) // check for multiscale bitmaps
 								{
-									int bpp = 0;
 									int mbpLen = 0;
 									int mbpPadLen = 0;
-									switch (code)
-									{
-										case 0x7b:
-										case 0x61:
-											bpp = 2;
-											break;
-										case 0x7d:
-											bpp = 8;
-											break;
-										case 0x7f:
-											bpp = 6;
-											break;
-										case 0x60:
-											bpp = 1;
-											break;
-										default:
-											bpp = 4;
-											break;
-									}
-
-									int bmpw, bmph;
-
+									
 									for (int j = 0; j <= numScales; j++)
 									{
-										bmpw = (width >> j);
-										bmph = (height >> j);
+										int mipWidth = (width >> j);
+										int mipHeight = (height >> j);
 
-
-										if (code == 0x60)
+										int dataLength;
+										switch (code)
 										{
-											bmpw += (4 - bmpw) & 3;
-											bmph += (4 - bmph) & 3;
+											case 0x60:
+												// DXT1 images must be padded to a multiple of four.
+												dataLength = ((((mipWidth + 3) & ~3) * ((mipHeight + 3) & ~3)) / 2);
+												break;
+											case 0x61:
+												dataLength = (mipWidth * mipHeight);
+												break;
+											case 0x7d:
+												dataLength = (mipWidth * mipHeight * 4);
+												break;
+											case 0x7f:
+												dataLength = (mipWidth * mipHeight * 3);
+												break;
+											default:
+												throw new FormatException(Resources.UnsupportedFshType);
 										}
-
-										int length = (bmpw * bmph) * bpp / 2;
-										mbpLen += length;
-										mbpPadLen += length;
+										mbpLen += dataLength;
+										mbpPadLen += dataLength;
 
 										// DXT1 mipmaps smaller than 4x4 are also padded
 										int padLen = ((16 - mbpLen) & 15);
@@ -288,13 +271,13 @@ namespace FshDatIO
 #endif
 									}
 
-									int imageLength = (eHeader.Code >> 8);
-									if ((imageLength != mbpLen + 16) && (imageLength != 0) ||
-										(imageLength == 0) && ((mbpLen + dir.Offset + 16) != fshSize))
+									int imageLength = eHeader.Code >> 8;
+									if (imageLength != 0 && imageLength != (mbpLen + EntryHeader.SizeOf) ||
+										imageLength == 0 && (mbpLen + dir.Offset + EntryHeader.SizeOf) != nextOffset)
 									{
 										packedMbp = true;
-										if ((imageLength != mbpPadLen + 16) && (imageLength != 0) ||
-										(imageLength == 0) && ((mbpPadLen + dir.Offset + 16) != fshSize))
+										if (imageLength != 0 && imageLength != (mbpPadLen + EntryHeader.SizeOf) ||
+											imageLength == 0 && (mbpPadLen + dir.Offset + EntryHeader.SizeOf) != nextOffset)
 										{
 											numScales = 0;
 										}
@@ -312,7 +295,7 @@ namespace FshDatIO
 							BitmapEntry entry = new BitmapEntry()
 							{
 								BmpType = format,
-								DirName = Encoding.ASCII.GetString(dir.Name),
+								DirName = dir.Name,
 								EmbeddedMipmapCount = numScales,
 								packedMbp = packedMbp,
 								miscHeader = eHeader.Misc
@@ -320,7 +303,6 @@ namespace FshDatIO
 							entry.Bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb);
 							entry.Alpha = new Bitmap(width, height, PixelFormat.Format24bppRgb);
 
-							int dataSize = 0;
 							byte[] imageData = null;
 
 							if (entryCompressed)
@@ -341,7 +323,7 @@ namespace FshDatIO
 							}
 							else
 							{
-								dataSize = GetBmpDataSize(width, height, format);
+								int dataSize = GetBmpDataSize(width, height, format);
 								imageData = reader.ReadBytes(dataSize);
 							}
 
@@ -1095,7 +1077,7 @@ namespace FshDatIO
 				if (this.isCompressed)
 				{
 					byte[] compbuf = QfsComp.Compress(this.rawData, true);
-					if ((compbuf != null) && compbuf.Length < stream.Length)
+					if (compbuf != null)
 					{
 						output.Write(compbuf, 0, compbuf.Length);
 					}
@@ -1152,8 +1134,7 @@ namespace FshDatIO
 			try
 			{
 				byte[] rawData = null;
-				if (((imageBytes[0] & 0xfe) == 0x10 && imageBytes[1] == 0xfb) ||
-					((imageBytes[4] & 0xfe) == 0x10 && imageBytes[5] == 0xfb))
+				if ((imageBytes[0] & 0xFE) == 0x10 && imageBytes[1] == 0xFB || imageBytes[4] == 0x10 && imageBytes[5] == 0xFB)
 				{
 					rawData = QfsComp.Decompress(imageBytes);
 				}

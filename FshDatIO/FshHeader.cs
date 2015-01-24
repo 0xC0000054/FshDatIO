@@ -11,7 +11,7 @@ namespace FshDatIO
 	{
 		private int size;
 		private int imageCount;
-		private byte[] directoryID;
+		private byte[] directoryId;
 
 		/// <summary>
 		/// The FSH file signature - SHPI
@@ -42,24 +42,16 @@ namespace FshDatIO
 			{ 
 				return imageCount; 
 			}
-			internal set
-			{ 
-				imageCount = value;
-			}
 		}
 
 		/// <summary>
 		/// The image family identifier.
 		/// </summary>
-		public byte[] DirectoryID
+		public string DirectoryId
 		{
 			get 
 			{ 
-				return directoryID; 
-			}
-			internal set
-			{ 
-				directoryID = value;
+				return Encoding.ASCII.GetString(directoryId);
 			}
 		}
 		
@@ -77,14 +69,14 @@ namespace FshDatIO
 
 			this.size = reader.ReadInt32();
 			this.imageCount = reader.ReadInt32();
-			this.directoryID = reader.ReadBytes(4);
+			this.directoryId = reader.ReadBytes(4);
 		}
 
 		internal FSHHeader(int imageCount, string directoryID)
 		{
 			this.size = 0;
 			this.imageCount = imageCount;
-			this.directoryID = Encoding.ASCII.GetBytes(directoryID);
+			this.directoryId = Encoding.ASCII.GetBytes(directoryID);
 		}
 
 		internal void Save(Stream stream)
@@ -92,7 +84,7 @@ namespace FshDatIO
 			stream.WriteUInt32(FSHSignature);
 			stream.WriteInt32(this.size);
 			stream.WriteInt32(this.imageCount);
-			stream.Write(this.directoryID, 0, 4);
+			stream.Write(this.directoryId, 0, 4);
 		}
 	}
 }

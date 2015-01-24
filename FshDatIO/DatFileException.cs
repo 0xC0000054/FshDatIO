@@ -12,7 +12,7 @@ namespace FshDatIO
         /// <summary>
         /// Initializes a new instance of the <see cref="DatFileException"/> class.
         /// </summary>
-        public DatFileException() : base("A DatFileException has occured")
+        public DatFileException() : base("A DatFileException has occurred")
         {
         }
 

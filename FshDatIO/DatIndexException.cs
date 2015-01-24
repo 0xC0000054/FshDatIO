@@ -12,7 +12,7 @@ namespace FshDatIO
         /// <summary>
         /// Initializes a new instance of the <see cref="DatIndexException"/> class.
         /// </summary>
-        public DatIndexException() : base("A DatIndexException has occured")
+        public DatIndexException() : base("A DatIndexException has occurred")
         {}
 
         /// <summary>

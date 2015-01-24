@@ -15,11 +15,11 @@ namespace FshDatIO
 		/// <summary>
 		/// The name of the directory.
 		/// </summary>
-		public byte[] Name
+		public string Name
 		{
 			get
 			{
-				return name;
+				return Encoding.ASCII.GetString(this.name, 0, 4);
 			}
 		}
 		
@@ -30,7 +30,7 @@ namespace FshDatIO
 		{
 			get
 			{
-				return offset;
+				return this.offset;
 			}
 			internal set
 			{

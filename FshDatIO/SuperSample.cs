@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Security.Permissions;
 
 namespace FshDatIO
 {
@@ -39,8 +40,15 @@ namespace FshDatIO
         /// <param name="width">The width to scale to</param>
         /// <param name="height">The height to scale to</param>
         /// <returns>The scaled Bitmap</returns>
+        /// <exception cref="System.ArgumentNullException"><paramref name="source"/> is null.</exception>
+        [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
         public static unsafe Bitmap GetBitmapThumbnail(Bitmap source, int width, int height)
         {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }        
+
             Bitmap destImage = null;
             using (Bitmap image = new Bitmap(width, height))
             {
@@ -48,9 +56,10 @@ namespace FshDatIO
                 int srcHeight = source.Height;
 
                 Rectangle srcRect = new Rectangle(0, 0, srcWidth, srcHeight);
-                BitmapData src = source.LockBits(srcRect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                BitmapData dest = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
                 Rectangle imageRect = new Rectangle(0, 0, image.Width, image.Height);
+                BitmapData src = source.LockBits(srcRect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                BitmapData dest = image.LockBits(imageRect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+               
                 try
                 {
 
@@ -95,9 +104,10 @@ namespace FshDatIO
                             // left fractional edge
                             Color* srcLeftPtr = GetPoint(srcScan0, srcStride, srcLeftInt, srcTopInt + 1);
 
+                            double a;
                             for (int srcY = srcTopInt + 1; srcY < srcBottomInt; ++srcY)
                             {
-                                double a = srcLeftPtr->A;
+                                a = srcLeftPtr->A;
                                 blueSum += srcLeftPtr->B * srcLeftWeight * a;
                                 greenSum += srcLeftPtr->G * srcLeftWeight * a;
                                 redSum += srcLeftPtr->R * srcLeftWeight * a;
@@ -109,7 +119,7 @@ namespace FshDatIO
                             Color* srcRightPtr = GetPoint(srcScan0, srcStride, srcRightInt, srcTopInt + 1);
                             for (int srcY = srcTopInt + 1; srcY < srcBottomInt; ++srcY)
                             {
-                                double a = srcRightPtr->A;
+                                a = srcRightPtr->A;
                                 blueSum += srcRightPtr->B * srcRightWeight * a;
                                 greenSum += srcRightPtr->G * srcRightWeight * a;
                                 redSum += srcRightPtr->R * srcRightWeight * a;
@@ -121,7 +131,7 @@ namespace FshDatIO
                             Color* srcTopPtr = GetPoint(srcScan0, srcStride, srcLeftInt + 1, srcTopInt);
                             for (int srcX = srcLeftInt + 1; srcX < srcRightInt; ++srcX)
                             {
-                                double a = srcTopPtr->A;
+                                a = srcTopPtr->A;
                                 blueSum += srcTopPtr->B * srcTopWeight * a;
                                 greenSum += srcTopPtr->G * srcTopWeight * a;
                                 redSum += srcTopPtr->R * srcTopWeight * a;
@@ -133,7 +143,7 @@ namespace FshDatIO
                             Color* srcBottomPtr = GetPoint(srcScan0, srcStride, srcLeftInt + 1, srcBottomInt);
                             for (int srcX = srcLeftInt + 1; srcX < srcRightInt; ++srcX)
                             {
-                                double a = srcBottomPtr->A;
+                                a = srcBottomPtr->A;
                                 blueSum += srcBottomPtr->B * srcBottomWeight * a;
                                 greenSum += srcBottomPtr->G * srcBottomWeight * a;
                                 redSum += srcBottomPtr->R * srcBottomWeight * a;
@@ -148,7 +158,7 @@ namespace FshDatIO
 
                                 for (int srcX = srcLeftInt + 1; srcX < srcRightInt; ++srcX)
                                 {
-                                    double a = srcPtr->A;
+                                    a = srcPtr->A;
                                     blueSum += (double)srcPtr->B * a;
                                     greenSum += (double)srcPtr->G * a;
                                     redSum += (double)srcPtr->R * a;

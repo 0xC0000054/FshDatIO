@@ -304,11 +304,13 @@ namespace FshDatIO
             if (index != -1)
             {
                 // Loop to remove any additional files with the same TGI, this should never happen but check anyway.
-                while (index >= 0)
-                { 
+                do
+                {
                     this.indices[index].IndexState = DatIndexState.Deleted;
                     index = this.indices.IndexOf(FshTypeID, group, instance, index + 1);
                 }
+                while (index >= 0);
+
                 this.dirty = true;
             }
         }

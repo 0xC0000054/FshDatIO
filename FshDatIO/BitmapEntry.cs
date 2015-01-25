@@ -116,10 +116,6 @@ namespace FshDatIO
             {
                 return embeddedMipmapCount;
             }
-            internal set
-            {
-                embeddedMipmapCount = value;
-            }
         }
 
         /// <summary>
@@ -176,6 +172,20 @@ namespace FshDatIO
             this.attachments = null;
             this.disposed = false;
         }
+
+        internal BitmapEntry(FshImageFormat format, string dirName, int embeddedMipCount, bool mipsPacked, ushort[] miscData)
+        {
+            this.bitmap = null;
+            this.alpha = null;
+            this.bmpType = format;
+            this.dirName = dirName;
+            this.embeddedMipmapCount = embeddedMipCount;
+            this.packedMbp = mipsPacked;
+            this.miscHeader = miscData;
+            this.attachments = null;
+            this.disposed = false;
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>

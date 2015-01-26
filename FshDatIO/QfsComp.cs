@@ -172,7 +172,7 @@ namespace FshDatIO
             outbuf[3] = (byte)((inlen >> 8) & 0xff);
             outbuf[4] = (byte)(inlen & 0xff);
             int outIndex = 5;
-            
+
             int bestLength = 0;
             int bestOffset = 0;
             int len = 0;
@@ -185,121 +185,108 @@ namespace FshDatIO
                 int temp = last_rev[inbuf[index], inbuf[index + 1]];
                 offs = similar_rev[index & CompMask] = temp;
                 last_rev[inbuf[index], inbuf[index + 1]] = index;
-                
+
                 if (index < lastwrot)
                 {
                     continue;
                 }
-                else
+                bestLength = 0;
+                int iterCount = 0;
+                while (((offs >= 0) && ((index - offs) < CompMaxLen)) && (iterCount++ < QfsMaxIterCount))
+                {
+                    len = 2;
+                    while ((inbuf[index + len] == inbuf[offs + len]) && (len < QfsMaxBlockSize))
+                    {
+                        len++;
+                    }
+                    if (len > bestLength)
+                    {
+                        bestLength = len;
+                        bestOffset = index - offs;
+                    }
+                    offs = similar_rev[offs & CompMask];
+                }
+                if (bestLength > (inlen - index))
+                {
+                    bestLength = index - inlen;
+                }
+                if (bestLength <= 2)
                 {
                     bestLength = 0;
-                    int iterCount = 0;
-                    while (((offs >= 0) && ((index - offs) < CompMaxLen)) && (iterCount++ < QfsMaxIterCount))
+                }
+                else if (bestLength == 3 && bestOffset > 1024)
+                {
+                    bestLength = 0;
+                }
+                else if (bestLength == 4 && bestOffset > 16384)
+                {
+                    bestLength = 0;
+                }
+                if (bestLength > 0)
+                {
+                    while ((index - lastwrot) >= 4) // 1 byte op code 0xE0 - 0xFB
                     {
-                        len = 2;
-                        while ((inbuf[index + len] == inbuf[offs + len]) && (len < QfsMaxBlockSize))
+                        len = ((index - lastwrot) / 4) - 1;
+                        if (len > 0x1b)
                         {
-                            len++;
+                            len = 0x1b;
                         }
-                        if (len > bestLength)
+                        outbuf[outIndex++] = (byte)(0xe0 + len);
+                        len = (4 * len) + 4;
+                        if ((outIndex + len) >= outbuf.Length)
                         {
-                            bestLength = len;
-                            bestOffset = index - offs;
+                            return null;// data did not compress so return null
                         }
-                        offs = similar_rev[offs & CompMask];
+                        Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, len);
+                        lastwrot += len;
+                        outIndex += len;
                     }
-
-                    if (bestLength > (inlen - index))
+                    len = index - lastwrot;
+                    if ((bestLength <= 10) && (bestOffset <= 1024)) // 2 byte op code  0x00 - 0x7f
                     {
-                        bestLength = index - inlen;
-                    }
-
-                    if (bestLength <= 2)
-                    {
-                        bestLength = 0;
-                    }
-                    else if (bestLength == 3 && bestOffset > 1024)
-                    {
-                        bestLength = 0;
-                    }
-                    else if (bestLength == 4 && bestOffset > 16384)
-                    {
-                        bestLength = 0;
-                    }
-
-                    if (bestLength > 0)
-                    {
-                        while ((index - lastwrot) >= 4) // 1 byte op code 0xE0 - 0xFB
+                        outbuf[outIndex++] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + len);
+                        outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
+                        if ((outIndex + len) >= outbuf.Length)
                         {
-                            len = ((index - lastwrot) / 4) - 1;
-                            if (len > 0x1b)
-                            {
-                                len = 0x1b;
-                            }
-                            outbuf[outIndex++] = (byte)(0xe0 + len);
-                            len = (4 * len) + 4;
-                            if ((outIndex + len) >= outbuf.Length)
-                            {
-                                return null;// data did not compress so return null
-                            }
-
-                            Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, len);
-                            lastwrot += len;
-                            outIndex += len;
+                            return null;// data did not compress so return null
                         }
-                        len = index - lastwrot;
-                        if ((bestLength <= 10) && (bestOffset <= 1024)) // 2 byte op code  0x00 - 0x7f
+                        while (len-- > 0)
                         {
-                            outbuf[outIndex++] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + len);
-                            outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
-
-                            if ((outIndex + len) >= outbuf.Length)
-                            {
-                                return null;// data did not compress so return null
-                            }
-
-                            while (len-- > 0)
-                            {
-                                outbuf[outIndex++] = inbuf[lastwrot++];
-                            }
-                            lastwrot += bestLength;
+                            outbuf[outIndex++] = inbuf[lastwrot++];
                         }
-                        else if ((bestLength <= 67) && (bestOffset <= 16384))  // 3 byte op code 0x80 - 0xBF
+                        lastwrot += bestLength;
+                    }
+                    else if ((bestLength <= 67) && (bestOffset <= 16384))  // 3 byte op code 0x80 - 0xBF
+                    {
+                        outbuf[outIndex++] = (byte)(0x80 + (bestLength - 4));
+                        outbuf[outIndex++] = (byte)((len << 6) + ((bestOffset - 1) >> 8));
+                        outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
+                        if ((outIndex + len) >= outbuf.Length)
                         {
-                            outbuf[outIndex++] = (byte)(0x80 + (bestLength - 4));
-                            outbuf[outIndex++] = (byte)((len << 6) + ((bestOffset - 1) >> 8));
-                            outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
-
-                            if ((outIndex + len) >= outbuf.Length)
-                            {
-                                return null;// data did not compress so return null
-                            }
-
-                            while (len-- > 0)
-                            {
-                                outbuf[outIndex++] = inbuf[lastwrot++];
-                            }
-                            lastwrot += bestLength;
+                            return null;// data did not compress so return null
                         }
-                        else if ((bestLength <= QfsMaxBlockSize) && (bestOffset < CompMaxLen)) // 4 byte op code 0xC0 - 0xFB
+                        while (len-- > 0)
                         {
-                            bestOffset--;
-                            outbuf[outIndex++] = (byte)(((0xc0 + ((bestOffset >> 0x10) << 4)) + (((bestLength - 5) >> 8) << 2)) + len);
-                            outbuf[outIndex++] = (byte)((bestOffset >> 8) & 0xff);
-                            outbuf[outIndex++] = (byte)(bestOffset & 0xff);
-                            outbuf[outIndex++] = (byte)((bestLength - 5) & 0xff);
-
-                            if ((outIndex + len) >= outbuf.Length)
-                            {
-                                return null;
-                            }
-
-                            while (len-- > 0)
-                            {
-                                outbuf[outIndex++] = inbuf[lastwrot++];
-                            }
-                            lastwrot += bestLength;
+                            outbuf[outIndex++] = inbuf[lastwrot++];
                         }
+                        lastwrot += bestLength;
+                    }
+                    else if ((bestLength <= QfsMaxBlockSize) && (bestOffset < CompMaxLen)) // 4 byte op code 0xC0 - 0xFB
+                    {
+                        bestOffset--;
+                        outbuf[outIndex++] = (byte)(((0xc0 + ((bestOffset >> 0x10) << 4)) + (((bestLength - 5) >> 8) << 2)) + len);
+                        outbuf[outIndex++] = (byte)((bestOffset >> 8) & 0xff);
+                        outbuf[outIndex++] = (byte)(bestOffset & 0xff);
+                        outbuf[outIndex++] = (byte)((bestLength - 5) & 0xff);
+                        if ((outIndex + len) >= outbuf.Length)
+                        {
+                            return null;
+                        }
+                        while (len-- > 0)
+                        {
+                            outbuf[outIndex++] = inbuf[lastwrot++];
+                        }
+                        lastwrot += bestLength;
                     }
                 }
             }

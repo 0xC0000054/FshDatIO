@@ -166,9 +166,9 @@ namespace FshDatIO
                 }
             }
 
-            byte[] outbuf = new byte[inlen + 2048];
+            byte[] outbuf = new byte[inlen];
             outbuf[0] = 0x10;
-            outbuf[1] = 0xfb;
+            outbuf[1] = 0xFB;
             outbuf[2] = (byte)((inlen >> 16) & 0xff);
             outbuf[3] = (byte)((inlen >> 8) & 0xff);
             outbuf[4] = (byte)(inlen & 0xff);
@@ -232,10 +232,10 @@ namespace FshDatIO
                         {
                             run = LiteralRunMaxLength;
                         }
-                        outbuf[outIndex++] = (byte)(0xe0 + run);
+                        outbuf[outIndex++] = (byte)(0xE0 + run);
                         
                         int blockLength = (run * 4) + 4;
-                        if ((outIndex + blockLength) >= outbuf.Length)
+                        if ((outIndex + blockLength) >= inlen)
                         {
                             return null;// data did not compress so return null
                         }
@@ -248,7 +248,7 @@ namespace FshDatIO
                     {
                         outbuf[outIndex++] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
                         outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
-                        if ((outIndex + run) >= outbuf.Length)
+                        if ((outIndex + run) >= inlen)
                         {
                             return null;// data did not compress so return null
                         }
@@ -263,7 +263,7 @@ namespace FshDatIO
                         outbuf[outIndex++] = (byte)(0x80 + (bestLength - 4));
                         outbuf[outIndex++] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
                         outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
-                        if ((outIndex + run) >= outbuf.Length)
+                        if ((outIndex + run) >= inlen)
                         {
                             return null;// data did not compress so return null
                         }
@@ -276,11 +276,11 @@ namespace FshDatIO
                     else if ((bestLength <= QfsMaxBlockSize) && (bestOffset < CompMaxLen)) // 4 byte op code 0xC0 - 0xFB
                     {
                         bestOffset--;
-                        outbuf[outIndex++] = (byte)(((0xc0 + ((bestOffset >> 0x10) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
+                        outbuf[outIndex++] = (byte)(((0xC0 + ((bestOffset >> 0x10) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
                         outbuf[outIndex++] = (byte)((bestOffset >> 8) & 0xff);
                         outbuf[outIndex++] = (byte)(bestOffset & 0xff);
                         outbuf[outIndex++] = (byte)((bestLength - 5) & 0xff);
-                        if ((outIndex + run) >= outbuf.Length)
+                        if ((outIndex + run) >= inlen)
                         {
                             return null;
                         }
@@ -301,10 +301,10 @@ namespace FshDatIO
                 {
                     run = LiteralRunMaxLength;
                 }
-                outbuf[outIndex++] = (byte)(0xe0 + run);
+                outbuf[outIndex++] = (byte)(0xE0 + run);
                 int blockLength = (run * 4) + 4;
 
-                if ((outIndex + blockLength) >= outbuf.Length)
+                if ((outIndex + blockLength) >= inlen)
                 {
                     return null; // data did not compress so return null
                 }
@@ -315,13 +315,12 @@ namespace FshDatIO
             }
             run = index - lastwrot;
 
-            if ((outIndex + run) >= outbuf.Length) // add in the remaining data length to check for available space
+            // 1 byte EOF op code 0xFC - 0xFF 
+            outbuf[outIndex++] = (byte)(0xFC + run);
+            if ((outIndex + run) >= inlen) // add in the remaining data length to check for available space
             {
                 return null;
             }
-
-            // 1 byte EOF op code 0xFC - 0xFF 
-            outbuf[outIndex++] = (byte)(0xfc + run);
 
             while (run-- > 0)
             {
@@ -330,7 +329,13 @@ namespace FshDatIO
 
             if (prefixLength)
             {
-                byte[] temp = new byte[outIndex + 4];
+                int outLength = outIndex + 4;
+                if (outLength >= inlen)
+                {
+                    return null;
+                }
+                
+                byte[] temp = new byte[outLength];
 
                 Array.Copy(BitConverter.GetBytes(outIndex), temp, 4); // write the compressed length before the actual data
                 Buffer.BlockCopy(outbuf, 0, temp, 4, outIndex);

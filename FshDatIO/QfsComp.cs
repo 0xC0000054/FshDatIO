@@ -130,6 +130,7 @@ namespace FshDatIO
         const int QfsMaxBlockSize = 1028;
         const int CompMaxLen = 131072; // FshTool's WINDOWLEN
         const int CompMask = CompMaxLen - 1;  // Fshtool's WINDOWMASK
+        const int LiteralRunMaxLength = 27;
         /// <summary>
         /// Compresses the input byte array with QFS compression
         /// </summary>
@@ -173,26 +174,25 @@ namespace FshDatIO
             outbuf[4] = (byte)(inlen & 0xff);
             int outIndex = 5;
 
-            int bestLength = 0;
-            int bestOffset = 0;
             int len = 0;
-            int offs = 0;
             int lastwrot = 0;
             int index = 0;
 
             for (index = 0; index < inlen; index++)
             {
-                int temp = last_rev[inbuf[index], inbuf[index + 1]];
-                offs = similar_rev[index & CompMask] = temp;
+                int offs = last_rev[inbuf[index], inbuf[index + 1]];
+                similar_rev[index & CompMask] = offs;
                 last_rev[inbuf[index], inbuf[index + 1]] = index;
 
                 if (index < lastwrot)
                 {
                     continue;
                 }
-                bestLength = 0;
+                
+                int bestLength = 0;            
+                int bestOffset = 0;
                 int iterCount = 0;
-                while (((offs >= 0) && ((index - offs) < CompMaxLen)) && (iterCount++ < QfsMaxIterCount))
+                while (((offs >= 0) && ((index - offs) < CompMaxLen)) && (iterCount < QfsMaxIterCount))
                 {
                     len = 2;
                     while ((inbuf[index + len] == inbuf[offs + len]) && (len < QfsMaxBlockSize))
@@ -205,6 +205,7 @@ namespace FshDatIO
                         bestOffset = index - offs;
                     }
                     offs = similar_rev[offs & CompMask];
+                    iterCount++;
                 }
                 if (bestLength > (inlen - index))
                 {
@@ -227,19 +228,20 @@ namespace FshDatIO
                     while ((index - lastwrot) >= 4) // 1 byte op code 0xE0 - 0xFB
                     {
                         len = ((index - lastwrot) / 4) - 1;
-                        if (len > 0x1b)
+                        if (len > LiteralRunMaxLength)
                         {
-                            len = 0x1b;
+                            len = LiteralRunMaxLength;
                         }
                         outbuf[outIndex++] = (byte)(0xe0 + len);
-                        len = (4 * len) + 4;
-                        if ((outIndex + len) >= outbuf.Length)
+                        
+                        int blockLength = (len * 4) + 4;
+                        if ((outIndex + blockLength) >= outbuf.Length)
                         {
                             return null;// data did not compress so return null
                         }
-                        Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, len);
-                        lastwrot += len;
-                        outIndex += len;
+                        Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, blockLength);
+                        lastwrot += blockLength;
+                        outIndex += blockLength;
                     }
                     len = index - lastwrot;
                     if ((bestLength <= 10) && (bestOffset <= 1024)) // 2 byte op code  0x00 - 0x7f
@@ -295,21 +297,21 @@ namespace FshDatIO
             while ((index - lastwrot) >= 4) // 1 byte op code 0xE0 - 0xFB
             {
                 len = ((index - lastwrot) / 4) - 1;
-                if (len > 0x1b)
+                if (len > LiteralRunMaxLength)
                 {
-                    len = 0x1b;
+                    len = LiteralRunMaxLength;
                 }
                 outbuf[outIndex++] = (byte)(0xe0 + len);
-                len = (4 * len) + 4;
+                int blockLength = (len * 4) + 4;
 
-                if ((outIndex + len) >= outbuf.Length)
+                if ((outIndex + blockLength) >= outbuf.Length)
                 {
                     return null; // data did not compress so return null
                 }
 
-                Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, len);
-                lastwrot += len;
-                outIndex += len;
+                Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, blockLength);
+                lastwrot += blockLength;
+                outIndex += blockLength;
             }
             len = index - lastwrot;
 

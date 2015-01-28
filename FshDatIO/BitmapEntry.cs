@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace FshDatIO
 {
@@ -173,6 +174,39 @@ namespace FshDatIO
             this.disposed = false;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BitmapEntry" /> class.
+        /// </summary>
+        /// <param name="bitmap">The bitmap.</param>
+        /// <param name="alpha">The alpha.</param>
+        /// <param name="bmpType">The <see cref="FshImageFormat" /> of the entry.</param>
+        /// <param name="dirName">The directory name of the entry.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="bitmap"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="alpha"/> is null.</exception>
+        public BitmapEntry(Bitmap bitmap, Bitmap alpha, FshImageFormat bmpType, string dirName)
+        {
+            if (bitmap == null)
+            {
+                throw new ArgumentNullException("bitmap");
+            }
+
+            if (alpha == null)
+            {
+                throw new ArgumentNullException("alpha");
+            }
+
+            Rectangle imageRect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+            this.bitmap = bitmap.Clone(imageRect, PixelFormat.Format24bppRgb);
+            this.alpha = alpha.Clone(imageRect, PixelFormat.Format24bppRgb);
+            this.bmpType = FshImageFormat.DXT1;
+            this.dirName = dirName;
+            this.embeddedMipmapCount = 0;
+            this.packedMbp = false;
+            this.miscHeader = null;
+            this.attachments = null;
+            this.disposed = false;
+        }
+
         internal BitmapEntry(FshImageFormat format, string dirName, int embeddedMipCount, bool mipsPacked, ushort[] miscData)
         {
             this.bitmap = null;
@@ -225,21 +259,30 @@ namespace FshDatIO
 
             int mips = 0;
 
-            while (width > 1 && height > 1)
+            // The image must be divisible by 2.
+            if ((width & 1) == 0 && (height & 1) == 0)
             {
-                mips++;
-                width /= 2;
-                height /= 2;
-            }
+                while (width > 1 && height > 1)
+                {
+                    mips++;
+                    width /= 2;
+                    height /= 2;
+                }
 
-            if (mips > 15)
-            {
-                mips = 0; // FSH images can have a maximum of 15 mipmaps.
-            }
+                int mipScale = 1 << mips;
 
-            if (bmpType == FshImageFormat.DXT1)
-            {
-                this.packedMbp = true;
+                // The image must be divisible by the number of mipmaps, and the total number of mipmaps must be less than 15.
+                if (((bitmap.Width % mipScale) != 0 || (bitmap.Height % mipScale) != 0) || mips > 15)
+                {
+                    mips = 0;
+                }
+                else
+                {
+                    if (bmpType == FshImageFormat.DXT1)
+                    {
+                        this.packedMbp = true;
+                    }
+                }
             }
 
             this.embeddedMipmapCount = mips;

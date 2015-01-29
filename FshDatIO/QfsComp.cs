@@ -131,9 +131,10 @@ namespace FshDatIO
         const int CompMaxLen = 131072; // FshTool's WINDOWLEN
         const int CompMask = CompMaxLen - 1;  // Fshtool's WINDOWMASK
         /// <summary>
-        /// The literal run maximum length, 112 bytes
+        /// The maximum length of a literal run, 112 bytes
         /// </summary>
         const int LiteralRunMaxLength = 112;
+        
         /// <summary>
         /// Compresses the input byte array with QFS compression
         /// </summary>
@@ -195,10 +196,10 @@ namespace FshDatIO
                 int bestLength = 0;
                 int bestOffset = 0;
                 int iterCount = 0;
-                while (((offs >= 0) && ((index - offs) < CompMaxLen)) && (iterCount < QfsMaxIterCount))
+                while (offs >= 0 && (index - offs) < CompMaxLen && iterCount < QfsMaxIterCount)
                 {
                     run = 2;
-                    while ((inbuf[index + run] == inbuf[offs + run]) && (run < QfsMaxBlockSize))
+                    while (inbuf[index + run] == inbuf[offs + run] && run < QfsMaxBlockSize)
                     {
                         run++;
                     }
@@ -232,7 +233,7 @@ namespace FshDatIO
                 if (bestLength > 0)
                 {
                     run = index - lastwrot;
-                    while (run > 3) // 1 byte op code 0xE0 - 0xFB
+                    while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
                     {
                         int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
                         outbuf[outIndex++] = (byte)(0xE0 + ((blockLength / 4) - 1));
@@ -298,7 +299,7 @@ namespace FshDatIO
             index = inlen;
             run = index - lastwrot;
             // write the end data
-            while (run > 3) // 1 byte op code 0xE0 - 0xFB
+            while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
             {
                 int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
                 outbuf[outIndex++] = (byte)(0xE0 + ((blockLength / 4) - 1));

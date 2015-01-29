@@ -388,16 +388,14 @@ namespace FshDatIO
 #if DEBUG
                             System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
 #endif
-                            if (fshw.Image == null)
+                            if (fshw.Image != null)
                             {
-                                continue; // skip any null images
-                            }
-
-                            location = writer.BaseStream.Position;
-                            size = fshw.Save(writer.BaseStream);
-                            if (fshw.Image.IsCompressed)
-                            {
-                                compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
+                                location = writer.BaseStream.Position;
+                                size = fshw.Save(writer.BaseStream);
+                                if (fshw.Image.IsCompressed)
+                                {
+                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
+                                }   
                             }
                         }
                         else

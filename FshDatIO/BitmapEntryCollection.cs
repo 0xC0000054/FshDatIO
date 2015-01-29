@@ -25,7 +25,10 @@ namespace FshDatIO
         {
             this.disposed = false;
         }
-        
+
+        /// <summary>
+        /// Removes all elements from the <see cref="T:System.Collections.ObjectModel.Collection`1" />.
+        /// </summary>
         protected override void ClearItems()
         {
             IList<BitmapEntry> items = Items;
@@ -41,6 +44,10 @@ namespace FshDatIO
             base.ClearItems();
         }
 
+        /// <summary>
+        /// Removes the element at the specified index of the <see cref="T:System.Collections.ObjectModel.Collection`1" />.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to remove.</param>
         protected override void RemoveItem(int index)
         {
             BitmapEntry entry = Items[index];
@@ -53,6 +60,9 @@ namespace FshDatIO
             base.RemoveItem(index);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);

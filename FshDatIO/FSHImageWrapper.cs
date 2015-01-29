@@ -19,6 +19,7 @@ namespace FshDatIO
 		private FSHDirEntry[] dirs;
 		private bool isCompressed;
 		private byte[] rawData;
+		private bool disposed;
 
 		/// <summary>
 		/// Gets the collection of <see cref="BitmapEntry"/> items.
@@ -592,10 +593,15 @@ namespace FshDatIO
 			{
 				throw new ArgumentNullException("stream");
 			}
+			this.bitmaps = new BitmapEntryCollection();
+			this.dirs = null;
+			this.isCompressed = false;
+			this.rawData = null;
+			this.disposed = false;
 
 			byte[] bytes = new byte[stream.Length];
 			stream.ProperRead(bytes, 0, (int)stream.Length);
-			this.Load(bytes);
+			Load(bytes);
 		}
 		/// <summary>
 		/// Initializes a new instance of the <see cref="FSHImageWrapper"/> class.
@@ -617,8 +623,13 @@ namespace FshDatIO
 			{
 				throw new ArgumentException("imageBytes is a zero length array.", "imageBytes");
 			}
+			this.bitmaps = new BitmapEntryCollection();
+			this.dirs = null;
+			this.isCompressed = false;
+			this.rawData = null;
+			this.disposed = false;
 
-			this.Load(imageBytes);
+			Load(imageBytes);
 		}
 
 		private FSHImageWrapper(FSHImageWrapper cloneMe)
@@ -1220,25 +1231,21 @@ namespace FshDatIO
 			return true;
 		}
 
-		private bool disposed;
 		/// <summary>
 		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 		/// </summary>
 		public void Dispose()
 		{
-			if (!disposed)
+			if (!this.disposed)
 			{
+				this.disposed = true;
 				if (bitmaps != null)
 				{
-					foreach (var item in bitmaps)
-					{
-						item.Dispose();
-					}
-					bitmaps.Clear();
+					bitmaps.Dispose();
 					bitmaps = null;
 				}
 
-				this.disposed = true;
+				
 			}
 
 			GC.SuppressFinalize(this);

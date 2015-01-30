@@ -55,7 +55,7 @@ namespace FshDatIO
             {
                 ccbyte1 = compressedData[index++];
 
-                if (ccbyte1 >= 0xE0) // 1 byte op code 0xE0 - 0xFB
+                if (ccbyte1 >= 0xE0) // 1 byte literal op code 0xE0 - 0xFB
                 {
                     plainCount = ((ccbyte1 & 0x1F) << 2) + 4;
                     copyCount = 0;
@@ -252,9 +252,10 @@ namespace FshDatIO
                     {
                         outbuf[outIndex++] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
                         outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
+                        
                         if ((outIndex + run) >= inlen)
                         {
-                            return null;// data did not compress so return null
+                            return null;
                         }
                         while (run-- > 0)
                         {
@@ -267,9 +268,10 @@ namespace FshDatIO
                         outbuf[outIndex++] = (byte)(0x80 + (bestLength - 4));
                         outbuf[outIndex++] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
                         outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
+                        
                         if ((outIndex + run) >= inlen)
                         {
-                            return null;// data did not compress so return null
+                            return null;
                         }
                         while (run-- > 0)
                         {
@@ -277,13 +279,14 @@ namespace FshDatIO
                         }
                         lastwrot += bestLength;
                     }
-                    else if (bestLength <= QfsMaxBlockSize && bestOffset < CompMaxLen) // 4 byte op code 0xC0 - 0xFB
+                    else if (bestLength <= QfsMaxBlockSize && bestOffset < CompMaxLen) // 4 byte op code 0xC0 - 0xDF
                     {
                         bestOffset--;
                         outbuf[outIndex++] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
                         outbuf[outIndex++] = (byte)((bestOffset >> 8) & 0xff);
                         outbuf[outIndex++] = (byte)(bestOffset & 0xff);
                         outbuf[outIndex++] = (byte)((bestLength - 5) & 0xff);
+                        
                         if ((outIndex + run) >= inlen)
                         {
                             return null;
@@ -314,7 +317,7 @@ namespace FshDatIO
                 run -= blockLength;
             }
 
-            // 1 byte EOF op code 0xFC - 0xFF 
+            // 1 byte EOF op code 0xFC - 0xFF
             outbuf[outIndex++] = (byte)(0xFC + run);
             if ((outIndex + run) >= inlen)
             {

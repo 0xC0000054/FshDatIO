@@ -198,7 +198,7 @@ namespace FshDatIO
             Rectangle imageRect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
             this.bitmap = bitmap.Clone(imageRect, PixelFormat.Format24bppRgb);
             this.alpha = alpha.Clone(imageRect, PixelFormat.Format24bppRgb);
-            this.bmpType = FshImageFormat.DXT1;
+            this.bmpType = bmpType;
             this.dirName = dirName;
             this.embeddedMipmapCount = 0;
             this.packedMbp = false;

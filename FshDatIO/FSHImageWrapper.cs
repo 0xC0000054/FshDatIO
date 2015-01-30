@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Security.Permissions;
-using System.Text;
 using FshDatIO.Properties;
-using System.Collections.Generic;
 
 namespace FshDatIO
 {
@@ -88,7 +87,6 @@ namespace FshDatIO
 			return imageBytes;
 		}
 
-
 		/// <summary>
 		/// Gets the size of the BMP data.
 		/// </summary>
@@ -98,7 +96,7 @@ namespace FshDatIO
 		/// <returns>The size of the bitmap data.</returns>
 		private static int GetBmpDataSize(int width, int height, FshImageFormat code)
 		{
-			int size = 0;
+			int size;
 			switch (code)
 			{
 				case FshImageFormat.ThirtyTwoBit:
@@ -113,6 +111,8 @@ namespace FshDatIO
 				case FshImageFormat.DXT3:
 					size = (width * height);
 					break;
+				default:
+					throw new FormatException(Resources.UnsupportedFshType);
 			}
 
 			return size;
@@ -181,7 +181,6 @@ namespace FshDatIO
 			}
 			else if (format == FshImageFormat.ThirtyTwoBit) // 32-bit BGRA
 			{
-
 				bd = entry.Bitmap.LockBits(lockRect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 				ad = entry.Alpha.LockBits(lockRect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 

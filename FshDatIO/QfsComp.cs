@@ -53,19 +53,22 @@ namespace FshDatIO
 
             while (index < length && compressedData[index] < 0xFC)
             {
-                ccbyte1 = compressedData[index++];
+                ccbyte1 = compressedData[index];
 
                 if (ccbyte1 >= 0xE0) // 1 byte literal op code 0xE0 - 0xFB
                 {
+                    index++;
+
                     plainCount = ((ccbyte1 & 0x1F) << 2) + 4;
                     copyCount = 0;
                     copyOffset = 0;
                 }
                 else if (ccbyte1 >= 0xC0) // 4 byte op code 0xC0 - 0xDF
                 {
-                    ccbyte2 = compressedData[index++];
-                    ccbyte3 = compressedData[index++];
-                    ccbyte4 = compressedData[index++];
+                    ccbyte2 = compressedData[index + 1];
+                    ccbyte3 = compressedData[index + 2];
+                    ccbyte4 = compressedData[index + 3];
+                    index += 4;
 
                     plainCount = (ccbyte1 & 3);
                     copyCount = ((ccbyte1 & 0x0C) << 6) + ccbyte4 + 5;
@@ -73,8 +76,9 @@ namespace FshDatIO
                 }
                 else if (ccbyte1 >= 0x80) // 3 byte op code 0x80 - 0xBF
                 {
-                    ccbyte2 = compressedData[index++];
-                    ccbyte3 = compressedData[index++];
+                    ccbyte2 = compressedData[index + 1];
+                    ccbyte3 = compressedData[index + 2];
+                    index += 3;
 
                     plainCount = (ccbyte2 & 0xC0) >> 6;
                     copyCount = (ccbyte1 & 0x3F) + 4;
@@ -82,7 +86,8 @@ namespace FshDatIO
                 }
                 else // 2 byte op code 0x00 - 0x7F
                 {
-                    ccbyte2 = compressedData[index++];
+                    ccbyte2 = compressedData[index + 1];
+                    index += 2;
 
                     plainCount = (ccbyte1 & 3);
                     copyCount = ((ccbyte1 & 0x1C) >> 2) + 3;
@@ -113,7 +118,8 @@ namespace FshDatIO
             if (index < length && outIndex < outLength)
             {
                 // 1 byte EOF op code 0xFC - 0xFF.
-                plainCount = (compressedData[index++] & 3);
+                plainCount = (compressedData[index] & 3);
+                index++;
 
                 for (int i = 0; i < plainCount; i++)
                 {
@@ -236,7 +242,8 @@ namespace FshDatIO
                     while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
                     {
                         int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
-                        outbuf[outIndex++] = (byte)(0xE0 + ((blockLength / 4) - 1));
+                        outbuf[outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
+                        outIndex++;
 
                         if ((outIndex + blockLength) >= inlen)
                         {
@@ -250,50 +257,59 @@ namespace FshDatIO
 
                     if (bestLength <= 10 && bestOffset <= 1024) // 2 byte op code  0x00 - 0x7f
                     {
-                        outbuf[outIndex++] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
-                        outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
+                        outbuf[outIndex] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
+                        outbuf[outIndex + 1] = (byte)((bestOffset - 1) & 0xff);
+                        outIndex += 2;
                         
                         if ((outIndex + run) >= inlen)
                         {
                             return null;
                         }
-                        while (run-- > 0)
+                        for (int i = 0; i < run; i++)
                         {
-                            outbuf[outIndex++] = inbuf[lastwrot++];
+                            outbuf[outIndex] = inbuf[lastwrot];
+                            lastwrot++;
+                            outIndex++;
                         }
                         lastwrot += bestLength;
                     }
                     else if (bestLength <= 67 && bestOffset <= 16384)  // 3 byte op code 0x80 - 0xBF
                     {
-                        outbuf[outIndex++] = (byte)(0x80 + (bestLength - 4));
-                        outbuf[outIndex++] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
-                        outbuf[outIndex++] = (byte)((bestOffset - 1) & 0xff);
+                        outbuf[outIndex] = (byte)(0x80 + (bestLength - 4));
+                        outbuf[outIndex + 1] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
+                        outbuf[outIndex + 2] = (byte)((bestOffset - 1) & 0xff);
+                        outIndex += 3;
                         
                         if ((outIndex + run) >= inlen)
                         {
                             return null;
                         }
-                        while (run-- > 0)
+                        for (int i = 0; i < run; i++)
                         {
-                            outbuf[outIndex++] = inbuf[lastwrot++];
+                            outbuf[outIndex] = inbuf[lastwrot];
+                            lastwrot++;
+                            outIndex++;
                         }
                         lastwrot += bestLength;
                     }
                     else if (bestLength <= QfsMaxBlockSize && bestOffset < CompMaxLen) // 4 byte op code 0xC0 - 0xDF
                     {
                         bestOffset--;
-                        outbuf[outIndex++] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
-                        outbuf[outIndex++] = (byte)((bestOffset >> 8) & 0xff);
-                        outbuf[outIndex++] = (byte)(bestOffset & 0xff);
-                        outbuf[outIndex++] = (byte)((bestLength - 5) & 0xff);
+                        outbuf[outIndex] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
+                        outbuf[outIndex + 1] = (byte)((bestOffset >> 8) & 0xff);
+                        outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);
+                        outbuf[outIndex + 3] = (byte)((bestLength - 5) & 0xff);
+                        outIndex += 4;
                         
                         if ((outIndex + run) >= inlen)
                         {
                             return null;
                         }
-                        while (run-- > 0)
+                        for (int i = 0; i < run; i++)
                         {
-                            outbuf[outIndex++] = inbuf[lastwrot++];
+                            outbuf[outIndex] = inbuf[lastwrot];
+                            lastwrot++;
+                            outIndex++;
                         }
                         lastwrot += bestLength;
                     }
@@ -305,7 +321,8 @@ namespace FshDatIO
             while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
             {
                 int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
-                outbuf[outIndex++] = (byte)(0xE0 + ((blockLength / 4) - 1));
+                outbuf[outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
+                outIndex++;
 
                 if ((outIndex + blockLength) >= inlen)
                 {
@@ -318,15 +335,18 @@ namespace FshDatIO
             }
 
             // 1 byte EOF op code 0xFC - 0xFF
-            outbuf[outIndex++] = (byte)(0xFC + run);
+            outbuf[outIndex] = (byte)(0xFC + run);
+            outIndex++;
             if ((outIndex + run) >= inlen)
             {
                 return null;
             }
 
-            while (run-- > 0)
+            for (int i = 0; i < run; i++)
             {
-                outbuf[outIndex++] = inbuf[lastwrot++];
+                outbuf[outIndex] = inbuf[lastwrot];
+                lastwrot++;
+                outIndex++;
             }
 
             if (prefixLength)

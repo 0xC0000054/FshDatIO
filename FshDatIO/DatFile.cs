@@ -287,8 +287,7 @@ namespace FshDatIO
 
             fshItem.Compressed = compress;
 
-            DatIndex index = new DatIndex(FshTypeID, group, instance, fshItem);
-            this.indices.Add(index);
+            this.indices.Add(new DatIndex(FshTypeID, group, instance, fshItem));
 
             this.dirty = true;
         }
@@ -428,7 +427,7 @@ namespace FshDatIO
 
                             writer.Write(rawbuf);
 
-                            if ((rawbuf.Length > 5) && ((rawbuf[0] & 0xfe) == 0x10 && rawbuf[1] == 0xfb || (rawbuf[4] & 0xfe) == 0x10 && rawbuf[5] == 0xfb))
+                            if ((rawbuf.Length > 5) && ((rawbuf[0] & 0xfe) == 0x10 && rawbuf[1] == 0xFB || rawbuf[4] == 0x10 && rawbuf[5] == 0xFB))
                             {
                                 compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                             }
@@ -453,7 +452,7 @@ namespace FshDatIO
 
                     uint entryCount = (uint)saveIndices.Count;
                     location = writer.BaseStream.Position;
-                    size = (entryCount * DatIndex.SizeOf);
+                    size = entryCount * DatIndex.SizeOf;
                     for (int i = 0; i < saveIndices.Count; i++)
                     {
                         saveIndices[i].Save(writer);

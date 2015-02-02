@@ -425,7 +425,7 @@ namespace FshDatIO
 							{
 								auxOffset += (auxCode >> 8); // the section length is the start offset for the attachment
 
-								if ((auxOffset + 4) >= fshSize)
+								if ((auxOffset + 4) >= nextOffset)
 								{
 									break;
 								}

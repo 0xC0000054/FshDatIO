@@ -54,21 +54,22 @@ namespace FshDatIO
             while (index < length && compressedData[index] < 0xFC)
             {
                 ccbyte1 = compressedData[index];
+                index++;
 
                 if (ccbyte1 >= 0xE0) // 1 byte literal op code 0xE0 - 0xFB
                 {
-                    index++;
-
                     plainCount = ((ccbyte1 & 0x1F) << 2) + 4;
                     copyCount = 0;
                     copyOffset = 0;
                 }
                 else if (ccbyte1 >= 0xC0) // 4 byte op code 0xC0 - 0xDF
                 {
-                    ccbyte2 = compressedData[index + 1];
-                    ccbyte3 = compressedData[index + 2];
-                    ccbyte4 = compressedData[index + 3];
-                    index += 4;
+                    ccbyte2 = compressedData[index];
+                    index++;
+                    ccbyte3 = compressedData[index];
+                    index++;
+                    ccbyte4 = compressedData[index];
+                    index++;
 
                     plainCount = (ccbyte1 & 3);
                     copyCount = ((ccbyte1 & 0x0C) << 6) + ccbyte4 + 5;
@@ -76,9 +77,10 @@ namespace FshDatIO
                 }
                 else if (ccbyte1 >= 0x80) // 3 byte op code 0x80 - 0xBF
                 {
-                    ccbyte2 = compressedData[index + 1];
-                    ccbyte3 = compressedData[index + 2];
-                    index += 3;
+                    ccbyte2 = compressedData[index];
+                    index++;
+                    ccbyte3 = compressedData[index];
+                    index++;
 
                     plainCount = (ccbyte2 & 0xC0) >> 6;
                     copyCount = (ccbyte1 & 0x3F) + 4;
@@ -86,8 +88,8 @@ namespace FshDatIO
                 }
                 else // 2 byte op code 0x00 - 0x7F
                 {
-                    ccbyte2 = compressedData[index + 1];
-                    index += 2;
+                    ccbyte2 = compressedData[index];
+                    index++;
 
                     plainCount = (ccbyte1 & 3);
                     copyCount = ((ccbyte1 & 0x1C) >> 2) + 3;

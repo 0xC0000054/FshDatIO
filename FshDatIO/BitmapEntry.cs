@@ -286,6 +286,15 @@ namespace FshDatIO
             }
 
             this.embeddedMipmapCount = mips;
+            if (this.miscHeader != null)
+            {
+                int existingMips = (this.miscHeader[3] >> 12) & 0x0f;
+
+                if (this.embeddedMipmapCount != existingMips)
+                {
+                    this.miscHeader[3] = (ushort)(this.embeddedMipmapCount << 12); 
+                }
+            }
         }
 
     }

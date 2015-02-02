@@ -43,7 +43,7 @@ namespace FshDatIO
         public static unsafe byte[] CompressImage(byte* scan0, int srcStride, int width, int height, int flags)
         {
 
-            byte[] pixelData = new byte[width * height * 4 + 2000];
+            byte[] pixelData = new byte[width * height * 4];
 
             int dstStride = width * 4;
             fixed (byte* ptr = pixelData)
@@ -70,7 +70,9 @@ namespace FshDatIO
             int blockSize = ((flags & (int)SquishFlags.kDxt1) != 0) ? 8 : 16;
 
             // Allocate room for compressed blocks
-            byte[] blockData = new byte[blockCount * blockSize];
+            // with 16 bytes of padding after the compressed image data.
+            
+            byte[] blockData = new byte[(blockCount * blockSize) + 16];
 
             // Invoke squish::CompressImage() with the required parameters
             CompressImageWrapper(pixelData, width, height, blockData, flags);

@@ -21,7 +21,7 @@ namespace FshDatIO
         private uint indexLoc;
         private uint indexSize;
         private uint holeCount;
-        private uint holeIdxLoc;
+        private uint holeIndexLocation;
         private uint holeSize;
 
         /// <summary>
@@ -39,6 +39,7 @@ namespace FshDatIO
                 return vMajor;
             }
         }
+
         /// <summary>
         /// Gets the header minor version.
         /// </summary>
@@ -49,6 +50,7 @@ namespace FshDatIO
                 return vMinor;
             }
         }
+
         /// <summary>
         /// Gets the major user version.
         /// </summary>
@@ -59,6 +61,7 @@ namespace FshDatIO
                 return uVMajor;
             }
         }
+
         /// <summary>
         /// Gets the minor user version.
         /// </summary>
@@ -69,6 +72,7 @@ namespace FshDatIO
                 return uVMinor;
             }
         }
+
         /// <summary>
         /// Gets the header flags.
         /// </summary>
@@ -79,6 +83,7 @@ namespace FshDatIO
                 return flags;
             }
         }
+
         /// <summary>
         /// The Date the DatFile was Created (In Unix Timestamp format, the number of seconds since 1 / 1 / 1970) 
         /// </summary>
@@ -93,6 +98,7 @@ namespace FshDatIO
                 dateCreated = value;
             }
         }
+
         /// <summary>
         /// The Date the DatFile was Modified (In Unix Timestamp format, the number of seconds since 1 / 1 / 1970) 
         /// </summary>
@@ -107,6 +113,7 @@ namespace FshDatIO
                 dateModified = value;
             }
         }
+
         /// <summary>
         /// Gets the  major version of the index.
         /// </summary>
@@ -117,6 +124,7 @@ namespace FshDatIO
                 return indexVMajor;
             }
         }
+
         /// <summary>
         /// Gets the number of entries in the file.
         /// </summary>
@@ -131,6 +139,7 @@ namespace FshDatIO
                 entries = value;
             }
         }
+
         /// <summary>
         /// Gets the start location of the index.
         /// </summary>
@@ -145,6 +154,7 @@ namespace FshDatIO
                 indexLoc = value;
             }
         }
+
         /// <summary>
         /// Gets the size of the index.
         /// </summary>
@@ -170,16 +180,18 @@ namespace FshDatIO
                 return holeCount;
             }
         }
+
         /// <summary>
         /// Gets the hole index location.
         /// </summary>
-        public uint HoleIndexLoc
+        public uint HoleIndexLocation
         {
             get
             {
-                return holeIdxLoc;
+                return holeIndexLocation;
             }
         }
+
         /// <summary>
         /// Gets the size of the hole.
         /// </summary>
@@ -206,7 +218,7 @@ namespace FshDatIO
             this.indexSize = 0;
             this.holeCount = 0;
             this.holeSize = 0;
-            this.holeIdxLoc = 0;
+            this.holeIndexLocation = 0;
         }
 
         /// <summary>
@@ -257,7 +269,7 @@ namespace FshDatIO
             this.indexLoc = reader.ReadUInt32();
             this.indexSize = reader.ReadUInt32();
             this.holeCount = reader.ReadUInt32();
-            this.holeIdxLoc = reader.ReadUInt32();
+            this.holeIndexLocation = reader.ReadUInt32();
             this.holeSize = reader.ReadUInt32();
         }
         
@@ -286,7 +298,7 @@ namespace FshDatIO
             writer.Write(this.indexLoc);
             writer.Write(this.indexSize);
             writer.Write(this.holeCount);
-            writer.Write(this.holeIdxLoc);
+            writer.Write(this.holeIndexLocation);
             writer.Write(this.holeSize);
             byte[] reservedBytes = new byte[36];
             writer.Write(reservedBytes); // reserved byte padding

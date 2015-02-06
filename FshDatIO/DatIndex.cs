@@ -25,7 +25,7 @@ namespace FshDatIO
     /// <summary>
     /// The class that holds the TGI and location data of an entry within the DatFile 
     /// </summary>
-    public sealed class DatIndex
+    public sealed class DatIndex : IEquatable<DatIndex>
     {
         private readonly uint type;
         private readonly uint group;
@@ -207,5 +207,55 @@ namespace FshDatIO
             bw.Write(this.fileSize);
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
+        /// </summary>
+        /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+        /// </returns>
+        public override bool Equals(object obj)
+        {
+            DatIndex other = obj as DatIndex;
+
+            if (other != null)
+            {
+                return Equals(other);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">An object to compare with this object.</param>
+        /// <returns>
+        /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
+        /// </returns>
+        public bool Equals(DatIndex other)
+        {
+            return (this.type == other.type && this.group == other.group && this.instance == other.instance && this.location == other.location && this.fileSize == other.fileSize);
+        }
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// </returns>
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = this.type.GetHashCode();
+                hash = hash * this.group.GetHashCode();
+                hash = hash * this.instance.GetHashCode();
+                hash = hash * this.location.GetHashCode();
+                hash = hash * this.fileSize.GetHashCode();
+
+                return hash;
+            }
+        }
     }
 }

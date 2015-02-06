@@ -27,11 +27,11 @@ namespace FshDatIO
     /// </summary>
     public sealed class DatIndex
     {
-        private uint type;
-        private uint group;
-        private uint instance;
-        private uint location;
-        private uint fileSize;
+        private readonly uint type;
+        private readonly uint group;
+        private readonly uint instance;
+        private readonly uint location;
+        private readonly uint fileSize;
         private DatIndexState indexState;
         private FshFileItem fileItem;
 
@@ -47,10 +47,6 @@ namespace FshDatIO
             {
                 return type;
             }
-            private set
-            {
-                type = value;
-            }
         }
 
         /// <summary>
@@ -61,10 +57,6 @@ namespace FshDatIO
             get
             {
                 return group;
-            }
-            private set
-            {
-                group = value;
             }
         }
 
@@ -77,10 +69,6 @@ namespace FshDatIO
             {
                 return instance;
             }
-            private set
-            {
-                instance = value;
-            }
         }
 
         /// <summary>
@@ -91,10 +79,6 @@ namespace FshDatIO
             get
             {
                 return location;
-            }
-            private set
-            {
-                location = value;
             }
         }
 
@@ -109,10 +93,6 @@ namespace FshDatIO
             get
             {
                 return fileSize;
-            }
-            private set
-            {
-                fileSize = value;
             }
         }
 
@@ -157,13 +137,13 @@ namespace FshDatIO
         /// </summary>
         internal DatIndex()
         {
-            this.Type = 0;
-            this.Group = 0;
-            this.Instance = 0;
-            this.Location = 0;
-            this.FileSize = 0;
-            this.IndexState = DatIndexState.None;
-            this.FileItem = null;
+            this.type = 0;
+            this.group = 0;
+            this.instance = 0;
+            this.location = 0;
+            this.fileSize = 0;
+            this.indexState = DatIndexState.None;
+            this.fileItem = null;
         }
 
         /// <summary>
@@ -176,12 +156,12 @@ namespace FshDatIO
         /// <param name="fileSize">Size of the entry.</param>
         internal DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
         {
-            this.Type = type;
-            this.Group = group;
-            this.Instance = instance;
-            this.Location = location;
-            this.FileSize = fileSize;
-            this.IndexState = DatIndexState.None;
+            this.type = type;
+            this.group = group;
+            this.instance = instance;
+            this.location = location;
+            this.fileSize = fileSize;
+            this.indexState = DatIndexState.None;
         }
 
         /// <summary>
@@ -199,13 +179,13 @@ namespace FshDatIO
                 throw new ArgumentNullException("fileItem");
             }
 
-            this.Type = type;
-            this.Group = group;
-            this.Instance = instance;
-            this.Location = 0;
-            this.FileSize = 0;
-            this.IndexState = DatIndexState.New;
-            this.FileItem = fileItem;
+            this.type = type;
+            this.group = group;
+            this.instance = instance;
+            this.location = 0;
+            this.fileSize = 0;
+            this.indexState = DatIndexState.New;
+            this.fileItem = fileItem;
         }
 
         /// <summary>

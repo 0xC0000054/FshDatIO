@@ -121,21 +121,25 @@ namespace FshDatIO
                 throw new ArgumentNullException("fileName");
             }
 
-            this.Load(new FileStream(fileName, FileMode.Open, FileAccess.Read));
             this.datFileName = fileName;
+            this.dirty = false;
+            this.loaded = false;
+            this.reader = null;
+            Load(fileName);
         }
 
         /// <summary>
-        /// Loads a DatFile from the specified Stream
+        /// Loads a DatFile from the specified file
         /// </summary>
-        /// <param name="input">The input stream to load from</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the <see cref="Stream"></see> input is null</exception>
+        /// <param name="path">The path to the file.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when <param ref="path" /> is null</exception>
         /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
-        public void Load(Stream input)
+        /// <exception cref="System.IO.FileNotFoundException">Thrown when the specified file does not exist.</exception>
+        public void Load(string path)
         {
-            if (input == null)
+            if (path == null)
             {
-                throw new ArgumentNullException("input", "input is null.");
+                throw new ArgumentNullException("fileName");
             }
 
             if (this.reader != null)
@@ -143,34 +147,52 @@ namespace FshDatIO
                 this.reader.Close();
             }
 
-            this.reader = new BinaryReader(input);
+            FileStream stream = null;
 
-            this.header = new DatHeader(reader);
-
-            int entryCount = (int)header.Entries;
-
-            this.indices = new DatIndexCollection(entryCount);
-
-            this.reader.BaseStream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
-            for (int i = 0; i < entryCount; i++)
+            try
             {
-                uint type = reader.ReadUInt32();
-                uint group = reader.ReadUInt32();
-                uint instance = reader.ReadUInt32();
-                uint location = reader.ReadUInt32();
-                uint size = reader.ReadUInt32();
+                stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                this.reader = new BinaryReader(stream);
+                stream = null;
 
-                DatIndex index = new DatIndex(type, group, instance, location, size);
-                if (type == FshTypeID)
+                this.header = new DatHeader(reader);
+                int entryCount = (int)header.Entries;
+
+                this.indices = new DatIndexCollection(entryCount);
+
+                this.reader.BaseStream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
+                for (int i = 0; i < entryCount; i++)
                 {
-                    index.FileItem = new FshFileItem();
+                    uint type = reader.ReadUInt32();
+                    uint group = reader.ReadUInt32();
+                    uint instance = reader.ReadUInt32();
+                    uint location = reader.ReadUInt32();
+                    uint size = reader.ReadUInt32();
+
+                    DatIndex index = new DatIndex(type, group, instance, location, size);
+                    if (type == FshTypeID)
+                    {
+                        index.FileItem = new FshFileItem();
+                    }
+                    this.indices.Add(index);
                 }
-                this.indices.Add(index);
+
+                this.indices.SortByLocation();
+
+                this.loaded = true;
             }
-
-            this.indices.SortByLocation();
-
-            this.loaded = true;
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                if (stream != null)
+                {
+                    stream.Dispose();
+                    stream = null;
+                }
+            }
         }
 
         /// <summary>
@@ -352,17 +374,18 @@ namespace FshDatIO
                 throw new ArgumentNullException("fileName");
             }
 
+            string saveFileName = fileName;
             if (fileName == this.datFileName && this.reader != null)
             {
-                this.reader.Close(); // if the fileName is the same close the BinaryReader
-                this.reader = null;
+                // When overwriting an existing file, we save to a temporary file first and then use File.Copy to overwrite it if the save was successful.
+                saveFileName = Path.GetTempFileName();
             }
 
             FileStream fs = null;
 
             try
             {
-                fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                fs = new FileStream(saveFileName, FileMode.OpenOrCreate, FileAccess.Write);
 
                 using (BinaryWriter writer = new BinaryWriter(fs))
                 {
@@ -383,20 +406,23 @@ namespace FshDatIO
                     {
                         DatIndex index = indices[i];
 
-                        if (index.IndexState == DatIndexState.New && index.Type == FshTypeID)
+                        if (index.IndexState == DatIndexState.New)
                         {
-                            FshFileItem fshw = index.FileItem;
-#if DEBUG
-                            System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
-#endif
-                            if (fshw.Image != null)
+                            if (index.Type == FshTypeID)
                             {
-                                location = writer.BaseStream.Position;
-                                size = fshw.Save(writer.BaseStream);
-                                if (fshw.Image.IsCompressed)
+                                FshFileItem fshw = index.FileItem;
+#if DEBUG
+                                System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
+#endif
+                                if (fshw.Image != null)
                                 {
-                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
-                                }   
+                                    location = writer.BaseStream.Position;
+                                    size = fshw.Save(writer.BaseStream);
+                                    if (fshw.Image.IsCompressed)
+                                    {
+                                        compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
+                                    }
+                                }
                             }
                         }
                         else
@@ -410,22 +436,10 @@ namespace FshDatIO
 
                             byte[] rawbuf = new byte[size];
 
-                            if (reader != null) // read from the original file if it is open
-                            {
-                                reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                                reader.BaseStream.ProperRead(rawbuf, 0, (int)size);
-                            }
-                            else
-                            {
-                                // otherwise the original file should have the same name
-                                writer.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                                writer.BaseStream.ProperRead(rawbuf, 0, (int)size);
-                            }
 
-                            if (writer.BaseStream.Position != location)
-                            {
-                                writer.BaseStream.Seek(location, SeekOrigin.Begin);
-                            }
+                            reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
+                            reader.BaseStream.ProperRead(rawbuf, 0, (int)size);
+
 
                             writer.Write(rawbuf);
 
@@ -434,7 +448,7 @@ namespace FshDatIO
                                 compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                             }
                         }
-                        
+
                         saveIndices.Add(new DatIndex(index.Type, index.Group, index.Instance, (uint)location, size));
                     }
 
@@ -474,6 +488,41 @@ namespace FshDatIO
                     this.dirty = false;
                 }
 
+                if (saveFileName != fileName)
+                {
+                    // Close the old file and copy the new file in its place.
+                    this.reader.Close();
+                    this.reader = null;
+                    
+                    File.Copy(saveFileName, fileName, true);
+                    File.Delete(saveFileName);
+
+                    // Open the new file to prevent a NullRefrenceException if LoadFile is called.
+                    FileStream temp = null;
+                    try
+                    {
+                        temp = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+                        this.reader = new BinaryReader(temp);
+                        temp = null;
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                    finally
+                    {
+                        if (temp != null)
+                        {
+                            temp.Dispose();
+                            temp = null;
+                        }
+                    }
+                }
+
+            }
+            catch (Exception)
+            {
+                throw;
             }
             finally
             {
@@ -484,6 +533,7 @@ namespace FshDatIO
                 }
             }
         }
+        
         /// <summary>
         /// Gets the current Unix Timestamp for the DatHeader DateCreated and DateModified fields. 
         /// </summary>

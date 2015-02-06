@@ -168,6 +168,8 @@ namespace FshDatIO
                 this.indices.Add(index);
             }
 
+            this.indices.SortByLocation();
+
             this.loaded = true;
         }
 

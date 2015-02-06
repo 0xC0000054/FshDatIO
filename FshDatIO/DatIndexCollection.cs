@@ -19,7 +19,7 @@ namespace FshDatIO
 
         public DatIndex Find(uint type, uint group, uint instance)
         {
-            IList<DatIndex> indices = base.Items;
+            IList<DatIndex> indices = Items;
 
             for (int i = 0; i < indices.Count; i++)
             {
@@ -40,9 +40,9 @@ namespace FshDatIO
 
         internal int IndexOf(uint type, uint group, uint instance, int startIndex)
         {
-            if (startIndex >= 0 && startIndex < base.Items.Count)
+            if (startIndex >= 0 && startIndex < Items.Count)
             {
-                IList<DatIndex> indices = base.Items;
+                IList<DatIndex> indices = Items;
 
                 for (int i = startIndex; i < indices.Count; i++)
                 {
@@ -59,12 +59,20 @@ namespace FshDatIO
 
         public void RemoveAll(Predicate<DatIndex> predicate)
         {
-            ((List<DatIndex>)base.Items).RemoveAll(predicate);
+            ((List<DatIndex>)Items).RemoveAll(predicate);
         }
 
         public ReadOnlyCollection<DatIndex> AsReadOnly()
         {
-            return new ReadOnlyCollection<DatIndex>(base.Items);
+            return new ReadOnlyCollection<DatIndex>(Items);
+        }
+
+        /// <summary>
+        /// Sorts the collection in ascending order by the file location.
+        /// </summary>
+        public void SortByLocation()
+        {
+            ((List<DatIndex>)Items).Sort(new IndexLocationComparer());
         }
 
         public void Dispose()
@@ -85,11 +93,49 @@ namespace FshDatIO
                     {
                         if (Items[i].FileItem != null)
                         {
-                            base.Items[i].FileItem.Dispose();
-                            base.Items[i].FileItem = null;
+                            Items[i].FileItem.Dispose();
+                            Items[i].FileItem = null;
                         }
                     }
                 }
+            }
+        }
+
+        private sealed class IndexLocationComparer : IComparer<DatIndex>
+        {
+            public IndexLocationComparer()
+            {
+            }
+
+            public int Compare(DatIndex x, DatIndex y)
+            {
+                if (x != null)
+                {
+                    if (y != null)
+                    { 
+                        if (x.Location < y.Location)
+                        {
+                            return -1;
+                        }
+                        else if (x.Location > y.Location)
+                        {
+                            return 1;
+                        }
+                        else
+                        {
+                            // The file locations should never be equal.
+                            return 0;
+                        }
+                    }
+
+                    return 1;
+                }
+                if (y != null)
+                {
+                    return -1;
+                }
+
+                return 0;
             }
         }
 

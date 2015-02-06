@@ -37,81 +37,7 @@ namespace FshDatIO
 
         internal const uint SizeOf = 20U;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DatIndex"/> class.
-        /// </summary>
-        internal DatIndex()
-        {
-            this.Type = 0;
-            this.Group = 0;
-            this.Instance = 0;
-            this.Location = 0;
-            this.FileSize = 0;
-            this.IndexState = DatIndexState.None;
-            this.FileItem = null;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DatIndex"/> class.
-        /// </summary>
-        /// <param name="type">The type id of the entry.</param>
-        /// <param name="group">The group id of the entry.</param>
-        /// <param name="instance">The instance id of the entry.</param>
-        /// <param name="location">The location of the entry.</param>
-        /// <param name="fileSize">Size of the entry.</param>
-        internal DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
-        {
-            this.Type = type;
-            this.Group = group;
-            this.Instance = instance;
-            this.Location = location;
-            this.FileSize = fileSize;
-            this.IndexState = DatIndexState.None;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DatIndex" /> class.
-        /// </summary>
-        /// <param name="type">The type id of the entry.</param>
-        /// <param name="group">The group id of the entry.</param>
-        /// <param name="instance">The instance id of the entry.</param>
-        /// <param name="fileItem">The file item.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="fileItem"/> is null.</exception>
-        internal DatIndex(uint type, uint group, uint instance, FshFileItem fileItem)
-        {
-            if (fileItem == null)
-            {
-                throw new ArgumentNullException("fileItem");
-            }
-
-            this.Type = type;
-            this.Group = group;
-            this.Instance = instance;
-            this.Location = 0;
-            this.FileSize = 0;
-            this.IndexState = DatIndexState.New;
-            this.FileItem = fileItem;
-        }
-
-        /// <summary>
-        /// Saves the DatIndex instance to the specified BinaryWriter.
-        /// </summary>
-        /// <param name="bw">The <see cref="System.IO.BinaryWriter"/> to save to.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
-        internal void Save(BinaryWriter bw)
-        {
-            if (bw == null)
-            {
-                throw new ArgumentNullException("bw", "bw is null.");
-            }
-
-            bw.Write(this.type);
-            bw.Write(this.group);
-            bw.Write(this.instance);
-            bw.Write(this.location);
-            bw.Write(this.fileSize);
-        }
-
+        
         /// <summary>
         /// Gets the type id of the index.
         /// </summary>
@@ -225,5 +151,81 @@ namespace FshDatIO
                 fileItem = value;
             }
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatIndex"/> class.
+        /// </summary>
+        internal DatIndex()
+        {
+            this.Type = 0;
+            this.Group = 0;
+            this.Instance = 0;
+            this.Location = 0;
+            this.FileSize = 0;
+            this.IndexState = DatIndexState.None;
+            this.FileItem = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatIndex"/> class.
+        /// </summary>
+        /// <param name="type">The type id of the entry.</param>
+        /// <param name="group">The group id of the entry.</param>
+        /// <param name="instance">The instance id of the entry.</param>
+        /// <param name="location">The location of the entry.</param>
+        /// <param name="fileSize">Size of the entry.</param>
+        internal DatIndex(uint type, uint group, uint instance, uint location, uint fileSize)
+        {
+            this.Type = type;
+            this.Group = group;
+            this.Instance = instance;
+            this.Location = location;
+            this.FileSize = fileSize;
+            this.IndexState = DatIndexState.None;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatIndex" /> class.
+        /// </summary>
+        /// <param name="type">The type id of the entry.</param>
+        /// <param name="group">The group id of the entry.</param>
+        /// <param name="instance">The instance id of the entry.</param>
+        /// <param name="fileItem">The file item.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="fileItem"/> is null.</exception>
+        internal DatIndex(uint type, uint group, uint instance, FshFileItem fileItem)
+        {
+            if (fileItem == null)
+            {
+                throw new ArgumentNullException("fileItem");
+            }
+
+            this.Type = type;
+            this.Group = group;
+            this.Instance = instance;
+            this.Location = 0;
+            this.FileSize = 0;
+            this.IndexState = DatIndexState.New;
+            this.FileItem = fileItem;
+        }
+
+        /// <summary>
+        /// Saves the DatIndex instance to the specified BinaryWriter.
+        /// </summary>
+        /// <param name="bw">The <see cref="System.IO.BinaryWriter"/> to save to.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
+        internal void Save(BinaryWriter bw)
+        {
+            if (bw == null)
+            {
+                throw new ArgumentNullException("bw", "bw is null.");
+            }
+
+            bw.Write(this.type);
+            bw.Write(this.group);
+            bw.Write(this.instance);
+            bw.Write(this.location);
+            bw.Write(this.fileSize);
+        }
+
     }
 }

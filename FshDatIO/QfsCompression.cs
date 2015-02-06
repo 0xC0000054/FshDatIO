@@ -3,7 +3,7 @@ using System.IO;
 
 namespace FshDatIO
 {
-    static class QfsComp
+    static class QfsCompression
     {
         /// <summary>
         /// Decompresses an QFS Compressed File

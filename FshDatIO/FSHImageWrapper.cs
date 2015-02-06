@@ -81,7 +81,7 @@ namespace FshDatIO
 			if ((imageBytes[0] & 0xfe) == 0x10 && imageBytes[1] == 0xFB || imageBytes[4] == 0x10 && imageBytes[5] == 0xFB)
 			{
 				this.isCompressed = true;
-				return QfsComp.Decompress(imageBytes);
+				return QfsCompression.Decompress(imageBytes);
 			}
 
 			return imageBytes;
@@ -533,7 +533,7 @@ namespace FshDatIO
 									compSize = nextOffset - (int)bmpStartOffset;
 								}
 
-								imageData = QfsComp.Decompress(reader.ReadBytes(compSize)); // read and decompress the bitmap data
+								imageData = QfsCompression.Decompress(reader.ReadBytes(compSize)); // read and decompress the bitmap data
 							}
 							else
 							{
@@ -1112,7 +1112,7 @@ namespace FshDatIO
 				this.rawData = stream.ToArray();
 				if (this.isCompressed)
 				{
-					byte[] compbuf = QfsComp.Compress(this.rawData, true);
+					byte[] compbuf = QfsCompression.Compress(this.rawData, true);
 					if (compbuf != null)
 					{
 						output.Write(compbuf, 0, compbuf.Length);
@@ -1172,7 +1172,7 @@ namespace FshDatIO
 				byte[] rawData = null;
 				if ((imageBytes[0] & 0xfe) == 0x10 && imageBytes[1] == 0xFB || imageBytes[4] == 0x10 && imageBytes[5] == 0xFB)
 				{
-					rawData = QfsComp.Decompress(imageBytes);
+					rawData = QfsCompression.Decompress(imageBytes);
 				}
 				else
 				{

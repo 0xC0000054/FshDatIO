@@ -20,6 +20,8 @@ namespace FshDatIO
         private bool loaded;
         private bool dirty;
         private BinaryReader reader;
+        private bool disposed;
+
         private const uint FshTypeID = 0x7ab50e44;
         private const uint CompressionDirectoryType = 0xe86b1eef;
         /// <summary>
@@ -287,7 +289,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Closes this instance.
+        /// Closes the current DatFile and the underlying stream.
         /// </summary>
         public void Close()
         {
@@ -547,7 +549,6 @@ namespace FshDatIO
 
         #region IDisposable Members
 
-        private bool disposed;
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
@@ -556,6 +557,7 @@ namespace FshDatIO
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         private void Dispose(bool disposing)
         {
             if (!disposed)

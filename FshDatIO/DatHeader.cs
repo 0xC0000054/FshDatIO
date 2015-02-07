@@ -1,6 +1,7 @@
-﻿using System;
+﻿using FshDatIO.Properties;
+using System;
+using System.Globalization;
 using System.IO;
-using System.Text;
 
 namespace FshDatIO
 {
@@ -18,7 +19,7 @@ namespace FshDatIO
         private uint dateModified;
         private uint indexVMajor; // index major version always 7
         private uint entries;
-        private uint indexLoc;
+        private uint indexLocation;
         private uint indexSize;
         private uint holeCount;
         private uint holeIndexLocation;
@@ -28,6 +29,18 @@ namespace FshDatIO
         /// The DBPF signature in little endian format.
         /// </summary>
         private const uint DBPFSignature = 0x46504244U;
+        /// <summary>
+        /// The major version of the Sim City 4 DBPF format.
+        /// </summary>
+        private const uint FileMajorVersion = 1;
+        /// <summary>
+        /// The minor version of the Sim City 4 DBPF format.
+        /// </summary>
+        private const uint FileMinorVersion = 0;
+        /// <summary>
+        /// The index major version of the Sim City 4 DBPF format.
+        /// </summary>
+        private const uint IndexMajorVersion = 7;
 
         /// <summary>
         /// Gets the header major version.
@@ -147,11 +160,11 @@ namespace FshDatIO
         {
             get
             {
-                return indexLoc;
+                return indexLocation;
             }
             internal set
             {
-                indexLoc = value;
+                indexLocation = value;
             }
         }
 
@@ -208,13 +221,13 @@ namespace FshDatIO
         /// </summary>
         internal DatHeader()
         {
-            this.vMajor = 1;
-            this.vMajor = 0;
+            this.vMajor = FileMajorVersion;
+            this.vMajor = FileMinorVersion;
             this.uVMajor = 0;
             this.uVMinor = 0;
-            this.indexVMajor = 7;
+            this.indexVMajor = IndexMajorVersion;
             this.entries = 0;
-            this.indexLoc = 96;
+            this.indexLocation = 96;
             this.indexSize = 0;
             this.holeCount = 0;
             this.holeSize = 0;
@@ -239,19 +252,34 @@ namespace FshDatIO
             uint sig = input.ReadUInt32();
             if (sig != DBPFSignature)
             {
-                throw new DatHeaderException(FshDatIO.Properties.Resources.DatHeaderInvalidIdentifer);
+                throw new DatHeaderException(Resources.DatHeaderInvalidIdentifer);
             }
 
             this.vMajor = input.ReadUInt32();
+            if (this.vMajor != FileMajorVersion)
+            {
+                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.vMajor, "0"));
+            }
+
             this.vMinor = input.ReadUInt32();
+            if (this.vMinor != FileMinorVersion)
+            {
+                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.vMajor, this.vMinor));
+            }
+
             this.uVMajor = input.ReadUInt32();
             this.uVMinor = input.ReadUInt32();
             this.flags = input.ReadUInt32();
             this.dateCreated = input.ReadUInt32();
             this.dateModified = input.ReadUInt32();
             this.indexVMajor = input.ReadUInt32();
+            if (this.indexVMajor != IndexMajorVersion)
+            {
+                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedIndexVersion, this.vMajor, this.vMinor));
+            }
+
             this.entries = input.ReadUInt32();
-            this.indexLoc = input.ReadUInt32();
+            this.indexLocation = input.ReadUInt32();
             this.indexSize = input.ReadUInt32();
             this.holeCount = input.ReadUInt32();
             this.holeIndexLocation = input.ReadUInt32();
@@ -280,7 +308,7 @@ namespace FshDatIO
             stream.WriteUInt32(this.dateModified);
             stream.WriteUInt32(this.indexVMajor);
             stream.WriteUInt32(this.entries);
-            stream.WriteUInt32(this.indexLoc);
+            stream.WriteUInt32(this.indexLocation);
             stream.WriteUInt32(this.indexSize);
             stream.WriteUInt32(this.holeCount);
             stream.WriteUInt32(this.holeIndexLocation);

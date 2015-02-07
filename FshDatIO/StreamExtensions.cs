@@ -4,6 +4,81 @@ namespace FshDatIO
 {
     static class StreamExtensions
     {
+        public static ushort ReadUInt16(this Stream s)
+        {
+            int byte1 = s.ReadByte();
+            if (byte1 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte2 = s.ReadByte();
+            if (byte2 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            return (ushort)(byte1 | (byte2 << 8));
+        }
+
+        public static uint ReadUInt32(this Stream s)
+        {
+            int byte1 = s.ReadByte();
+            if (byte1 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte2 = s.ReadByte();
+            if (byte2 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte3 = s.ReadByte();
+            if (byte3 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte4 = s.ReadByte();
+            if (byte4 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            return (uint)(byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
+        }
+
+        public static int ReadInt32(this Stream s)
+        {
+            int byte1 = s.ReadByte();
+            if (byte1 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte2 = s.ReadByte();
+            if (byte2 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte3 = s.ReadByte();
+            if (byte3 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            int byte4 = s.ReadByte();
+            if (byte4 == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            return (int)(byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
+        }
+
         public static void ProperRead(this Stream s, byte[] buffer, int offset, int count)
         {
             int numBytesToRead = count;

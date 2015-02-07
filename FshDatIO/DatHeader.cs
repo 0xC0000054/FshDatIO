@@ -224,84 +224,69 @@ namespace FshDatIO
         /// <summary>
         /// Initializes a new instance of the <see cref="DatHeader"/> class.
         /// </summary>
-        /// <param name="reader">The BinaryReader to read from.</param>
+        /// <param name="input">The Stream to read from.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
         /// <exception cref="FshDatIO.DatHeaderException">Thrown when the header signature is invalid.</exception>
-        internal DatHeader(BinaryReader reader)
+        internal DatHeader(Stream input)
         {
-            if (reader == null)
+            if (input == null)
             {
-                throw new ArgumentNullException("reader");
+                throw new ArgumentNullException("input");
             }
 
-            reader.BaseStream.Position = 0L;
-            this.Load(reader);
-        }
-
-        /// <summary>
-        /// Loads the DatHeader from specified BinaryReader.
-        /// </summary>
-        /// <param name="reader">The BinaryReader to read from.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
-        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the header signature is invalid.</exception>
-        private void Load(BinaryReader reader)
-        {
-            if (reader == null)
-            {
-                throw new ArgumentNullException("reader");
-            }
+            input.Position = 0L;
             
-            uint sig = reader.ReadUInt32();
+            uint sig = input.ReadUInt32();
             if (sig != DBPFSignature)
             {
                 throw new DatHeaderException(FshDatIO.Properties.Resources.DatHeaderInvalidIdentifer);
             }
 
-            this.vMajor = reader.ReadUInt32();
-            this.vMinor = reader.ReadUInt32();
-            this.uVMajor = reader.ReadUInt32();
-            this.uVMinor = reader.ReadUInt32();
-            this.flags = reader.ReadUInt32();
-            this.dateCreated = reader.ReadUInt32();
-            this.dateModified = reader.ReadUInt32();
-            this.indexVMajor = reader.ReadUInt32();
-            this.entries = reader.ReadUInt32();
-            this.indexLoc = reader.ReadUInt32();
-            this.indexSize = reader.ReadUInt32();
-            this.holeCount = reader.ReadUInt32();
-            this.holeIndexLocation = reader.ReadUInt32();
-            this.holeSize = reader.ReadUInt32();
+            this.vMajor = input.ReadUInt32();
+            this.vMinor = input.ReadUInt32();
+            this.uVMajor = input.ReadUInt32();
+            this.uVMinor = input.ReadUInt32();
+            this.flags = input.ReadUInt32();
+            this.dateCreated = input.ReadUInt32();
+            this.dateModified = input.ReadUInt32();
+            this.indexVMajor = input.ReadUInt32();
+            this.entries = input.ReadUInt32();
+            this.indexLoc = input.ReadUInt32();
+            this.indexSize = input.ReadUInt32();
+            this.holeCount = input.ReadUInt32();
+            this.holeIndexLocation = input.ReadUInt32();
+            this.holeSize = input.ReadUInt32();
         }
-        
+
         /// <summary>
         /// Saves the DatHeader.
         /// </summary>
-        /// <param name="writer">The BinaryReader to save to</param>
+        /// <param name="stream">The Stream to save to</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
-        internal void Save(BinaryWriter writer)
+        internal void Save(Stream stream)
         {
-            if (writer == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException("writer");
+                throw new ArgumentNullException("stream");
             }
             
-            writer.Write(DBPFSignature);
-            writer.Write(this.vMajor);
-            writer.Write(this.vMinor);
-            writer.Write(this.uVMajor);
-            writer.Write(this.uVMinor);
-            writer.Write(this.flags);
-            writer.Write(this.dateCreated);
-            writer.Write(this.dateModified);
-            writer.Write(this.indexVMajor);
-            writer.Write(this.entries);
-            writer.Write(this.indexLoc);
-            writer.Write(this.indexSize);
-            writer.Write(this.holeCount);
-            writer.Write(this.holeIndexLocation);
-            writer.Write(this.holeSize);
+            stream.WriteUInt32(DBPFSignature);
+            stream.WriteUInt32(this.vMajor);
+            stream.WriteUInt32(this.vMinor);
+            stream.WriteUInt32(this.uVMajor);
+            stream.WriteUInt32(this.uVMinor);
+            stream.WriteUInt32(this.flags);
+            stream.WriteUInt32(this.dateCreated);
+            stream.WriteUInt32(this.dateModified);
+            stream.WriteUInt32(this.indexVMajor);
+            stream.WriteUInt32(this.entries);
+            stream.WriteUInt32(this.indexLoc);
+            stream.WriteUInt32(this.indexSize);
+            stream.WriteUInt32(this.holeCount);
+            stream.WriteUInt32(this.holeIndexLocation);
+            stream.WriteUInt32(this.holeSize);
             byte[] reservedBytes = new byte[36];
-            writer.Write(reservedBytes); // reserved byte padding
+            stream.Write(reservedBytes, 0, 36); // reserved byte padding
         }
     }
 

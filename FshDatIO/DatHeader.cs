@@ -235,11 +235,12 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DatHeader"/> class.
+        /// Initializes a new instance of the <see cref="DatHeader" /> class.
         /// </summary>
         /// <param name="input">The Stream to read from.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the BinaryReader is null.</exception>
-        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the header signature is invalid.</exception>
+        /// <exception cref="DatHeaderException">The header signature is invalid.</exception>
+        /// <exception cref="DatFileException">The DBPF format version is not supported.</exception>
         internal DatHeader(Stream input)
         {
             if (input == null)

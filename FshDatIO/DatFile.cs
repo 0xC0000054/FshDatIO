@@ -19,7 +19,7 @@ namespace FshDatIO
         private string datFileName;
         private bool loaded;
         private bool dirty;
-        private BinaryReader reader;
+        private Stream stream;
         private bool disposed;
 
         private const uint FshTypeID = 0x7ab50e44;
@@ -107,7 +107,7 @@ namespace FshDatIO
             this.datFileName = string.Empty;
             this.loaded = false;
             this.dirty = false;
-            this.reader = null;
+            this.stream = null;
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace FshDatIO
             this.datFileName = fileName;
             this.dirty = false;
             this.loaded = false;
-            this.reader = null;
+            this.stream = null;
             Load(fileName);
         }
 
@@ -144,57 +144,38 @@ namespace FshDatIO
                 throw new ArgumentNullException("fileName");
             }
 
-            if (this.reader != null)
+            if (this.stream != null)
             {
-                this.reader.Close();
+                this.stream.Close();
             }
 
-            FileStream stream = null;
+            this.stream = new FileStream(path, FileMode.Open, FileAccess.Read);
 
-            try
+            this.header = new DatHeader(stream);
+            int entryCount = (int)header.Entries;
+
+            this.indices = new DatIndexCollection(entryCount);
+
+            this.stream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
+            for (int i = 0; i < entryCount; i++)
             {
-                stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-                this.reader = new BinaryReader(stream);
-                stream = null;
+                uint type = stream.ReadUInt32();
+                uint group = stream.ReadUInt32();
+                uint instance = stream.ReadUInt32();
+                uint location = stream.ReadUInt32();
+                uint size = stream.ReadUInt32();
 
-                this.header = new DatHeader(reader);
-                int entryCount = (int)header.Entries;
-
-                this.indices = new DatIndexCollection(entryCount);
-
-                this.reader.BaseStream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
-                for (int i = 0; i < entryCount; i++)
+                DatIndex index = new DatIndex(type, group, instance, location, size);
+                if (type == FshTypeID)
                 {
-                    uint type = reader.ReadUInt32();
-                    uint group = reader.ReadUInt32();
-                    uint instance = reader.ReadUInt32();
-                    uint location = reader.ReadUInt32();
-                    uint size = reader.ReadUInt32();
-
-                    DatIndex index = new DatIndex(type, group, instance, location, size);
-                    if (type == FshTypeID)
-                    {
-                        index.FileItem = new FshFileItem();
-                    }
-                    this.indices.Add(index);
+                    index.FileItem = new FshFileItem();
                 }
+                this.indices.Add(index);
+            }
 
-                this.indices.SortByLocation();
+            this.indices.SortByLocation();
 
-                this.loaded = true;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                if (stream != null)
-                {
-                    stream.Dispose();
-                    stream = null;
-                }
-            }
+            this.loaded = true;
         }
 
         /// <summary>
@@ -224,10 +205,10 @@ namespace FshDatIO
 
             if (!fsh.Loaded)
             {
-                reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
+                this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+                byte[] imageData = this.stream.ReadBytes((int)index.FileSize);
 
-                fsh.Load(fshbuf);
+                fsh.Load(imageData);
             }
 
             return fsh;
@@ -257,10 +238,10 @@ namespace FshDatIO
                 return false;
             }
 
-            reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-            byte[] fshbuf = reader.ReadBytes((int)index.FileSize);
+            this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+            byte[] imageBytes = this.stream.ReadBytes((int)index.FileSize);
 
-            return FSHImageWrapper.CheckImageSize(fshbuf);
+            return FSHImageWrapper.CheckImageSize(imageBytes);
         }
 
         /// <summary>
@@ -377,165 +358,123 @@ namespace FshDatIO
             }
 
             string saveFileName = fileName;
-            if (fileName == this.datFileName && this.reader != null)
+            if (fileName == this.datFileName && this.stream != null)
             {
                 // When overwriting an existing file, we save to a temporary file first and then use File.Copy to overwrite it if the save was successful.
                 saveFileName = Path.GetTempFileName();
             }
 
-            FileStream fs = null;
-
-            try
+            using (FileStream output = new FileStream(saveFileName, FileMode.OpenOrCreate, FileAccess.Write))
             {
-                fs = new FileStream(saveFileName, FileMode.OpenOrCreate, FileAccess.Write);
+                DatHeader head = this.header;
+                head.DateCreated = GetCurrentUnixTimestamp();
+                head.Save(output);
 
-                using (BinaryWriter writer = new BinaryWriter(fs))
+                TrimDeletedItems();
+
+                DatIndexCollection saveIndices = new DatIndexCollection(this.indices.Count + 2);
+                List<DirectoryEntry> compDirs = new List<DirectoryEntry>();
+                long location = 0;
+                uint size = 0;
+
+                for (int i = 0; i < this.indices.Count; i++)
                 {
-                    fs = null;
+                    DatIndex index = indices[i];
 
-                    DatHeader head = this.header;
-                    head.DateCreated = GetCurrentUnixTimestamp();
-                    head.Save(writer);
-
-                    TrimDeletedItems();
-
-                    DatIndexCollection saveIndices = new DatIndexCollection(this.indices.Count + 2);
-                    List<DirectoryEntry> compDirs = new List<DirectoryEntry>();
-                    long location = 0;
-                    uint size = 0;
-
-                    for (int i = 0; i < this.indices.Count; i++)
+                    if (index.IndexState == DatIndexState.New)
                     {
-                        DatIndex index = indices[i];
-
-                        if (index.IndexState == DatIndexState.New)
+                        if (index.Type == FshTypeID)
                         {
-                            if (index.Type == FshTypeID)
-                            {
-                                FshFileItem fshw = index.FileItem;
+                            FshFileItem fshw = index.FileItem;
 #if DEBUG
-                                System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
+                            System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
 #endif
-                                if (fshw.Image != null)
+                            if (fshw.Image != null)
+                            {
+                                location = output.Position;
+                                size = fshw.Save(output);
+                                if (fshw.Image.IsCompressed)
                                 {
-                                    location = writer.BaseStream.Position;
-                                    size = fshw.Save(writer.BaseStream);
-                                    if (fshw.Image.IsCompressed)
-                                    {
-                                        compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
-                                    }
+                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
                                 }
                             }
                         }
-                        else
-                        {
-                            location = writer.BaseStream.Position;
-                            size = index.FileSize;
+                    }
+                    else
+                    {
+                        location = output.Position;
+                        size = index.FileSize;
 
 #if DEBUG
-                            System.Diagnostics.Debug.WriteLine(string.Format("Index: {0} Type: 0x{1:X8}", i, index.Type));
+                        System.Diagnostics.Debug.WriteLine(string.Format("Index: {0} Type: 0x{1:X8}", i, index.Type));
 #endif
+                        
+                        this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+                        
+                        int dataSize = (int)size;
+                        byte[] buffer = this.stream.ReadBytes(dataSize);
 
-                            byte[] rawbuf = new byte[size];
+                        output.Write(buffer, 0, dataSize);
 
-
-                            reader.BaseStream.Seek((long)index.Location, SeekOrigin.Begin);
-                            reader.BaseStream.ProperRead(rawbuf, 0, (int)size);
-
-
-                            writer.Write(rawbuf);
-
-                            if ((rawbuf.Length > 5) && ((rawbuf[0] & 0xfe) == 0x10 && rawbuf[1] == 0xFB || rawbuf[4] == 0x10 && rawbuf[5] == 0xFB))
-                            {
-                                compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
-                            }
-                        }
-
-                        saveIndices.Add(new DatIndex(index.Type, index.Group, index.Instance, (uint)location, size));
-                    }
-
-                    if (compDirs.Count > 0)
-                    {
-                        location = writer.BaseStream.Position;
-
-                        int count = compDirs.Count;
-                        for (int i = 0; i < count; i++)
+                        if ((buffer.Length > 5) && ((buffer[0] & 0xfe) == 0x10 && buffer[1] == 0xFB || buffer[4] == 0x10 && buffer[5] == 0xFB))
                         {
-                            compDirs[i].Save(writer);
-                        }
-
-                        size = (uint)(compDirs.Count * DirectoryEntry.SizeOf);
-                        saveIndices.Add(new DatIndex(CompressionDirectoryType, 0xe86b1eef, 0x286b1f03, (uint)location, size));
-                    }
-
-                    uint entryCount = (uint)saveIndices.Count;
-                    location = writer.BaseStream.Position;
-                    size = entryCount * DatIndex.SizeOf;
-                    for (int i = 0; i < saveIndices.Count; i++)
-                    {
-                        saveIndices[i].Save(writer);
-                    }
-                    head.Entries = entryCount;
-                    head.IndexSize = size;
-                    head.IndexLocation = (uint)location;
-                    head.DateModified = GetCurrentUnixTimestamp();
-
-                    writer.BaseStream.Position = 0L;
-                    head.Save(writer);
-
-                    this.header = head;
-                    this.indices = saveIndices;
-                    this.datFileName = fileName;
-
-                    this.dirty = false;
-                }
-
-                if (saveFileName != fileName)
-                {
-                    // Close the old file and copy the new file in its place.
-                    this.reader.Close();
-                    this.reader = null;
-                    
-                    File.Copy(saveFileName, fileName, true);
-                    File.Delete(saveFileName);
-
-                    // Open the new file to prevent a NullRefrenceException if LoadFile is called.
-                    FileStream temp = null;
-                    try
-                    {
-                        temp = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-                        this.reader = new BinaryReader(temp);
-                        temp = null;
-                    }
-                    catch (Exception)
-                    {
-                        throw;
-                    }
-                    finally
-                    {
-                        if (temp != null)
-                        {
-                            temp.Dispose();
-                            temp = null;
+                            compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
                         }
                     }
+
+                    saveIndices.Add(new DatIndex(index.Type, index.Group, index.Instance, (uint)location, size));
                 }
 
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                if (fs != null)
+                if (compDirs.Count > 0)
                 {
-                    fs.Dispose();
-                    fs = null;
+                    location = output.Position;
+
+                    int count = compDirs.Count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        compDirs[i].Save(output);
+                    }
+
+                    size = (uint)(compDirs.Count * DirectoryEntry.SizeOf);
+                    saveIndices.Add(new DatIndex(CompressionDirectoryType, 0xe86b1eef, 0x286b1f03, (uint)location, size));
                 }
+
+                uint entryCount = (uint)saveIndices.Count;
+                location = output.Position;
+                size = entryCount * DatIndex.SizeOf;
+                for (int i = 0; i < saveIndices.Count; i++)
+                {
+                    saveIndices[i].Save(output);
+                }
+                head.Entries = entryCount;
+                head.IndexSize = size;
+                head.IndexLocation = (uint)location;
+                head.DateModified = GetCurrentUnixTimestamp();
+
+                output.Position = 0L;
+                head.Save(output);
+
+                this.header = head;
+                this.indices = saveIndices;
+                this.datFileName = fileName;
+
+                this.dirty = false;
+            }
+
+            if (saveFileName != fileName)
+            {
+                // Close the old file and copy the new file in its place.
+                this.stream.Dispose();
+                this.stream = null;
+
+                File.Copy(saveFileName, fileName, true);
+                File.Delete(saveFileName);
+
+                // Open the new file to prevent a NullRefrenceException if LoadFile is called.
+                this.stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
             }
         }
-        
+
         /// <summary>
         /// Gets the current Unix Timestamp for the DatHeader DateCreated and DateModified fields. 
         /// </summary>
@@ -564,10 +503,10 @@ namespace FshDatIO
             {
                 if (disposing)
                 {
-                    if (this.reader != null)
+                    if (this.stream != null)
                     {
-                        this.reader.Close();
-                        this.reader = null;
+                        this.stream.Dispose();
+                        this.stream = null;
                     }
 
                     if (this.indices != null)
@@ -575,7 +514,7 @@ namespace FshDatIO
                         this.indices.Dispose();
                         this.indices = null;
                     }
-                    
+
                     this.loaded = false;
 
                 }

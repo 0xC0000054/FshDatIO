@@ -4,96 +4,79 @@ namespace FshDatIO
 {
     static class StreamExtensions
     {
+        private const int DefaultBufferSize = 4;
+        private static byte[] buffer;
+
+        private static void FillBuffer(Stream s, int count)
+        {
+            if (buffer == null)
+            {
+                buffer = new byte[DefaultBufferSize];
+            }
+
+            if (count > buffer.Length)
+            {
+                throw new System.ArgumentOutOfRangeException("count", "count > buffer.Length");
+            }
+
+            int bytesRead = 0;
+            int n;
+
+            do
+            {
+                n = s.Read(buffer, bytesRead, count - bytesRead);
+                if (n == 0)
+                {
+                    throw new EndOfStreamException();
+                }
+                bytesRead += n;
+
+            } while (bytesRead < count);
+        }
+
         public static ushort ReadUInt16(this Stream s)
         {
-            int byte1 = s.ReadByte();
-            if (byte1 == -1)
-            {
-                throw new EndOfStreamException();
-            }
+            FillBuffer(s, 2);
 
-            int byte2 = s.ReadByte();
-            if (byte2 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            return (ushort)(byte1 | (byte2 << 8));
+            return (ushort)(buffer[0] | (buffer[1] << 8));
         }
 
         public static uint ReadUInt32(this Stream s)
         {
-            int byte1 = s.ReadByte();
-            if (byte1 == -1)
-            {
-                throw new EndOfStreamException();
-            }
+            FillBuffer(s, 4);
 
-            int byte2 = s.ReadByte();
-            if (byte2 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            int byte3 = s.ReadByte();
-            if (byte3 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            int byte4 = s.ReadByte();
-            if (byte4 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            return (uint)(byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
+            return (uint)(buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24));
         }
 
         public static int ReadInt32(this Stream s)
         {
-            int byte1 = s.ReadByte();
-            if (byte1 == -1)
-            {
-                throw new EndOfStreamException();
-            }
+            FillBuffer(s, 4);
 
-            int byte2 = s.ReadByte();
-            if (byte2 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            int byte3 = s.ReadByte();
-            if (byte3 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            int byte4 = s.ReadByte();
-            if (byte4 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            return (int)(byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
+            return (int)(buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24));
         }
 
-        public static void ProperRead(this Stream s, byte[] buffer, int offset, int count)
+        public static byte[] ReadBytes(this Stream s, int count)
         {
-            int numBytesToRead = count;
-            int numBytesRead = 0 + offset;
+            byte[] buffer = new byte[count];
 
-            while (numBytesToRead > 0)
+            int totalBytesRead = count;
+            int offset = 0;
+
+            while (totalBytesRead > 0)
             {
                 // Read may return anything from 0 to numBytesToRead.
-                int n = s.Read(buffer, numBytesRead, numBytesToRead);
+                int n = s.Read(buffer, offset, totalBytesRead);
                 // The end of the file is reached.
                 if (n == 0)
-                    break;
-                numBytesRead += n;
-                numBytesToRead -= n;
+                {
+                    throw new EndOfStreamException();
+                }
+
+                offset += n;
+                totalBytesRead -= n;
             }
+
+            return buffer;
         }
 
         public static void WriteUInt16(this Stream s, ushort value)

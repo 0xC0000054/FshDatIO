@@ -115,11 +115,11 @@ namespace FshDatIO.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The DBPF index size is invalid..
+        ///   Looks up a localized string similar to The size of the DBPF index table is invalid..
         /// </summary>
-        internal static string InvalidHeaderIndexSize {
+        internal static string InvalidIndexTableSize {
             get {
-                return ResourceManager.GetString("InvalidHeaderIndexSize", resourceCulture);
+                return ResourceManager.GetString("InvalidIndexTableSize", resourceCulture);
             }
         }
         

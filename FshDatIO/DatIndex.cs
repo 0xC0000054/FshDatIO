@@ -97,7 +97,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets or sets the state of the index.
+        /// Gets the state of the index.
         /// </summary>
         /// <value>
         /// The state of the index.
@@ -108,7 +108,7 @@ namespace FshDatIO
             {
                 return indexState;
             }
-            set
+            internal set
             {
                 indexState = value;
             }
@@ -191,20 +191,20 @@ namespace FshDatIO
         /// <summary>
         /// Saves the DatIndex instance to the specified BinaryWriter.
         /// </summary>
-        /// <param name="bw">The <see cref="System.IO.BinaryWriter"/> to save to.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the BinaryWriter is null.</exception>
-        internal void Save(BinaryWriter bw)
+        /// <param name="stream">The <see cref="System.IO.BinaryWriter"/> to save to.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="stream"/> is null.</exception>
+        internal void Save(Stream stream)
         {
-            if (bw == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException("bw", "bw is null.");
+                throw new ArgumentNullException("stream");
             }
 
-            bw.Write(this.type);
-            bw.Write(this.group);
-            bw.Write(this.instance);
-            bw.Write(this.location);
-            bw.Write(this.fileSize);
+            stream.WriteUInt32(this.type);
+            stream.WriteUInt32(this.group);
+            stream.WriteUInt32(this.instance);
+            stream.WriteUInt32(this.location);
+            stream.WriteUInt32(this.fileSize);
         }
 
         /// <summary>
@@ -235,6 +235,11 @@ namespace FshDatIO
         /// </returns>
         public bool Equals(DatIndex other)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             return (this.type == other.type && this.group == other.group && this.instance == other.instance && this.location == other.location && this.fileSize == other.fileSize);
         }
 

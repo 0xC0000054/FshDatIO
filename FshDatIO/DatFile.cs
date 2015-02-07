@@ -114,8 +114,11 @@ namespace FshDatIO
         /// Initializes a new instance of the DatFile class and loads the specified fileName.  
         /// </summary>
         /// <param name="fileName">The fileName to load.</param>
-        /// <exception cref="System.ArgumentException">Thrown when the fileName is null or empty.</exception>
-        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="fileName"/> is null.</exception>
+        /// <exception cref="DatFileException">The DBPF format version is not supported.</exception>
+        /// <exception cref="DatFileException">The size of the index table is invalid.</exception>
+        /// <exception cref="DatHeaderException">The header identifier does not equal DBPF.</exception>
+        /// <exception cref="System.IO.FileNotFoundException">The file specified in <paramref name="path"/> was not found.</exception>
         public DatFile(string fileName)
         {
             if (fileName == null)
@@ -123,6 +126,8 @@ namespace FshDatIO
                 throw new ArgumentNullException("fileName");
             }
 
+            this.header = null;
+            this.indices = null;
             this.datFileName = fileName;
             this.dirty = false;
             this.loaded = false;
@@ -134,24 +139,28 @@ namespace FshDatIO
         /// Loads a DatFile from the specified file
         /// </summary>
         /// <param name="path">The path to the file.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when <param ref="path" /> is null</exception>
-        /// <exception cref="FshDatIO.DatHeaderException">Thrown when the DatHeader identifier is invalid, does not equal DBPF.</exception>
-        /// <exception cref="System.IO.FileNotFoundException">Thrown when the specified file does not exist.</exception>
-        public void Load(string path)
+        /// <exception cref="System.ArgumentNullException"><param ref="path" /> is null</exception>
+        /// <exception cref="DatFileException">The DBPF format version is not supported.</exception>
+        /// <exception cref="DatFileException">The size of the index table is invalid.</exception>
+        /// <exception cref="DatHeaderException">The header identifier does not equal DBPF.</exception>
+        /// <exception cref="System.IO.FileNotFoundException">The file specified in <paramref name="path"/> was not found.</exception>
+        private void Load(string path)
         {
             if (path == null)
             {
                 throw new ArgumentNullException("fileName");
             }
 
-            if (this.stream != null)
-            {
-                this.stream.Close();
-            }
-
             this.stream = new FileStream(path, FileMode.Open, FileAccess.Read);
 
             this.header = new DatHeader(stream);
+
+            uint expectedIndexSize = this.header.Entries * DatIndex.SizeOf;
+            if (this.header.IndexSize != expectedIndexSize)
+            {
+                throw new DatFileException(Resources.InvalidIndexTableSize);
+            }
+
             int entryCount = (int)header.Entries;
 
             this.indices = new DatIndexCollection(entryCount);
@@ -184,9 +193,9 @@ namespace FshDatIO
         /// <param name="group">The TGI group id to load.</param>
         /// <param name="instance">The TGI instance id to load.</param>
         /// <returns>The loaded FshWrapper item</returns>
-        /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile</exception>
-        /// <exception cref="FshDatIO.DatFileException">Thrown when the Fsh file is not found at the specified index in the DatFile</exception>
-        /// <exception cref="System.ObjectDisposedException">Thrown when the method is called after the DatFile has been closed.</exception>
+        /// <exception cref="DatIndexException">The specified index does not exist in the DatFile</exception>
+        /// <exception cref="DatFileException">The Fsh file is not found at the specified index in the DatFile</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been disposed.</exception>
         public FshFileItem LoadFile(uint group, uint instance)
         {
             if (this.disposed)
@@ -218,9 +227,9 @@ namespace FshDatIO
         /// Checks the size of the images within the fsh.
         /// </summary>
         /// <param name="index">The <see cref="FshDatIO.DatIndex"/> of the file to check.</param>
-        /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the index is null.</exception>
-        /// <exception cref="System.ObjectDisposedException">Thrown when the method is called after the DatFile has been closed.</exception>
+        /// <returns><c>true</c> if all the image are at least 128x128; otherwise <c>false</c>.</returns>
+        /// <exception cref="System.ArgumentNullException"><paramref name="index"/> is null.</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
         public bool CheckImageSize(DatIndex index)
         {
             if (this.disposed)
@@ -250,8 +259,8 @@ namespace FshDatIO
         /// <param name="group">The group id of the file.</param>
         /// <param name="instance">The instance id of the file.</param>
         /// <returns>True if all the image are at least 128x128; otherwise false.</returns>
-        /// <exception cref="FshDatIO.DatIndexException">Thrown when the specified index does not exist in the DatFile.</exception>
-        /// <exception cref="System.ObjectDisposedException">Thrown when the method is called after the DatFile has been closed.</exception>
+        /// <exception cref="FshDatIO.DatIndexException">The specified index does not exist in the DatFile.</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
         public bool CheckImageSize(uint group, uint instance)
         {
             if (this.disposed)
@@ -284,7 +293,7 @@ namespace FshDatIO
         /// <param name="group">The TGI group id of the FshWrapper item.</param>
         /// <param name="instance">The TGI instance id of the FshWrapper item.</param>
         /// <param name="compress">Compress the added FshWrapper item.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the FshFileItem is null</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="fshItem"/> is null</exception>
         public void Add(FshFileItem fshItem, uint group, uint instance, bool compress)
         {
             if (fshItem == null)
@@ -348,7 +357,7 @@ namespace FshDatIO
         /// Saves the DatFile to the specified fileName.
         /// </summary>
         /// <param name="fileName">The fileName to save as</param>
-        /// <exception cref="System.ArgumentException">The fileName is null or empty.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="fileName"/> is null.</exception>
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save(string fileName)
         {
@@ -408,9 +417,9 @@ namespace FshDatIO
 #if DEBUG
                         System.Diagnostics.Debug.WriteLine(string.Format("Index: {0} Type: 0x{1:X8}", i, index.Type));
 #endif
-                        
+
                         this.stream.Seek((long)index.Location, SeekOrigin.Begin);
-                        
+
                         int dataSize = (int)size;
                         byte[] buffer = this.stream.ReadBytes(dataSize);
 

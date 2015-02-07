@@ -150,4 +150,13 @@
   <data name="UnsupportedFshType" xml:space="preserve">
     <value>Only 24-bit , 32-bit, DXT1 and DXT3 images are supported.</value>
   </data>
+  <data name="InvalidHeaderIndexSize" xml:space="preserve">
+    <value>The DBPF index size is invalid.</value>
+  </data>
+  <data name="UnsupportedDBPFVersion" xml:space="preserve">
+    <value>DBPF format version {0}.{1} is not supported.</value>
+  </data>
+  <data name="UnsupportedIndexVersion" xml:space="preserve">
+    <value>DBPF index version {0} is not supported.</value>
+  </data>
 </root>

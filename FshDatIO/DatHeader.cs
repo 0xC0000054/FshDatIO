@@ -23,7 +23,7 @@ namespace FshDatIO
         private uint indexSize;
         private uint holeCount;
         private uint holeIndexLocation;
-        private uint holeSize;
+        private uint holeIndexSize;
 
         /// <summary>
         /// The DBPF signature in little endian format.
@@ -128,7 +128,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the  major version of the index.
+        /// Gets the  major version of the index table.
         /// </summary>
         public uint IndexVersionMajor
         {
@@ -154,7 +154,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the start location of the index.
+        /// Gets the location of the index table.
         /// </summary>
         public uint IndexLocation
         {
@@ -169,7 +169,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the size of the index.
+        /// Gets the size of the index table.
         /// </summary>
         public uint IndexSize
         {
@@ -195,7 +195,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the hole index location.
+        /// Gets the location of the hole index table.
         /// </summary>
         public uint HoleIndexLocation
         {
@@ -206,13 +206,13 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the size of the hole.
+        /// Gets the size of the hole index table.
         /// </summary>
-        public uint HoleSize
+        public uint HoleIndexSize
         {
             get
             {
-                return holeSize;
+                return holeIndexSize;
             }
         }
 
@@ -230,7 +230,7 @@ namespace FshDatIO
             this.indexLocation = 96;
             this.indexSize = 0;
             this.holeCount = 0;
-            this.holeSize = 0;
+            this.holeIndexSize = 0;
             this.holeIndexLocation = 0;
         }
 
@@ -283,7 +283,7 @@ namespace FshDatIO
             this.indexSize = input.ReadUInt32();
             this.holeCount = input.ReadUInt32();
             this.holeIndexLocation = input.ReadUInt32();
-            this.holeSize = input.ReadUInt32();
+            this.holeIndexSize = input.ReadUInt32();
         }
 
         /// <summary>
@@ -312,7 +312,7 @@ namespace FshDatIO
             stream.WriteUInt32(this.indexSize);
             stream.WriteUInt32(this.holeCount);
             stream.WriteUInt32(this.holeIndexLocation);
-            stream.WriteUInt32(this.holeSize);
+            stream.WriteUInt32(this.holeIndexSize);
             byte[] reservedBytes = new byte[36];
             stream.Write(reservedBytes, 0, 36); // reserved byte padding
         }

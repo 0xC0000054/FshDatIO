@@ -55,21 +55,21 @@ namespace FshDatIO
 			}
 		}
 		
-		internal FSHHeader(BinaryReader reader)
+		internal FSHHeader(Stream stream)
 		{
-			if (reader == null)
+			if (stream == null)
 			{
-				throw new ArgumentNullException("reader");
+				throw new ArgumentNullException("stream");
 			}
 
-			if (reader.ReadUInt32() != FSHSignature)
+			if (stream.ReadUInt32() != FSHSignature)
 			{
 				throw new FormatException(Properties.Resources.InvalidFshHeader);
 			}
 
-			this.size = reader.ReadInt32();
-			this.imageCount = reader.ReadInt32();
-			this.directoryId = reader.ReadBytes(4);
+			this.size = stream.ReadInt32();
+			this.imageCount = stream.ReadInt32();
+			this.directoryId = stream.ReadBytes(4);
 		}
 
 		internal FSHHeader(int imageCount, string directoryID)

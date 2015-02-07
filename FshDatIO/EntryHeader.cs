@@ -116,23 +116,23 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EntryHeader"/> struct from the specified BinaryReader.
+        /// Initializes a new instance of the <see cref="EntryHeader"/> from the specified Stream.
         /// </summary>
-        /// <param name="br">The BinaryReader to read from.</param>
-        internal EntryHeader(BinaryReader br)
+        /// <param name="stream">The Stream to read from.</param>
+        internal EntryHeader(Stream stream)
         {
-            if (br == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException("br");
+                throw new ArgumentNullException("stream");
             }
 
-            this.code = br.ReadInt32();
-            this.width = br.ReadUInt16();
-            this.height = br.ReadUInt16();
+            this.code = stream.ReadInt32();
+            this.width = stream.ReadUInt16();
+            this.height = stream.ReadUInt16();
             this.misc = new ushort[4];
             for (int i = 0; i < 4; i++)
             {
-                this.misc[i] = br.ReadUInt16();
+                this.misc[i] = stream.ReadUInt16();
             }
         }
 

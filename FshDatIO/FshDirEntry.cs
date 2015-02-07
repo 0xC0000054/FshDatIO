@@ -38,15 +38,15 @@ namespace FshDatIO
 			}
 		}
 
-		internal FSHDirEntry(BinaryReader reader)
+		internal FSHDirEntry(Stream stream)
 		{
-			if (reader == null)
+			if (stream == null)
 			{
-				throw new ArgumentNullException("reader");
+				throw new ArgumentNullException("stream");
 			}
 
-			this.name = reader.ReadBytes(4);
-			this.offset = reader.ReadInt32();
+			this.name = stream.ReadBytes(4);
+			this.offset = stream.ReadInt32();
 		}
 
 		internal FSHDirEntry(string name)

@@ -29,12 +29,12 @@ namespace FshDatIO
             this.unCompressedSize = unCompressedSize;
         }
 
-        public void Save(BinaryWriter bw)
+        public void Save(Stream stream)
         {
-            bw.Write(this.type);
-            bw.Write(this.group);
-            bw.Write(this.instance);
-            bw.Write(this.unCompressedSize);
+            stream.WriteUInt32(this.type);
+            stream.WriteUInt32(this.group);
+            stream.WriteUInt32(this.instance);
+            stream.WriteUInt32(this.unCompressedSize);
         }
     }
 

@@ -111,28 +111,28 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Initializes a new instance of the DatFile class and loads the specified fileName.  
+        /// Initializes a new instance of the DatFile class and loads the specified path.  
         /// </summary>
-        /// <param name="fileName">The fileName to load.</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="fileName"/> is null.</exception>
+        /// <param name="path">The path of the file to load.</param>
+        /// <exception cref="System.ArgumentNullException"><paramref name="path"/> is null.</exception>
         /// <exception cref="DatFileException">The DBPF format version is not supported.</exception>
         /// <exception cref="DatFileException">The size of the index table is invalid.</exception>
         /// <exception cref="DatHeaderException">The header identifier does not equal DBPF.</exception>
         /// <exception cref="System.IO.FileNotFoundException">The file specified in <paramref name="path"/> was not found.</exception>
-        public DatFile(string fileName)
+        public DatFile(string path)
         {
-            if (fileName == null)
+            if (path == null)
             {
-                throw new ArgumentNullException("fileName");
+                throw new ArgumentNullException("path");
             }
 
             this.header = null;
             this.indices = null;
-            this.datFileName = fileName;
+            this.datFileName = path;
             this.dirty = false;
             this.loaded = false;
             this.stream = null;
-            Load(fileName);
+            Load(path);
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace FshDatIO
         {
             if (path == null)
             {
-                throw new ArgumentNullException("fileName");
+                throw new ArgumentNullException("path");
             }
 
             this.stream = new FileStream(path, FileMode.Open, FileAccess.Read);

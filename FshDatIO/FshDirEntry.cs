@@ -12,6 +12,8 @@ namespace FshDatIO
 		private byte[] name;
 		private int offset;
 
+		internal const int SizeOf = 8;
+
 		/// <summary>
 		/// The name of the directory.
 		/// </summary>
@@ -38,15 +40,21 @@ namespace FshDatIO
 			}
 		}
 
-		internal FSHDirEntry(Stream stream)
+		internal FSHDirEntry(byte[] rawData, int startOffset)
 		{
-			if (stream == null)
+			if (rawData == null)
 			{
-				throw new ArgumentNullException("stream");
+				throw new ArgumentNullException("rawData");
 			}
 
-			this.name = stream.ReadBytes(4);
-			this.offset = stream.ReadInt32();
+			if (startOffset < 0 || startOffset > (rawData.Length - FSHDirEntry.SizeOf))
+			{
+				throw new ArgumentOutOfRangeException("startOffset");
+			}
+
+			this.name = new byte[4];
+			Array.Copy(rawData, startOffset, this.name, 0, 4);
+			this.offset = LittleEndianBitConverter.ToInt32(rawData, startOffset + 4);
 		}
 
 		internal FSHDirEntry(string name)

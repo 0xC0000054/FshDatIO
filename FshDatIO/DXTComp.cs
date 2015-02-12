@@ -11,12 +11,13 @@ namespace FshDatIO
         /// <summary>
         /// Unpacks the DXT image.
         /// </summary>
-        /// <param name="blocks">The compressed blocks.</param>
+        /// <param name="blocks">The byte array containing the compressed blocks.</param>
+        /// <param name="offset">The offset of the data within the <paramref name="blocks"/> array.</param>
         /// <param name="width">The width of the final image.</param>
         /// <param name="height">The height of the final image.</param>
         /// <param name="dxt1">set to <c>true</c> if the image is DXT1.</param>
-        /// <returns>The decompressed pixels.</returns>
-        public static unsafe byte[] UnpackDXTImage(byte[] blocks, int width, int height, bool dxt1)
+        /// <exception cref="System.ArgumentNullException">blocks</exception>
+        public static unsafe byte[] UnpackDXTImage(byte[] blocks, int offset, int width, int height, bool dxt1)
         {
             if (blocks == null)
             {
@@ -27,7 +28,7 @@ namespace FshDatIO
 
             fixed (byte* rgba = pixelData)
             {
-                fixed (byte* pBlocks = blocks) // fix the array in place
+                fixed (byte* pBlocks = &blocks[offset]) // fix the array in place
                 {
                     int bytesPerBlock = dxt1 ? 8 : 16;
                     byte* targetRGBA = stackalloc byte[4 * 16];

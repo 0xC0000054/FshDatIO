@@ -429,7 +429,7 @@ namespace FshDatIO
                         }
                         attachCount++;
 
-                        auxCode = BitConverter.ToInt32(this.rawData, auxOffset);
+                        auxCode = LittleEndianBitConverter.ToInt32(this.rawData, auxOffset);
                     }
                     int width = (int)eHeader.Width;
                     int height = (int)eHeader.Height;

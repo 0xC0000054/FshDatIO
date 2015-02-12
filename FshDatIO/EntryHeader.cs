@@ -100,11 +100,27 @@ namespace FshDatIO
         
         internal EntryHeader(byte[] rawData, int offset)
         {
-            this.code = BitConverter.ToInt32(rawData, offset);
-            this.width = BitConverter.ToUInt16(rawData, offset + 4);
-            this.height = BitConverter.ToUInt16(rawData, offset + 6);
+            if (rawData == null)
+            {
+                throw new ArgumentNullException("rawData");
+            }
+
+            if (offset < 0 || offset > (rawData.Length - EntryHeader.SizeOf))
+            {
+                throw new ArgumentOutOfRangeException("offset");
+            }
+
+            this.code = LittleEndianBitConverter.ToInt32(rawData, offset);
+            this.width = LittleEndianBitConverter.ToUInt16(rawData, offset + 4);
+            this.height = LittleEndianBitConverter.ToUInt16(rawData, offset + 6);
             this.misc = new ushort[4];
-            Array.Copy(rawData, offset + 8, this.misc, 0, 4);
+
+            int miscOffset = offset + 8;
+            for (int i = 0; i < this.misc.Length; i++)
+            {
+                this.misc[i] = LittleEndianBitConverter.ToUInt16(rawData, miscOffset);
+                miscOffset += 2;
+            }
         }
 
         internal EntryHeader(FshImageFormat format, int width, int height, ushort[] misc)
@@ -113,27 +129,6 @@ namespace FshDatIO
             this.width = (ushort)width;
             this.height = (ushort)height;
             this.misc = misc;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EntryHeader"/> from the specified Stream.
-        /// </summary>
-        /// <param name="stream">The Stream to read from.</param>
-        internal EntryHeader(Stream stream)
-        {
-            if (stream == null)
-            {
-                throw new ArgumentNullException("stream");
-            }
-
-            this.code = stream.ReadInt32();
-            this.width = stream.ReadUInt16();
-            this.height = stream.ReadUInt16();
-            this.misc = new ushort[4];
-            for (int i = 0; i < 4; i++)
-            {
-                this.misc[i] = stream.ReadUInt16();
-            }
         }
 
         internal void Save(Stream stream)

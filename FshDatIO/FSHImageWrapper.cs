@@ -912,7 +912,7 @@ namespace FshDatIO
                     int dataLength = GetBmpDataSize(scaledWidth, scaledHeight, format);
                     byte[] data = EncodeImageData(temp, format, fshWriteCompression, dataLength);
 
-                    if (!entry.packedMbp && format != FshImageFormat.DXT1 || entry.packedMbp && j == mipCount)
+                    if (format != FshImageFormat.DXT1 && !entry.packedMbp || format == FshImageFormat.DXT1 && j == mipCount)
                     {
                         while ((dataLength & 15) > 0)
                         {

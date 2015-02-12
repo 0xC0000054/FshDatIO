@@ -118,7 +118,7 @@ namespace FshDatIO
             return size;
         }
 
-        private static unsafe void DecodeImageData(byte[] imageData, int width, int height, ref BitmapEntry entry)
+        private static unsafe void DecodeImageData(byte[] imageData, int startOffset, int width, int height, ref BitmapEntry entry)
         {
             entry.Bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb);
             entry.Alpha = new Bitmap(width, height, PixelFormat.Format24bppRgb);
@@ -136,7 +136,7 @@ namespace FshDatIO
 
             if (format == FshImageFormat.DXT1 || format == FshImageFormat.DXT3)
             {
-                byte[] rgba = DXTComp.UnpackDXTImage(imageData, width, height, (format == FshImageFormat.DXT1));
+                byte[] rgba = DXTComp.UnpackDXTImage(imageData, startOffset, width, height, (format == FshImageFormat.DXT1));
 
                 bd = entry.Bitmap.LockBits(lockRect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
                 ad = entry.Alpha.LockBits(lockRect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
@@ -192,7 +192,7 @@ namespace FshDatIO
                     alStride = ad.Stride;
                     srcStride = width * 4;
 
-                    fixed (byte* ptr = imageData)
+                    fixed (byte* ptr = &imageData[startOffset])
                     {
                         for (int y = 0; y < height; y++)
                         {
@@ -235,7 +235,7 @@ namespace FshDatIO
 
                     srcStride = width * 3;
 
-                    fixed (byte* ptr = imageData)
+                    fixed (byte* ptr = &imageData[startOffset])
                     {
                         for (int y = 0; y < height; y++)
                         {
@@ -266,7 +266,7 @@ namespace FshDatIO
             }
         }
 
-        private static System.Collections.ObjectModel.ReadOnlyCollection<FshAttachment> ParseAttachments(Stream stream, int auxHeaderCode, int dirOffset, int nextOffset, int fshSize, int count)
+        private System.Collections.ObjectModel.ReadOnlyCollection<FshAttachment> ParseAttachments(int auxHeaderCode, int dirOffset, int nextOffset, int fshSize, int count)
         {
             List<FshAttachment> attachments = new List<FshAttachment>(count);
             int auxOffset = dirOffset;
@@ -280,9 +280,9 @@ namespace FshDatIO
                 {
                     break;
                 }
-                stream.Seek((long)auxOffset, SeekOrigin.Begin);
 
-                auxHeader.Code = stream.ReadInt32();
+                auxHeader.Code = LittleEndianBitConverter.ToInt32(this.rawData, auxOffset);
+                auxOffset += 4;
 
                 int attachCode = auxHeader.Code & 0xff;
 
@@ -295,14 +295,17 @@ namespace FshDatIO
                 {
                     try
                     {
-                        auxHeader.Width = stream.ReadUInt16();
-                        auxHeader.Height = stream.ReadUInt16();
+                        auxHeader.Width = LittleEndianBitConverter.ToUInt16(this.rawData, auxOffset);
+                        auxOffset += 2;
+                        auxHeader.Height = LittleEndianBitConverter.ToUInt16(this.rawData, auxOffset);
+                        auxOffset += 2;
                         if (attachCode == 0x69 || attachCode == 0x7c)
                         {
                             ushort[] misc = new ushort[4];
-                            for (int m = 0; m < 4; m++)
+                            for (int i = 0; i < 4; i++)
                             {
-                                misc[m] = stream.ReadUInt16();
+                                misc[i] = LittleEndianBitConverter.ToUInt16(this.rawData, auxOffset);
+                                auxOffset += 2;
                             }
                             auxHeader.SetMiscData(misc);
                         }
@@ -319,10 +322,12 @@ namespace FshDatIO
                 {
                     case 0x6f: // TXT                                    
                     case 0x69: // ETXT full header
-                        attachBytes = stream.ReadBytes(auxHeader.Width);
+                        attachBytes = new byte[auxHeader.Width];
+                        Buffer.BlockCopy(this.rawData, auxOffset, attachBytes, 0, attachBytes.Length);
                         break;
                     case 0x70: // ETXT 16 bytes including code length
-                        attachBytes = stream.ReadBytes(12);
+                        attachBytes = new byte[12];
+                        Buffer.BlockCopy(this.rawData, auxOffset, attachBytes, 0, attachBytes.Length);
                         break;
                     case 0x7c: // Pixel region
                     default: // Binary data
@@ -337,7 +342,8 @@ namespace FshDatIO
                             continue;
                         }
 
-                        attachBytes = stream.ReadBytes(dataLength);
+                        attachBytes = new byte[dataLength];
+                        Buffer.BlockCopy(this.rawData, auxOffset, attachBytes, 0, attachBytes.Length);
                         break;
                 }
 
@@ -368,185 +374,173 @@ namespace FshDatIO
             }
 
             this.rawData = Decompress(imageBytes);
-            using (MemoryStream stream = new MemoryStream(this.rawData))
+            this.header = new FSHHeader(this.rawData);
+
+            int fshSize = header.Size;
+            int imageCount = header.ImageCount;
+
+            this.dirs = new FSHDirEntry[imageCount];
+            this.bitmaps = new BitmapEntryCollection(imageCount);
+
+            int directoryOffset = 16;
+            for (int i = 0; i < imageCount; i++)
             {
-                this.header = new FSHHeader(stream);
+                this.dirs[i] = new FSHDirEntry(this.rawData, directoryOffset);
+                directoryOffset += FSHDirEntry.SizeOf;
+            }
 
-                int fshSize = header.Size;
-                int imageCount = header.ImageCount;
+            int nextOffset = fshSize;
+            for (int i = 0; i < imageCount; i++)
+            {
+                FSHDirEntry dir = this.dirs[i];
 
-                this.dirs = new FSHDirEntry[imageCount];
-                this.bitmaps = new BitmapEntryCollection(imageCount);
-
-                for (int i = 0; i < imageCount; i++)
+                for (int j = 0; j < imageCount; j++)
                 {
-                    this.dirs[i] = new FSHDirEntry(stream);
+                    if (dirs[j].Offset > dir.Offset && dirs[j].Offset < nextOffset)
+                    {
+                        nextOffset = dirs[j].Offset;
+                    }
                 }
 
-                int nextOffset = fshSize;
-                for (int i = 0; i < imageCount; i++)
+                EntryHeader eHeader = new EntryHeader(this.rawData, dir.Offset);
+
+                int code = eHeader.Code & 0x7f;
+
+                if (code == 0x7b || code == 0x7e || code == 0x78 || code == 0x6d)
                 {
-                    FSHDirEntry dir = this.dirs[i];
+                    throw new FormatException(Resources.UnsupportedFshType); // bail on the non SC4 formats
+                }
 
-                    for (int j = 0; j < imageCount; j++)
+                bool isBmp = (code == 0x7d || code == 0x7f || code == 0x60 || code == 0x61);
+
+                if (isBmp)
+                {
+                    int bmpStartOffset = dir.Offset + EntryHeader.SizeOf;
+                    int auxCode = eHeader.Code;
+                    int attachCount = 0;
+                    int auxOffset = dir.Offset;
+                    while ((auxCode >> 8) > 0)
                     {
-                        if (dirs[j].Offset > dir.Offset && dirs[j].Offset < nextOffset)
+                        auxOffset += (auxCode >> 8); // the section length is the start offset for the attachment
+
+                        if ((auxOffset + 4) >= nextOffset)
                         {
-                            nextOffset = dirs[j].Offset;
+                            break;
                         }
+                        attachCount++;
+
+                        auxCode = BitConverter.ToInt32(this.rawData, auxOffset);
                     }
+                    int width = (int)eHeader.Width;
+                    int height = (int)eHeader.Height;
+                    bool entryCompressed = (eHeader.Code & 0x80) != 0;
 
-                    stream.Seek((long)dir.Offset, SeekOrigin.Begin);
-                    EntryHeader eHeader = new EntryHeader(stream);
+                    int numScales = 0;
+                    bool packedMbp = false;
+                    ushort[] miscData = eHeader.GetMiscData();
 
-                    int code = eHeader.Code & 0x7f;
-
-                    if (code == 0x7b || code == 0x7e || code == 0x78 || code == 0x6d)
+                    if (!entryCompressed && (miscData[3] & 0x0fff) == 0)
                     {
-                        throw new FormatException(Resources.UnsupportedFshType); // bail on the non SC4 formats
-                    }
+                        numScales = (miscData[3] >> 12) & 0x0f;
 
-                    bool isBmp = (code == 0x7d || code == 0x7f || code == 0x60 || code == 0x61);
-
-                    if (isBmp)
-                    {
-                        long bmpStartOffset = dir.Offset + EntryHeader.SizeOf;
-                        int auxCode = eHeader.Code;
-                        int attachCount = 0;
-                        int auxOffset = dir.Offset;
-                        while ((auxCode >> 8) > 0)
+                        if ((width % (1 << numScales)) > 0 || (height % (1 << numScales)) > 0)
                         {
-                            auxOffset += (auxCode >> 8); // the section length is the start offset for the attachment
-
-                            if ((auxOffset + 4) >= nextOffset)
-                            {
-                                break;
-                            }
-                            attachCount++;
-
-                            stream.Seek(auxOffset, SeekOrigin.Begin);
-                            auxCode = stream.ReadInt32();
+                            numScales = 0;
                         }
-                        int width = (int)eHeader.Width;
-                        int height = (int)eHeader.Height;
-                        bool entryCompressed = (eHeader.Code & 0x80) != 0;
 
-                        int numScales = 0;
-                        bool packedMbp = false;
-                        ushort[] miscData = eHeader.GetMiscData();
-
-                        if (!entryCompressed && (miscData[3] & 0x0fff) == 0)
+                        if (numScales > 0) // check for multiscale bitmaps
                         {
-                            numScales = (miscData[3] >> 12) & 0x0f;
+                            int mbpLen = 0;
+                            int mbpPadLen = 0;
 
-                            if ((width % (1 << numScales)) > 0 || (height % (1 << numScales)) > 0)
+                            for (int j = 0; j <= numScales; j++)
                             {
-                                numScales = 0;
-                            }
+                                int mipWidth = (width >> j);
+                                int mipHeight = (height >> j);
 
-                            if (numScales > 0) // check for multiscale bitmaps
-                            {
-                                int mbpLen = 0;
-                                int mbpPadLen = 0;
-
-                                for (int j = 0; j <= numScales; j++)
+                                int dataLength;
+                                switch (code)
                                 {
-                                    int mipWidth = (width >> j);
-                                    int mipHeight = (height >> j);
-
-                                    int dataLength;
-                                    switch (code)
-                                    {
-                                        case 0x60:
-                                            // DXT1 images must be padded to a multiple of four.
-                                            dataLength = ((((mipWidth + 3) & ~3) * ((mipHeight + 3) & ~3)) / 2);
-                                            break;
-                                        case 0x61:
-                                            dataLength = (mipWidth * mipHeight);
-                                            break;
-                                        case 0x7d:
-                                            dataLength = (mipWidth * mipHeight * 4);
-                                            break;
-                                        case 0x7f:
-                                            dataLength = (mipWidth * mipHeight * 3);
-                                            break;
-                                        default:
-                                            throw new FormatException(Resources.UnsupportedFshType);
-                                    }
-                                    mbpLen += dataLength;
-                                    mbpPadLen += dataLength;
-
-                                    // DXT1 mipmaps smaller than 4x4 are also padded
-                                    int padLen = ((16 - mbpLen) & 15);
-                                    if (padLen > 0)
-                                    {
-                                        mbpLen += padLen;
-                                        if (j == numScales)
-                                        {
-                                            mbpPadLen += ((16 - mbpPadLen) & 15);
-                                        }
-                                    }
+                                    case 0x60:
+                                        // DXT1 images must be padded to a multiple of four.
+                                        dataLength = ((((mipWidth + 3) & ~3) * ((mipHeight + 3) & ~3)) / 2);
+                                        break;
+                                    case 0x61:
+                                        dataLength = (mipWidth * mipHeight);
+                                        break;
+                                    case 0x7d:
+                                        dataLength = (mipWidth * mipHeight * 4);
+                                        break;
+                                    case 0x7f:
+                                        dataLength = (mipWidth * mipHeight * 3);
+                                        break;
+                                    default:
+                                        throw new FormatException(Resources.UnsupportedFshType);
                                 }
+                                mbpLen += dataLength;
+                                mbpPadLen += dataLength;
 
-                                int imageLength = eHeader.Code >> 8;
-                                if (imageLength != 0 && imageLength != (mbpLen + EntryHeader.SizeOf) ||
-                                    imageLength == 0 && (mbpLen + dir.Offset + EntryHeader.SizeOf) != nextOffset)
+                                // DXT1 mipmaps smaller than 4x4 are also padded
+                                int padLen = ((16 - mbpLen) & 15);
+                                if (padLen > 0)
                                 {
-                                    packedMbp = true;
-                                    if (imageLength != 0 && imageLength != (mbpPadLen + EntryHeader.SizeOf) ||
-                                        imageLength == 0 && (mbpPadLen + dir.Offset + EntryHeader.SizeOf) != nextOffset)
+                                    mbpLen += padLen;
+                                    if (j == numScales)
                                     {
-                                        numScales = 0;
+                                        mbpPadLen += ((16 - mbpPadLen) & 15);
                                     }
                                 }
                             }
-                        }
 
-                        if (stream.Position != bmpStartOffset)
-                        {
-                            stream.Seek(bmpStartOffset, SeekOrigin.Begin);
-                        }
-
-                        FshImageFormat format = (FshImageFormat)code;
-                        BitmapEntry entry = new BitmapEntry(format, dir.Name, numScales, packedMbp, miscData);
-
-                        byte[] imageData = null;
-
-                        if (entryCompressed)
-                        {
-                            int compSize = 0;
-
-                            int sectionLength = eHeader.Code >> 8;
-                            if (sectionLength > 0)
+                            int imageLength = eHeader.Code >> 8;
+                            if (imageLength != 0 && imageLength != (mbpLen + EntryHeader.SizeOf) ||
+                                imageLength == 0 && (mbpLen + dir.Offset + EntryHeader.SizeOf) != nextOffset)
                             {
-                                compSize = sectionLength;
+                                packedMbp = true;
+                                if (imageLength != 0 && imageLength != (mbpPadLen + EntryHeader.SizeOf) ||
+                                    imageLength == 0 && (mbpPadLen + dir.Offset + EntryHeader.SizeOf) != nextOffset)
+                                {
+                                    numScales = 0;
+                                }
                             }
-                            else
-                            {
-                                compSize = nextOffset - (int)bmpStartOffset;
-                            }
+                        }
+                    }
 
-                            byte[] compressedData = stream.ReadBytes(compSize);
-                            imageData = QfsCompression.Decompress(compressedData); // read and decompress the bitmap data
+                    FshImageFormat format = (FshImageFormat)code;
+                    BitmapEntry entry = new BitmapEntry(format, dir.Name, numScales, packedMbp, miscData);
+
+                    if (entryCompressed)
+                    {
+                        int compSize = 0;
+
+                        int sectionLength = eHeader.Code >> 8;
+                        if (sectionLength > 0)
+                        {
+                            compSize = sectionLength;
                         }
                         else
                         {
-                            int dataSize = GetBmpDataSize(width, height, format);
-                            imageData = stream.ReadBytes(dataSize);
+                            compSize = nextOffset - (int)bmpStartOffset;
                         }
 
-                        DecodeImageData(imageData, width, height, ref entry);
-
-                        if (attachCount > 0)
-                        {
-                            entry.Attachments = ParseAttachments(stream, eHeader.Code, dir.Offset, nextOffset, fshSize, attachCount);
-                        }
-
-                        this.bitmaps.Add(entry);
+                        byte[] compressedData = new byte[compSize];
+                        Buffer.BlockCopy(this.rawData, bmpStartOffset, compressedData, 0, compSize);
+                        
+                        DecodeImageData(QfsCompression.Decompress(compressedData), 0, width, height, ref entry);
+                    }
+                    else
+                    {
+                        DecodeImageData(this.rawData, bmpStartOffset, width, height, ref entry);
                     }
 
-                }
 
+                    if (attachCount > 0)
+                    {
+                        entry.Attachments = ParseAttachments(eHeader.Code, dir.Offset, nextOffset, fshSize, attachCount);
+                    }
+
+                    this.bitmaps.Add(entry);
+                }
             }
 
         }
@@ -679,7 +673,7 @@ namespace FshDatIO
                 throw new InvalidOperationException(Properties.Resources.ImageNotLoaded);
             }
 
-            if (offset < 0 || (offset + EntryHeader.SizeOf) >= this.rawData.Length)
+            if (offset < 0 || offset > (this.rawData.Length - EntryHeader.SizeOf))
             {
                 throw new ArgumentOutOfRangeException("offset");
             }
@@ -1161,42 +1155,39 @@ namespace FshDatIO
                 rawData = imageBytes;
             }
 
-            using (MemoryStream stream = new MemoryStream(rawData))
+
+            FSHHeader header = new FSHHeader(rawData);
+
+            int nBmp = header.ImageCount;
+            FSHDirEntry[] dirs = new FSHDirEntry[nBmp];
+
+            int directoryOffset = 16;
+
+            for (int i = 0; i < nBmp; i++)
             {
-
-                FSHHeader header = new FSHHeader(stream);
-
-                int nBmp = header.ImageCount;
-                FSHDirEntry[] dirs = new FSHDirEntry[nBmp];
-
-                for (int i = 0; i < nBmp; i++)
-                {
-                    dirs[i] = new FSHDirEntry(stream);
-                }
-
-                for (int i = 0; i < nBmp; i++)
-                {
-                    FSHDirEntry dir = dirs[i];
-                    stream.Seek((long)dir.Offset, SeekOrigin.Begin);
-                    EntryHeader eHeader = new EntryHeader(stream);
-
-                    int code = eHeader.Code & 0x7f;
-
-                    if (code == 0x7b || code == 0x7e || code == 0x78 || code == 0x6d)
-                    {
-                        throw new FormatException(Resources.UnsupportedFshType); // bail on the non SC4 formats
-                    }
-
-                    bool isBmp = (code == 0x7d || code == 0x7f || code == 0x60 || code == 0x61);
-
-                    if (isBmp && eHeader.Width < 128 && eHeader.Height < 128)
-                    {
-                        return false;
-                    }
-                }
+                dirs[i] = new FSHDirEntry(rawData, directoryOffset);
+                directoryOffset += FSHDirEntry.SizeOf;
             }
 
+            for (int i = 0; i < nBmp; i++)
+            {
+                FSHDirEntry dir = dirs[i];
+                EntryHeader eHeader = new EntryHeader(rawData, dir.Offset);
 
+                int code = eHeader.Code & 0x7f;
+
+                if (code == 0x7b || code == 0x7e || code == 0x78 || code == 0x6d)
+                {
+                    throw new FormatException(Resources.UnsupportedFshType); // bail on the non SC4 formats
+                }
+
+                bool isBmp = (code == 0x7d || code == 0x7f || code == 0x60 || code == 0x61);
+
+                if (isBmp && eHeader.Width < 128 && eHeader.Height < 128)
+                {
+                    return false;
+                }
+            }
 
             return true;
         }

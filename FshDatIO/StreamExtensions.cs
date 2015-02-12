@@ -34,25 +34,11 @@ namespace FshDatIO
             } while (bytesRead < count);
         }
 
-        public static ushort ReadUInt16(this Stream s)
-        {
-            FillBuffer(s, 2);
-
-            return (ushort)(buffer[0] | (buffer[1] << 8));
-        }
-
         public static uint ReadUInt32(this Stream s)
         {
             FillBuffer(s, 4);
 
             return (uint)(buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24));
-        }
-
-        public static int ReadInt32(this Stream s)
-        {
-            FillBuffer(s, 4);
-
-            return (int)(buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24));
         }
 
         public static byte[] ReadBytes(this Stream s, int count)
@@ -79,12 +65,22 @@ namespace FshDatIO
             return buffer;
         }
 
+        /// <summary>
+        /// Writes an unsigned 16-bit integer to the stream in little endian byte order.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="value">The value.</param>
         public static void WriteUInt16(this Stream s, ushort value)
         {
             s.WriteByte((byte)(value & 0xff));
             s.WriteByte((byte)((value >> 8) & 0xff));
         }
 
+        /// <summary>
+        /// Writes an unsigned 32-bit integer to the stream in little endian byte order.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="value">The value.</param>
         public static void WriteUInt32(this Stream s, uint value)
         {
             s.WriteByte((byte)(value & 0xff));
@@ -92,7 +88,12 @@ namespace FshDatIO
             s.WriteByte((byte)((value >> 16) & 0xff));
             s.WriteByte((byte)((value >> 24) & 0xff));
         }
-
+        
+        /// <summary>
+        /// Writes an signed 32-bit integer to the stream in little endian byte order.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="value">The value.</param>
         public static void WriteInt32(this Stream s, int value)
         {
             s.WriteByte((byte)(value & 0xff));

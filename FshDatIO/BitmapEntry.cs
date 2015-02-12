@@ -275,14 +275,7 @@ namespace FshDatIO
                 if (((bitmap.Width % mipScale) != 0 || (bitmap.Height % mipScale) != 0) || mips > 15)
                 {
                     mips = 0;
-                }
-                else
-                {
-                    if (bmpType == FshImageFormat.DXT1)
-                    {
-                        this.packedMbp = true;
-                    }
-                }
+                }                
             }
 
             this.embeddedMipmapCount = mips;

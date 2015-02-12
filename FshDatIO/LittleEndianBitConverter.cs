@@ -48,7 +48,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="value">An array of bytes.</param>
         /// <param name="startIndex">The starting position within <paramref name="value"/>.</param>
-        /// <returns>A 32-bit signed integer formed by two bytes beginning at <paramref name="startIndex"/>.</returns>
+        /// <returns>A 32-bit signed integer formed by four bytes beginning at <paramref name="startIndex"/>.</returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="value"/> is null</exception>
         /// <exception cref="System.ArgumentOutOfRangeException"><paramref name="startIndex"/> is less than zero or greater than the length of <paramref name="value"/> minus 1.</exception>
         public static unsafe int ToInt32(byte[] value, int startIndex)
@@ -82,7 +82,7 @@ namespace FshDatIO
         /// </summary>
         /// <param name="value">An array of bytes.</param>
         /// <param name="startIndex">The starting position within <paramref name="value"/>.</param>
-        /// <returns>A 32-bit unsigned integer formed by two bytes beginning at <paramref name="startIndex"/>.</returns>
+        /// <returns>A 32-bit unsigned integer formed by four bytes beginning at <paramref name="startIndex"/>.</returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="value"/> is null</exception>
         /// <exception cref="System.ArgumentOutOfRangeException"><paramref name="startIndex"/> is less than zero or greater than the length of <paramref name="value"/> minus 1.</exception>
         public static unsafe uint ToUInt32(byte[] value, int startIndex)

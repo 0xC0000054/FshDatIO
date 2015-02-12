@@ -257,13 +257,8 @@ namespace FshDatIO
             }
 
             this.vMajor = input.ReadUInt32();
-            if (this.vMajor != FileMajorVersion)
-            {
-                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.vMajor, "0"));
-            }
-
             this.vMinor = input.ReadUInt32();
-            if (this.vMinor != FileMinorVersion)
+            if (this.vMajor != FileMajorVersion || this.vMinor != FileMinorVersion)
             {
                 throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.vMajor, this.vMinor));
             }

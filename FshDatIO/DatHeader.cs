@@ -271,7 +271,7 @@ namespace FshDatIO
             this.indexVMajor = input.ReadUInt32();
             if (this.indexVMajor != IndexMajorVersion)
             {
-                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedIndexVersion, this.vMajor, this.vMinor));
+                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedIndexVersion, this.indexVMajor));
             }
 
             this.entries = input.ReadUInt32();

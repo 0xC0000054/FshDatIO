@@ -376,7 +376,10 @@ namespace FshDatIO
             using (FileStream output = new FileStream(saveFileName, FileMode.OpenOrCreate, FileAccess.Write))
             {
                 DatHeader head = this.header;
-                head.DateCreated = GetCurrentUnixTimestamp();
+                if (head.DateCreated == 0U)
+                {
+                    head.DateCreated = GetCurrentUnixTimestamp();
+                }
                 head.Save(output);
 
                 TrimDeletedItems();

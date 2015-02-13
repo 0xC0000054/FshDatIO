@@ -225,6 +225,9 @@ namespace FshDatIO
             this.vMajor = FileMinorVersion;
             this.uVMajor = 0;
             this.uVMinor = 0;
+            this.flags = 0;
+            this.dateCreated = 0;
+            this.dateModified = 0;
             this.indexVMajor = IndexMajorVersion;
             this.entries = 0;
             this.indexLocation = 96;

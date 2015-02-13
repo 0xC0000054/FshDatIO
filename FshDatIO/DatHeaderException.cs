@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace FshDatIO
 {
     /// <summary>
-    /// The exception thrown when the <see cref="DatFile"/>'s Header is invalid.
+    /// The exception thrown when the DBPF file signature is not valid.
     /// </summary>
     [Serializable]
     public sealed class DatHeaderException : DatFileException, ISerializable

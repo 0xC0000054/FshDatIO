@@ -379,11 +379,11 @@ namespace FshDatIO
 
                 byte[] temp = new byte[outLength];
 
-                // Write the compressed length before the actual data.
-                temp[0] = (byte)((outIndex >> 24) & 0xff);
-                temp[1] = (byte)((outIndex >> 16) & 0xff);
-                temp[2] = (byte)((outIndex >> 8) & 0xff);
-                temp[3] = (byte)(outIndex & 0xff);
+                // Write the compressed length before the actual data in little endian byte order.
+                temp[0] = (byte)(outIndex & 0xff);
+                temp[1] = (byte)((outIndex >> 8) & 0xff);
+                temp[2] = (byte)((outIndex >> 16) & 0xff);
+                temp[3] = (byte)((outIndex >> 24) & 0xff);
 
                 Buffer.BlockCopy(outbuf, 0, temp, 4, outIndex);
                 outbuf = temp;

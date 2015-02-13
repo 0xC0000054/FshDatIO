@@ -34,6 +34,12 @@ namespace FshDatIO
             } while (bytesRead < count);
         }
 
+        /// <summary>
+        /// Reads a 4-byte unsigned integer from the stream in little endian byte order and advances the position of the stream by four bytes.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <exception cref="System.IO.EndOfStreamException">The end of the stream is reached.</exception>
+        /// <returns>A 4-byte unsigned integer read from the current stream.</returns>
         public static uint ReadUInt32(this Stream s)
         {
             FillBuffer(s, 4);

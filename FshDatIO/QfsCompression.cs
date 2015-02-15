@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 
 namespace FshDatIO
 {
@@ -166,14 +165,13 @@ namespace FshDatIO
         /// </summary>
         /// <param name="input">The input byte array to compress</param>
         /// <param name="prefixLength">If set to true prefix the size of the compressed data, as is used by SC4; otherwise false.</param>
-        /// <returns>A byte array containing compressed data or null if the compression fails.</returns>
+        /// <returns>A byte array containing the compressed data or null if the data cannot be compressed.</returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="input"/> is null.</exception>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1814:PreferJaggedArraysOverMultidimensional", MessageId = "Body"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public static byte[] Compress(byte[] input, bool prefixLength)
         {
             if (input == null)
             {
-                throw new ArgumentNullException("input", "input byte array is null.");
+                throw new ArgumentNullException("input");
             }
 
             int inlen = input.Length;

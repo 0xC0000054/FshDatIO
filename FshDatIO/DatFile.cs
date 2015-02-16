@@ -153,38 +153,54 @@ namespace FshDatIO
 
             this.stream = new FileStream(path, FileMode.Open, FileAccess.Read);
 
-            this.header = new DatHeader(stream);
-
-            uint expectedIndexSize = this.header.Entries * DatIndex.SizeOf;
-            if (this.header.IndexSize != expectedIndexSize)
+            try
             {
-                throw new DatFileException(Resources.InvalidIndexTableSize);
-            }
+                this.header = new DatHeader(stream);
 
-            int entryCount = (int)header.Entries;
-
-            this.indices = new DatIndexCollection(entryCount);
-
-            this.stream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
-            for (int i = 0; i < entryCount; i++)
-            {
-                uint type = stream.ReadUInt32();
-                uint group = stream.ReadUInt32();
-                uint instance = stream.ReadUInt32();
-                uint location = stream.ReadUInt32();
-                uint size = stream.ReadUInt32();
-
-                DatIndex index = new DatIndex(type, group, instance, location, size);
-                if (type == FshTypeID)
+                uint expectedIndexSize = this.header.Entries * DatIndex.SizeOf;
+                if (this.header.IndexSize != expectedIndexSize)
                 {
-                    index.FileItem = new FshFileItem();
+                    throw new DatFileException(Resources.InvalidIndexTableSize);
                 }
-                this.indices.Add(index);
+
+                int entryCount = (int)header.Entries;
+
+                this.indices = new DatIndexCollection(entryCount);
+
+                this.stream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
+                for (int i = 0; i < entryCount; i++)
+                {
+                    uint type = stream.ReadUInt32();
+                    uint group = stream.ReadUInt32();
+                    uint instance = stream.ReadUInt32();
+                    uint location = stream.ReadUInt32();
+                    uint size = stream.ReadUInt32();
+
+                    DatIndex index = new DatIndex(type, group, instance, location, size);
+                    if (type == FshTypeID)
+                    {
+                        index.FileItem = new FshFileItem();
+                    }
+                    this.indices.Add(index);
+                }
+
+                this.indices.SortByLocation();
+
+                this.loaded = true;
             }
-
-            this.indices.SortByLocation();
-
-            this.loaded = true;
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                // Close the stream if an Exception was thrown when the file was being loaded. 
+                if (!this.loaded && this.stream != null)
+                {
+                    this.stream.Dispose();
+                    this.stream = null;
+                }
+            }
         }
 
         /// <summary>

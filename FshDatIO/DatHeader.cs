@@ -222,7 +222,7 @@ namespace FshDatIO
         internal DatHeader()
         {
             this.vMajor = FileMajorVersion;
-            this.vMajor = FileMinorVersion;
+            this.vMinor = FileMinorVersion;
             this.uVMajor = 0;
             this.uVMinor = 0;
             this.flags = 0;

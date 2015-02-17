@@ -4,7 +4,7 @@ using System.IO;
 namespace FshDatIO
 {
     /// <summary>
-    /// The enum specifing the DatIndex states.
+    /// An enumeration specifying the DatIndex states.
     /// </summary>
     public enum DatIndexState
     {
@@ -13,11 +13,11 @@ namespace FshDatIO
         /// </summary>
         None,
         /// <summary>
-        /// The DatIndex contains a new file to add to the dat.
+        /// The DatIndex is a new file.
         /// </summary>
         New,
         /// <summary>
-        /// The DatIndex will be deleted on save.
+        /// The DatIndex will be deleted when the file is saved.
         /// </summary>
         Deleted,
         /// <summary>
@@ -119,7 +119,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets or sets the file item.
+        /// Gets the file item.
         /// </summary>
         /// <value>
         /// The file item.
@@ -130,7 +130,7 @@ namespace FshDatIO
             {
                 return fileItem;
             }
-            set
+            internal set
             {
                 fileItem = value;
             }

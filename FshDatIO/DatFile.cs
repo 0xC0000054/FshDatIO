@@ -360,13 +360,16 @@ namespace FshDatIO
         /// <summary>
         /// Saves the currently loaded DatFile
         /// </summary>
+        /// <exception cref="System.InvalidOperationException">The current DatFile is not loaded from an existing file.</exception>
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save()
         {
-            if (!string.IsNullOrEmpty(this.datFileName))
+            if (string.IsNullOrEmpty(this.datFileName))
             {
-                Save(this.datFileName);
+                throw new InvalidOperationException(Resources.NoDatLoaded);
             }
+            
+            Save(this.datFileName);
         }
 
         /// <summary>

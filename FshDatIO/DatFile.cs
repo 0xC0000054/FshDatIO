@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace FshDatIO
         private static readonly DateTime UnixEpochUTC = new DateTime(1970, 1, 1).ToUniversalTime();
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is dirty.
+        /// Gets a value indicating whether this instance is dirty.
         /// </summary>
         /// <value>
         ///   <c>true</c> if this instance is dirty; otherwise, <c>false</c>.
@@ -40,10 +41,6 @@ namespace FshDatIO
             get
             {
                 return dirty;
-            }
-            set
-            {
-                dirty = value;
             }
         }
 
@@ -176,12 +173,7 @@ namespace FshDatIO
                     uint location = stream.ReadUInt32();
                     uint size = stream.ReadUInt32();
 
-                    DatIndex index = new DatIndex(type, group, instance, location, size);
-                    if (type == FshTypeID)
-                    {
-                        index.FileItem = new FshFileItem();
-                    }
-                    this.indices.Add(index);
+                    this.indices.Add(new DatIndex(type, group, instance, location, size));
                 }
 
                 this.indices.SortByLocation();
@@ -210,7 +202,6 @@ namespace FshDatIO
         /// <param name="instance">The TGI instance id to load.</param>
         /// <returns>The loaded FshWrapper item</returns>
         /// <exception cref="DatIndexException">The specified index does not exist in the DatFile</exception>
-        /// <exception cref="DatFileException">The Fsh file is not found at the specified index in the DatFile</exception>
         /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been disposed.</exception>
         public FshFileItem LoadFile(uint group, uint instance)
         {
@@ -226,8 +217,12 @@ namespace FshDatIO
                 throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist);
             }
 
-            FshFileItem fsh = index.FileItem;
+            if (index.FileItem == null)
+            {
+                index.FileItem = new FshFileItem();
+            }
 
+            FshFileItem fsh = index.FileItem;
             if (!fsh.Loaded)
             {
                 this.stream.Seek((long)index.Location, SeekOrigin.Begin);
@@ -237,6 +232,58 @@ namespace FshDatIO
             }
 
             return fsh;
+        }
+
+        /// <summary>
+        /// Marks an existing file as having been modified.
+        /// </summary>
+        /// <param name="group">The group id of the file.</param>
+        /// <param name="instance">The instance id of the file.</param>
+        /// <exception cref="FshDatIO.DatIndexException">The specified index does not exist in the DatFile.</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
+        public void MarkFileAsModified(uint group, uint instance)
+        {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
+            int index = this.indices.IndexOf(FshTypeID, group, instance);
+
+            if (index == -1)
+            {
+                throw new DatIndexException(Resources.SpecifiedIndexDoesNotExist);
+            }
+
+            this.indices[index].IndexState = DatIndexState.Modified;
+            this.dirty = true;
+        }
+
+        /// <summary>
+        /// Discards the changes to any modified files.
+        /// </summary>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
+        public void DiscardFileChanges()
+        {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
+            for (int i = 0; i < this.indices.Count; i++)
+            {
+                DatIndex index = this.indices[i];
+
+                if (index.IndexState == DatIndexState.Modified)
+                {
+                    index.IndexState = DatIndexState.None;
+                    if (index.FileItem != null)
+                    {
+                        index.FileItem.ClearLoadedImage();
+                    }
+                }
+            }
+            this.dirty = false;
         }
 
         /// <summary>
@@ -310,8 +357,14 @@ namespace FshDatIO
         /// <param name="instance">The TGI instance id of the FshWrapper item.</param>
         /// <param name="compress">Compress the added FshWrapper item.</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="fshItem"/> is null</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
         public void Add(FshFileItem fshItem, uint group, uint instance, bool compress)
         {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
             if (fshItem == null)
             {
                 throw new ArgumentNullException("fshItem");
@@ -329,8 +382,14 @@ namespace FshDatIO
         /// </summary>
         /// <param name="group">The TGI group id to remove</param>
         /// <param name="instance">The TGI instance id to remove</param>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
         public void Remove(uint group, uint instance)
         {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
             int index = this.indices.IndexOf(FshTypeID, group, instance);
             if (index != -1)
             {
@@ -361,14 +420,20 @@ namespace FshDatIO
         /// Saves the currently loaded DatFile
         /// </summary>
         /// <exception cref="System.InvalidOperationException">The current DatFile is not loaded from an existing file.</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save()
         {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
             if (string.IsNullOrEmpty(this.datFileName))
             {
                 throw new InvalidOperationException(Resources.NoDatLoaded);
             }
-            
+
             Save(this.datFileName);
         }
 
@@ -376,10 +441,16 @@ namespace FshDatIO
         /// Saves the DatFile to the specified fileName.
         /// </summary>
         /// <param name="fileName">The fileName to save as</param>
-        /// <exception cref="System.ArgumentNullException"><paramref name="fileName"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="fileName" /> is null.</exception>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public void Save(string fileName)
-        {
+        {            
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
             if (fileName == null)
             {
                 throw new ArgumentNullException("fileName");
@@ -411,46 +482,66 @@ namespace FshDatIO
                 for (int i = 0; i < this.indices.Count; i++)
                 {
                     DatIndex index = indices[i];
+                    DatIndexState state = index.IndexState;
 
-                    if (index.IndexState == DatIndexState.New)
+                    switch (state)
                     {
-                        if (index.Type == FshTypeID)
-                        {
-                            FshFileItem fshw = index.FileItem;
-#if DEBUG
-                            System.Diagnostics.Debug.WriteLine(string.Format("Item # {0} Instance = {1}\n", i.ToString(), index.Instance.ToString("X")));
-#endif
-                            if (fshw.Image != null)
+                        case DatIndexState.New:
+                        case DatIndexState.Modified:
+                            if (index.Type != FshTypeID)
                             {
-                                location = output.Position;
-                                size = fshw.Save(output);
-                                if (fshw.Image.IsCompressed)
-                                {
-                                    compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
-                                }
+#if DEBUG
+                                System.Diagnostics.Debug.WriteLine(string.Format("Index # {0} is not a FSH file.\n", i.ToString()));
+#endif
+                                continue;
                             }
-                        }
-                    }
-                    else
-                    {
-                        location = output.Position;
-                        size = index.FileSize;
+
+                            FshFileItem fshw = index.FileItem;
+
+                            if (fshw.Image == null)
+                            {
+#if DEBUG
+                                System.Diagnostics.Debug.WriteLine(string.Format("Index # {0} is a null image.\n", i.ToString()));
+#endif
+                                continue;
+                            }
+
+                            location = output.Position;
+                            size = fshw.Save(output);
+                            if (fshw.Image.IsCompressed)
+                            {
+                                compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, fshw.Image.RawDataLength));
+                            }
+
+                            break;
+                        case DatIndexState.None:
+
+                            location = output.Position;
+                            size = index.FileSize;
 
 #if DEBUG
-                        System.Diagnostics.Debug.WriteLine(string.Format("Index: {0} Type: 0x{1:X8}", i, index.Type));
+                            System.Diagnostics.Debug.WriteLine(string.Format("Existing file Index: {0} Type: 0x{1:X8}", i, index.Type));
 #endif
+                            this.stream.Seek((long)index.Location, SeekOrigin.Begin);
 
-                        this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+                            int dataSize = (int)size;
+                            byte[] buffer = this.stream.ReadBytes(dataSize);
 
-                        int dataSize = (int)size;
-                        byte[] buffer = this.stream.ReadBytes(dataSize);
+                            output.Write(buffer, 0, dataSize);
 
-                        output.Write(buffer, 0, dataSize);
+                            if ((buffer.Length > 5) && ((buffer[0] & 0xfe) == 0x10 && buffer[1] == 0xFB || buffer[4] == 0x10 && buffer[5] == 0xFB))
+                            {
+                                compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
+                            }
+                            break;
 
-                        if ((buffer.Length > 5) && ((buffer[0] & 0xfe) == 0x10 && buffer[1] == 0xFB || buffer[4] == 0x10 && buffer[5] == 0xFB))
-                        {
-                            compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
-                        }
+                        case DatIndexState.Deleted:
+                        default:
+                            // Unknown index state or deleted file. 
+#if DEBUG
+                            System.Diagnostics.Debug.WriteLine(string.Format("Index # {0} has unsupported state {0}.\n", i.ToString(), state.ToString()));
+#endif
+                            continue;
                     }
 
                     saveIndices.Add(new DatIndex(index.Type, index.Group, index.Instance, (uint)location, size));
@@ -485,6 +576,10 @@ namespace FshDatIO
                 output.Position = 0L;
                 head.Save(output);
 
+
+                saveIndices.SortByLocation();
+                this.indices.Dispose();
+
                 this.header = head;
                 this.indices = saveIndices;
                 this.datFileName = fileName;
@@ -512,7 +607,7 @@ namespace FshDatIO
         /// <returns>The timestamp in Unix format</returns> 
         private static uint GetCurrentUnixTimestamp()
         {
-            TimeSpan t = (DateTime.UtcNow - UnixEpochUTC);
+            TimeSpan t = DateTime.UtcNow - UnixEpochUTC;
 
             return (uint)t.TotalSeconds;
         }
@@ -530,8 +625,10 @@ namespace FshDatIO
 
         private void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!this.disposed)
             {
+                this.disposed = true;
+
                 if (disposing)
                 {
                     if (this.stream != null)
@@ -546,10 +643,9 @@ namespace FshDatIO
                         this.indices = null;
                     }
 
+                    this.datFileName = null;
                     this.loaded = false;
-
                 }
-                disposed = true;
             }
         }
 

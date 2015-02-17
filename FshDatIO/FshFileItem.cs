@@ -167,6 +167,21 @@ namespace FshDatIO
         }
 
         /// <summary>
+        /// Clears the loaded image.
+        /// </summary>
+        internal void ClearLoadedImage()
+        {
+            if (this.image != null)
+            {
+                this.image.Dispose();
+                this.image = null;
+            }
+            
+            this.compressed = false;
+            this.loaded = false;
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()

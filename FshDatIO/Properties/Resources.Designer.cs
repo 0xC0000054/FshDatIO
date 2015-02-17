@@ -124,6 +124,15 @@ namespace FshDatIO.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This method can only be called when a dat has been loaded from a file..
+        /// </summary>
+        internal static string NoDatLoaded {
+            get {
+                return ResourceManager.GetString("NoDatLoaded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file at the specified index does not exist..
         /// </summary>
         internal static string SpecifiedIndexDoesNotExist {

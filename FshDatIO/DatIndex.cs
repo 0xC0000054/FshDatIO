@@ -19,7 +19,11 @@ namespace FshDatIO
         /// <summary>
         /// The DatIndex will be deleted on save.
         /// </summary>
-        Deleted
+        Deleted,
+        /// <summary>
+        /// The DatIndex is an existing file that has been modified.
+        /// </summary>
+        Modified
     }
 
     /// <summary>

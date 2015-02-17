@@ -160,6 +160,6 @@
     <value>DBPF index version {0} is not supported.</value>
   </data>
   <data name="NoDatLoaded" xml:space="preserve">
-    <value>This method can only be called when a dat has been loaded from a file.</value>
+    <value>This method can only be called when the dat has been loaded from a file.</value>
   </data>
 </root>

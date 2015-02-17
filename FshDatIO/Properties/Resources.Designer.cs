@@ -124,7 +124,7 @@ namespace FshDatIO.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This method can only be called when a dat has been loaded from a file..
+        ///   Looks up a localized string similar to This method can only be called when the dat has been loaded from a file..
         /// </summary>
         internal static string NoDatLoaded {
             get {

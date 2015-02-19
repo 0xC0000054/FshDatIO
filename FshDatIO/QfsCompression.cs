@@ -151,10 +151,22 @@ namespace FshDatIO
             return unCompressedData;
         }
 
+        /// <summary>
+        /// The number of iterations to use when searching for matches.
+        /// </summary>
         const int QfsMaxIterCount = 50;
+        /// <summary>
+        /// The maximum size of a compressed block.
+        /// </summary>
         const int QfsMaxBlockSize = 1028;
-        const int CompMaxLen = 131072; // FshTool's WINDOWLEN
-        const int CompMask = CompMaxLen - 1;  // Fshtool's WINDOWMASK
+        /// <summary>
+        /// The length of the LZSS sliding window.
+        /// </summary>
+        const int WindowLength = 131072;
+        /// <summary>
+        /// The mask used to lookup an index in the dictonary.
+        /// </summary>
+        const int WindowMask = WindowLength - 1;
         /// <summary>
         /// The maximum length of a literal run, 112 bytes
         /// </summary>
@@ -178,10 +190,10 @@ namespace FshDatIO
             byte[] inbuf = new byte[inlen + 1028]; // 1028 byte safety buffer
             Buffer.BlockCopy(input, 0, inbuf, 0, input.Length);
 
-            int[] similar_rev = new int[CompMaxLen];
+            int[] similar_rev = new int[WindowLength];
             int[,] last_rev = new int[256, 256];
 
-            for (int i = 0; i < CompMaxLen; i++)
+            for (int i = 0; i < WindowLength; i++)
             {
                 similar_rev[i] = -1;
             }
@@ -209,7 +221,7 @@ namespace FshDatIO
             for (index = 0; index < inlen; index++)
             {
                 int offs = last_rev[inbuf[index], inbuf[index + 1]];
-                similar_rev[index & CompMask] = offs;
+                similar_rev[index & WindowMask] = offs;
                 last_rev[inbuf[index], inbuf[index + 1]] = index;
 
                 if (index < lastwrot)
@@ -220,7 +232,7 @@ namespace FshDatIO
                 int bestLength = 0;
                 int bestOffset = 0;
                 int iterCount = 0;
-                while (offs >= 0 && (index - offs) < CompMaxLen && iterCount < QfsMaxIterCount)
+                while (offs >= 0 && (index - offs) < WindowLength && iterCount < QfsMaxIterCount)
                 {
                     run = 2;
                     while (inbuf[index + run] == inbuf[offs + run] && run < QfsMaxBlockSize)
@@ -232,7 +244,7 @@ namespace FshDatIO
                         bestLength = run;
                         bestOffset = index - offs;
                     }
-                    offs = similar_rev[offs & CompMask];
+                    offs = similar_rev[offs & WindowMask];
                     iterCount++;
                 }
 
@@ -310,7 +322,7 @@ namespace FshDatIO
                         }
                         lastwrot += bestLength;
                     }
-                    else if (bestLength <= QfsMaxBlockSize && bestOffset < CompMaxLen) // 4 byte op code 0xC0 - 0xDF
+                    else if (bestLength <= QfsMaxBlockSize && bestOffset < WindowLength) // 4 byte op code 0xC0 - 0xDF
                     {
                         bestOffset--;
                         outbuf[outIndex] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);

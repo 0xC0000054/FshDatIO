@@ -5,10 +5,12 @@ namespace FshDatIO
     static class QfsCompression
     {
         /// <summary>
-        /// Decompresses an QFS Compressed File
+        /// Decompresses a QFS compressed byte array.
         /// </summary>
         /// <param name="compressedData">The byte array to decompress</param>
-        /// <returns>A byte array containing the decompressed data</returns>
+        /// <returns>A byte array containing the decompressed data.</returns>
+        /// <exception cref="System.ArgumentNullException"><paramref name="compressedData"/> is null.</exception>
+        /// <exception cref="System.NotSupportedException"><paramref name="compressedData"/> uses an unsupported compression format.</exception>
         public static byte[] Decompress(byte[] compressedData)
         {
             if (compressedData == null)
@@ -164,11 +166,11 @@ namespace FshDatIO
         /// </summary>
         const int WindowLength = 131072;
         /// <summary>
-        /// The mask used to lookup an index in the dictonary.
+        /// The mask used to lookup an index in the dictionary.
         /// </summary>
         const int WindowMask = WindowLength - 1;
         /// <summary>
-        /// The maximum length of a literal run, 112 bytes
+        /// The maximum length of a literal run.
         /// </summary>
         const int LiteralRunMaxLength = 112;
         
@@ -176,7 +178,7 @@ namespace FshDatIO
         /// Compresses the input byte array with QFS compression
         /// </summary>
         /// <param name="input">The input byte array to compress</param>
-        /// <param name="prefixLength">If set to true prefix the size of the compressed data, as is used by SC4; otherwise false.</param>
+        /// <param name="prefixLength">If set to <c>true</c> prefix the size of the compressed data, as is used by SC4; otherwise <c>false</c>.</param>
         /// <returns>A byte array containing the compressed data or null if the data cannot be compressed.</returns>
         /// <exception cref="System.ArgumentNullException"><paramref name="input"/> is null.</exception>
         public static byte[] Compress(byte[] input, bool prefixLength)

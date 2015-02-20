@@ -101,7 +101,7 @@ namespace FshDatIO
         {
             this.header = new DatHeader();
             this.indices = new DatIndexCollection();
-            this.datFileName = string.Empty;
+            this.datFileName = null;
             this.loaded = false;
             this.dirty = false;
             this.stream = null;
@@ -342,7 +342,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Closes the current DatFile and the underlying stream.
+        /// Closes the current DatFile.
         /// </summary>
         public void Close()
         {
@@ -402,6 +402,30 @@ namespace FshDatIO
                 while (index >= 0);
 
                 this.dirty = true;
+            }
+        }
+
+        /// <summary>
+        /// Removes the existing file with the specified group and instance.
+        /// </summary>
+        /// <param name="group">The TGI group id to remove</param>
+        /// <param name="instance">The TGI instance id to remove</param>
+        /// <exception cref="System.ObjectDisposedException">The method is called after the DatFile has been closed.</exception>
+        public void RemoveExistingFile(uint group, uint instance)
+        {
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("DatFile");
+            }
+
+            for (int i = 0; i < this.indices.Count; i++)
+            {
+                DatIndex index = indices[i];
+                if (index.Type == FshTypeID && index.Group == group && index.Instance == instance && index.IndexState == DatIndexState.None)
+                {
+                    index.IndexState = DatIndexState.Deleted;
+                    this.dirty = true;
+                }
             }
         }
 
@@ -575,7 +599,6 @@ namespace FshDatIO
 
                 output.Position = 0L;
                 head.Save(output);
-
 
                 saveIndices.SortByLocation();
                 this.indices.Dispose();

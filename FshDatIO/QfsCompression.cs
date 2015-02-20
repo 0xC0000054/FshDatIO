@@ -22,7 +22,7 @@ namespace FshDatIO
 
             if ((compressedData[0] & 0xfe) != 0x10 || compressedData[1] != 0xFB)
             {
-                if (compressedData[4] != 0x10 && compressedData[5] != 0xFB)
+                if (compressedData[4] != 0x10 || compressedData[5] != 0xFB)
                 {
                     throw new NotSupportedException(FshDatIO.Properties.Resources.UnsupportedCompressionFormat);
                 }

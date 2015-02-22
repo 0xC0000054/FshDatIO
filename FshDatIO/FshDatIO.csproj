@@ -93,13 +93,15 @@
     <Compile Include="FshImageFormat.cs" />
     <Compile Include="FSHImageWrapper.cs" />
     <Compile Include="FshFileItem.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="LittleEndianBitConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="QfsComp.cs" />
+    <Compile Include="QfsCompression.cs" />
     <Compile Include="Squish.cs" />
     <Compile Include="StreamExtensions.cs" />
     <Compile Include="SuperSample.cs" />
@@ -125,6 +127,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1091,7 +1091,16 @@ namespace FshDatIO
                 this.rawData = stream.ToArray();
                 if (this.isCompressed)
                 {
-                    byte[] compbuf = QfsCompression.Compress(this.rawData, true);
+                    byte[] compbuf = null;
+
+                    try
+                    {
+                        compbuf = QfsCompression.Compress(this.rawData, true);
+                    }
+                    catch (FormatException)
+                    {
+                    } 
+
                     if (compbuf != null)
                     {
                         output.Write(compbuf, 0, compbuf.Length);

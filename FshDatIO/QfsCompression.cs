@@ -156,36 +156,46 @@ namespace FshDatIO
         /// <summary>
         /// The number of iterations to use when searching for matches.
         /// </summary>
-        const int QfsMaxIterCount = 50;
+        private const int QfsMaxIterCount = 50;
         /// <summary>
         /// The maximum size of a compressed block.
         /// </summary>
-        const int QfsMaxBlockSize = 1028;
+        private const int QfsMaxBlockSize = 1028;
         /// <summary>
         /// The length of the LZSS sliding window.
         /// </summary>
-        const int WindowLength = 131072;
+        private const int WindowLength = 131072;
         /// <summary>
         /// The mask used to lookup an index in the dictionary.
         /// </summary>
-        const int WindowMask = WindowLength - 1;
+        private const int WindowMask = WindowLength - 1;
         /// <summary>
         /// The maximum length of a literal run.
         /// </summary>
-        const int LiteralRunMaxLength = 112;
-        
+        private const int LiteralRunMaxLength = 112;
+        /// <summary>
+        /// The maximum size in bytes of an uncompressed buffer that can be compressed with QFS compression.
+        /// </summary>
+        private const int UncompressedDataMaxSize = 16777215;
+
         /// <summary>
         /// Compresses the input byte array with QFS compression
         /// </summary>
         /// <param name="input">The input byte array to compress</param>
         /// <param name="prefixLength">If set to <c>true</c> prefix the size of the compressed data, as is used by SC4; otherwise <c>false</c>.</param>
         /// <returns>A byte array containing the compressed data or null if the data cannot be compressed.</returns>
-        /// <exception cref="System.ArgumentNullException"><paramref name="input"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="input" /> is null.</exception>
+        /// <exception cref="System.FormatException">The length of <paramref name="input"/> is larger than 16777215 bytes.</exception>
         public static byte[] Compress(byte[] input, bool prefixLength)
         {
             if (input == null)
             {
                 throw new ArgumentNullException("input");
+            }
+
+            if (input.Length > UncompressedDataMaxSize)
+            {
+                throw new FormatException(FshDatIO.Properties.Resources.UncompressedBufferTooLarge);
             }
 
             int inlen = input.Length;

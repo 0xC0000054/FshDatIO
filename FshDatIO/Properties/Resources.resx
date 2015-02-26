@@ -162,4 +162,7 @@
   <data name="NoDatLoaded" xml:space="preserve">
     <value>This method can only be called when the dat has been loaded from a file.</value>
   </data>
+  <data name="UncompressedBufferTooLarge" xml:space="preserve">
+    <value>The uncompressed data size must be less than 16777216 bytes to use QFS compression.</value>
+  </data>
 </root>

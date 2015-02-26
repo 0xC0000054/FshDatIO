@@ -151,6 +151,15 @@ namespace FshDatIO.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The uncompressed data size must be less than 16777216 bytes to use QFS compression..
+        /// </summary>
+        internal static string UncompressedBufferTooLarge {
+            get {
+                return ResourceManager.GetString("UncompressedBufferTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unsupported compression format..
         /// </summary>
         internal static string UnsupportedCompressionFormat {

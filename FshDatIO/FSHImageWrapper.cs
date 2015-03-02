@@ -1120,22 +1120,6 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Test if the fsh only contains DXT1 or DXT3 items
-        /// </summary>
-        /// <returns>True if successful otherwise false</returns>
-        public bool IsDXTFsh()
-        {
-            foreach (BitmapEntry item in this.bitmaps)
-            {
-                if (item.BmpType != FshImageFormat.DXT3 && item.BmpType != FshImageFormat.DXT1)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /// <summary>
         /// Checks the size of the images within the fsh.
         /// </summary>
         /// <param name="imageBytes">The stream to read from.</param>
@@ -1214,8 +1198,6 @@ namespace FshDatIO
                     bitmaps.Dispose();
                     bitmaps = null;
                 }
-
-
             }
 
             GC.SuppressFinalize(this);

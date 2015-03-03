@@ -10,14 +10,14 @@ namespace FshDatIO
     /// </summary>
     public sealed class DatHeader
     {
-        private uint vMajor;
-        private uint vMinor;
-        private uint uVMajor;
-        private uint uVMinor;
+        private uint majorVersion;
+        private uint minorVersion;
+        private uint userMajorVersion;
+        private uint userMinorVersion;
         private uint flags;
         private uint dateCreated;
         private uint dateModified;
-        private uint indexVMajor; // index major version always 7
+        private uint indexMajorVersion;
         private uint entries;
         private uint indexLocation;
         private uint indexSize;
@@ -29,60 +29,61 @@ namespace FshDatIO
         /// The DBPF signature in little endian format.
         /// </summary>
         private const uint DBPFSignature = 0x46504244U;
+
         /// <summary>
         /// The major version of the Sim City 4 DBPF format.
         /// </summary>
-        private const uint FileMajorVersion = 1;
+        private const uint SC4FormatMajorVersion = 1;
         /// <summary>
         /// The minor version of the Sim City 4 DBPF format.
         /// </summary>
-        private const uint FileMinorVersion = 0;
+        private const uint SC4FormatMinorVersion = 0;
         /// <summary>
         /// The index major version of the Sim City 4 DBPF format.
         /// </summary>
-        private const uint IndexMajorVersion = 7;
+        private const uint SC4IndexMajorVersion = 7;
 
         /// <summary>
         /// Gets the header major version.
         /// </summary>
-        public uint VersionMajor
+        public uint MajorVersion
         {
             get
             {
-                return vMajor;
+                return majorVersion;
             }
         }
 
         /// <summary>
         /// Gets the header minor version.
         /// </summary>
-        public uint VersionMinor
+        public uint MinorVersion
         {
             get
             {
-                return vMinor;
+                return minorVersion;
             }
         }
 
         /// <summary>
-        /// Gets the major user version.
+        /// Gets the user major version.
         /// </summary>
-        public uint UserVersionMajor
+        public uint UserMajorVersion
         {
             get
             {
-                return uVMajor;
+                return userMajorVersion;
             }
         }
 
         /// <summary>
-        /// Gets the minor user version.
+        /// Gets the user minor version.
         /// </summary>
-        public uint UserVersionMinor
+        public uint UserMinorVersion
         {
             get
             {
-                return uVMinor;
+                return userMinorVersion;
             }
         }
 
@@ -128,13 +129,13 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the  major version of the index table.
+        /// Gets the major version of the index table.
         /// </summary>
-        public uint IndexVersionMajor
+        public uint IndexMajorVersion
         {
             get
             {
-                return indexVMajor;
+                return indexMajorVersion;
             }
         }
 
@@ -221,14 +222,14 @@ namespace FshDatIO
         /// </summary>
         internal DatHeader()
         {
-            this.vMajor = FileMajorVersion;
-            this.vMinor = FileMinorVersion;
-            this.uVMajor = 0;
-            this.uVMinor = 0;
+            this.majorVersion = SC4FormatMajorVersion;
+            this.minorVersion = SC4FormatMinorVersion;
+            this.userMajorVersion = 0;
+            this.userMinorVersion = 0;
             this.flags = 0;
             this.dateCreated = 0;
             this.dateModified = 0;
-            this.indexVMajor = IndexMajorVersion;
+            this.indexMajorVersion = SC4IndexMajorVersion;
             this.entries = 0;
             this.indexLocation = 96;
             this.indexSize = 0;
@@ -259,22 +260,22 @@ namespace FshDatIO
                 throw new DatHeaderException(Resources.DatHeaderInvalidIdentifer);
             }
 
-            this.vMajor = input.ReadUInt32();
-            this.vMinor = input.ReadUInt32();
-            if (this.vMajor != FileMajorVersion || this.vMinor != FileMinorVersion)
+            this.majorVersion = input.ReadUInt32();
+            this.minorVersion = input.ReadUInt32();
+            if (this.majorVersion != SC4FormatMajorVersion || this.minorVersion != SC4FormatMinorVersion)
             {
-                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.vMajor, this.vMinor));
+                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.majorVersion, this.minorVersion));
             }
 
-            this.uVMajor = input.ReadUInt32();
-            this.uVMinor = input.ReadUInt32();
+            this.userMajorVersion = input.ReadUInt32();
+            this.userMinorVersion = input.ReadUInt32();
             this.flags = input.ReadUInt32();
             this.dateCreated = input.ReadUInt32();
             this.dateModified = input.ReadUInt32();
-            this.indexVMajor = input.ReadUInt32();
-            if (this.indexVMajor != IndexMajorVersion)
+            this.indexMajorVersion = input.ReadUInt32();
+            if (this.indexMajorVersion != SC4IndexMajorVersion)
             {
-                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedIndexVersion, this.indexVMajor));
+                throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedIndexVersion, this.indexMajorVersion));
             }
 
             this.entries = input.ReadUInt32();
@@ -298,14 +299,14 @@ namespace FshDatIO
             }
             
             stream.WriteUInt32(DBPFSignature);
-            stream.WriteUInt32(this.vMajor);
-            stream.WriteUInt32(this.vMinor);
-            stream.WriteUInt32(this.uVMajor);
-            stream.WriteUInt32(this.uVMinor);
+            stream.WriteUInt32(this.majorVersion);
+            stream.WriteUInt32(this.minorVersion);
+            stream.WriteUInt32(this.userMajorVersion);
+            stream.WriteUInt32(this.userMinorVersion);
             stream.WriteUInt32(this.flags);
             stream.WriteUInt32(this.dateCreated);
             stream.WriteUInt32(this.dateModified);
-            stream.WriteUInt32(this.indexVMajor);
+            stream.WriteUInt32(this.indexMajorVersion);
             stream.WriteUInt32(this.entries);
             stream.WriteUInt32(this.indexLocation);
             stream.WriteUInt32(this.indexSize);

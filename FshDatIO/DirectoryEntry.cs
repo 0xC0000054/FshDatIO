@@ -7,10 +7,10 @@ namespace FshDatIO
     /// </summary>
     internal sealed class DirectoryEntry
     {
-        private uint type;
-        private uint group;
-        private uint instance;
-        private uint unCompressedSize;
+        private readonly uint type;
+        private readonly uint group;
+        private readonly uint instance;
+        private readonly uint unCompressedSize;
 
         public const int SizeOf = 16;
 

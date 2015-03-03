@@ -44,7 +44,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Returns a 32-bit signed integer converted from two bytes at a specified position in a byte array.
+        /// Returns a 32-bit signed integer converted from four bytes at a specified position in a byte array.
         /// </summary>
         /// <param name="value">An array of bytes.</param>
         /// <param name="startIndex">The starting position within <paramref name="value"/>.</param>
@@ -78,7 +78,7 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Returns a 32-bit unsigned integer converted from two bytes at a specified position in a byte array.
+        /// Returns a 32-bit unsigned integer converted from four bytes at a specified position in a byte array.
         /// </summary>
         /// <param name="value">An array of bytes.</param>
         /// <param name="startIndex">The starting position within <paramref name="value"/>.</param>
@@ -97,18 +97,7 @@ namespace FshDatIO
                 throw new ArgumentOutOfRangeException("startIndex");
             }
 
-            fixed (byte* ptr = &value[startIndex])
-            {
-                if (IsLittleEndian && (startIndex % 4) == 0)
-                {
-                    // If we are aligned cast the pointer directly.
-                    return *((uint*)ptr);
-                }
-                else
-                {
-                    return (uint)(*ptr | (*(ptr + 1) << 8) | (*(ptr + 2) << 16) | (*(ptr + 3) << 24));
-                }
-            }
+            return (uint)ToInt32(value, startIndex);
         }
     }
 }

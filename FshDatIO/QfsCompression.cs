@@ -236,124 +236,122 @@ namespace FshDatIO
                 similar_rev[index & WindowMask] = offs;
                 last_rev[inbuf[index], inbuf[index + 1]] = index;
 
-                if (index < lastwrot)
+                if (index >= lastwrot)
                 {
-                    continue;
-                }
-
-                int bestLength = 0;
-                int bestOffset = 0;
-                int iterCount = 0;
-                while (offs >= 0 && (index - offs) < WindowLength && iterCount < QfsMaxIterCount)
-                {
-                    run = 2;
-                    while (inbuf[index + run] == inbuf[offs + run] && run < QfsMaxBlockSize)
+                    int bestLength = 0;
+                    int bestOffset = 0;
+                    int iterCount = 0;
+                    while (offs >= 0 && (index - offs) < WindowLength && iterCount < QfsMaxIterCount)
                     {
-                        run++;
-                    }
-                    if (run > bestLength)
-                    {
-                        bestLength = run;
-                        bestOffset = index - offs;
-                    }
-                    offs = similar_rev[offs & WindowMask];
-                    iterCount++;
-                }
-
-                if (bestLength > (inlen - index))
-                {
-                    bestLength = index - inlen;
-                }
-
-                if (bestLength <= 2)
-                {
-                    bestLength = 0;
-                }
-                else if (bestLength == 3 && bestOffset > 1024)
-                {
-                    bestLength = 0;
-                }
-                else if (bestLength == 4 && bestOffset > 16384)
-                {
-                    bestLength = 0;
-                }
-
-                if (bestLength > 0)
-                {
-                    run = index - lastwrot;
-                    while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
-                    {
-                        int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
-                        outbuf[outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
-                        outIndex++;
-
-                        if ((outIndex + blockLength) >= inlen)
+                        run = 2;
+                        while (inbuf[index + run] == inbuf[offs + run] && run < QfsMaxBlockSize)
                         {
-                            return null; // data did not compress so return null
+                            run++;
                         }
-                        Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, blockLength);
-                        lastwrot += blockLength;
-                        outIndex += blockLength;
-                        run -= blockLength;
+                        if (run > bestLength)
+                        {
+                            bestLength = run;
+                            bestOffset = index - offs;
+                        }
+                        offs = similar_rev[offs & WindowMask];
+                        iterCount++;
                     }
 
-                    if (bestLength <= 10 && bestOffset <= 1024) // 2 byte op code  0x00 - 0x7f
+                    if (bestLength > (inlen - index))
                     {
-                        outbuf[outIndex] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
-                        outbuf[outIndex + 1] = (byte)((bestOffset - 1) & 0xff);
-                        outIndex += 2;
-                        
-                        if ((outIndex + run) >= inlen)
+                        bestLength = index - inlen;
+                    }
+
+                    if (bestLength <= 2)
+                    {
+                        bestLength = 0;
+                    }
+                    else if (bestLength == 3 && bestOffset > 1024)
+                    {
+                        bestLength = 0;
+                    }
+                    else if (bestLength == 4 && bestOffset > 16384)
+                    {
+                        bestLength = 0;
+                    }
+
+                    if (bestLength > 0)
+                    {
+                        run = index - lastwrot;
+                        while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
                         {
-                            return null;
-                        }
-                        for (int i = 0; i < run; i++)
-                        {
-                            outbuf[outIndex] = inbuf[lastwrot];
-                            lastwrot++;
+                            int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
+                            outbuf[outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
                             outIndex++;
+
+                            if ((outIndex + blockLength) >= inlen)
+                            {
+                                return null; // data did not compress so return null
+                            }
+                            Buffer.BlockCopy(inbuf, lastwrot, outbuf, outIndex, blockLength);
+                            lastwrot += blockLength;
+                            outIndex += blockLength;
+                            run -= blockLength;
                         }
-                        lastwrot += bestLength;
-                    }
-                    else if (bestLength <= 67 && bestOffset <= 16384)  // 3 byte op code 0x80 - 0xBF
-                    {
-                        outbuf[outIndex] = (byte)(0x80 + (bestLength - 4));
-                        outbuf[outIndex + 1] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
-                        outbuf[outIndex + 2] = (byte)((bestOffset - 1) & 0xff);
-                        outIndex += 3;
-                        
-                        if ((outIndex + run) >= inlen)
+
+                        if (bestLength <= 10 && bestOffset <= 1024) // 2 byte op code  0x00 - 0x7f
                         {
-                            return null;
+                            outbuf[outIndex] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
+                            outbuf[outIndex + 1] = (byte)((bestOffset - 1) & 0xff);
+                            outIndex += 2;
+
+                            if ((outIndex + run) >= inlen)
+                            {
+                                return null;
+                            }
+                            for (int i = 0; i < run; i++)
+                            {
+                                outbuf[outIndex] = inbuf[lastwrot];
+                                lastwrot++;
+                                outIndex++;
+                            }
+                            lastwrot += bestLength;
                         }
-                        for (int i = 0; i < run; i++)
+                        else if (bestLength <= 67 && bestOffset <= 16384)  // 3 byte op code 0x80 - 0xBF
                         {
-                            outbuf[outIndex] = inbuf[lastwrot];
-                            lastwrot++;
-                            outIndex++;
+                            outbuf[outIndex] = (byte)(0x80 + (bestLength - 4));
+                            outbuf[outIndex + 1] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
+                            outbuf[outIndex + 2] = (byte)((bestOffset - 1) & 0xff);
+                            outIndex += 3;
+
+                            if ((outIndex + run) >= inlen)
+                            {
+                                return null;
+                            }
+                            for (int i = 0; i < run; i++)
+                            {
+                                outbuf[outIndex] = inbuf[lastwrot];
+                                lastwrot++;
+                                outIndex++;
+                            }
+                            lastwrot += bestLength;
                         }
-                        lastwrot += bestLength;
-                    }
-                    else if (bestLength <= QfsMaxBlockSize && bestOffset < WindowLength) // 4 byte op code 0xC0 - 0xDF
-                    {
-                        bestOffset--;
-                        outbuf[outIndex] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
-                        outbuf[outIndex + 1] = (byte)((bestOffset >> 8) & 0xff);
-                        outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);
-                        outbuf[outIndex + 3] = (byte)((bestLength - 5) & 0xff);
-                        outIndex += 4;
-                        
-                        if ((outIndex + run) >= inlen)
+                        else if (bestLength <= QfsMaxBlockSize && bestOffset < WindowLength) // 4 byte op code 0xC0 - 0xDF
                         {
-                            return null;
+                            bestOffset--;
+                            outbuf[outIndex] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
+                            outbuf[outIndex + 1] = (byte)((bestOffset >> 8) & 0xff);
+                            outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);
+                            outbuf[outIndex + 3] = (byte)((bestLength - 5) & 0xff);
+                            outIndex += 4;
+
+                            if ((outIndex + run) >= inlen)
+                            {
+                                return null;
+                            }
+                            for (int i = 0; i < run; i++)
+                            {
+                                outbuf[outIndex] = inbuf[lastwrot];
+                                lastwrot++;
+                                outIndex++;
+                            }
+                            lastwrot += bestLength;
                         }
-                        for (int i = 0; i < run; i++)
-                        {
-                            outbuf[outIndex] = inbuf[lastwrot];
-                            lastwrot++;
-                            outIndex++;
-                        }
-                        lastwrot += bestLength;
                     }
                 }
             }

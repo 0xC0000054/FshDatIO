@@ -156,7 +156,7 @@ namespace FshDatIO
         /// <summary>
         /// The number of iterations to use when searching for matches.
         /// </summary>
-        private const int QfsMaxIterCount = 50;
+        private const int QfsMaxIterCount = 150;
         /// <summary>
         /// The maximum size of a compressed block.
         /// </summary>
@@ -250,29 +250,23 @@ namespace FshDatIO
                         }
                         if (run > bestLength)
                         {
-                            bestLength = run;
-                            bestOffset = index - offs;
+                            int offset = index - offs;
+
+                            if (run > (inlen - index))
+                            {
+                                run = index - inlen;
+                            }
+
+                            if (run >= 3 && offset < 1024 ||
+                                run >= 4 && offset < 16384 ||
+                                run >= 5 && offset < WindowLength)
+                            {
+                                bestLength = run;
+                                bestOffset = offset;
+                            }
                         }
                         offs = similar_rev[offs & WindowMask];
                         iterCount++;
-                    }
-
-                    if (bestLength > (inlen - index))
-                    {
-                        bestLength = index - inlen;
-                    }
-
-                    if (bestLength <= 2)
-                    {
-                        bestLength = 0;
-                    }
-                    else if (bestLength == 3 && bestOffset > 1024)
-                    {
-                        bestLength = 0;
-                    }
-                    else if (bestLength == 4 && bestOffset > 16384)
-                    {
-                        bestLength = 0;
                     }
 
                     if (bestLength > 0)

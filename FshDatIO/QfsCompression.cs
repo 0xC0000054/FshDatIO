@@ -162,13 +162,9 @@ namespace FshDatIO
         /// </summary>
         private const int QfsMaxBlockSize = 1028;
         /// <summary>
-        /// The length of the LZSS sliding window.
+        /// The maximum length of the LZSS sliding window.
         /// </summary>
-        private const int WindowLength = 131072;
-        /// <summary>
-        /// The mask used to lookup an index in the dictionary.
-        /// </summary>
-        private const int WindowMask = WindowLength - 1;
+        private const int MaxWindowLength = 131072;
         /// <summary>
         /// The maximum length of a literal run.
         /// </summary>
@@ -181,6 +177,23 @@ namespace FshDatIO
         /// The minimum match length.
         /// </summary>
         private const int MIN_MATCH = 3;
+
+        /// <summary>
+        /// Calculates the next highest the power of two.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns>The next highest power of 2.</returns>
+        private static int NextPowerOfTwo(int value)
+        {
+            value |= (value >> 1);
+            value |= (value >> 2);
+            value |= (value >> 4);
+            value |= (value >> 8);
+            value |= (value >> 16);
+            value++;
+
+            return value;
+        }
 
         /// <summary>
         /// Compresses the input byte array with QFS compression
@@ -201,11 +214,16 @@ namespace FshDatIO
             {
                 throw new FormatException(FshDatIO.Properties.Resources.UncompressedBufferTooLarge);
             }
+            int inputLength = input.Length;
+
+            // If the input is smaller than MaxWindowLength use the next highest power of 2 as the sliding window length to save memory.
+            int windowLength = inputLength < MaxWindowLength ? NextPowerOfTwo(inputLength) : MaxWindowLength;
+            int windowMask = windowLength - 1;
             
-            int[] similar_rev = new int[WindowLength];
+            int[] similar_rev = new int[windowLength];
             int[,] last_rev = new int[256, 256];
 
-            for (int i = 0; i < WindowLength; i++)
+            for (int i = 0; i < similar_rev.Length; i++)
             {
                 similar_rev[i] = -1;
             }
@@ -218,7 +236,6 @@ namespace FshDatIO
                 }
             }
             
-            int inputLength = input.Length;
             int outLength = inputLength - 1;
             byte[] outbuf = new byte[outLength];
             outbuf[0] = 0x10;
@@ -241,7 +258,7 @@ namespace FshDatIO
                 if (remaining > 2)
                 {
                     offs = last_rev[input[index], input[index + 1]];
-                    similar_rev[index & WindowMask] = offs;
+                    similar_rev[index & windowMask] = offs;
                     last_rev[input[index], input[index + 1]] = index;
                 }
 
@@ -252,7 +269,7 @@ namespace FshDatIO
                     int iterCount = 0;
                     int maxRun = Math.Min(remaining, QfsMaxBlockSize);
 
-                    while (offs >= 0 && (index - offs) < WindowLength && iterCount < QfsMaxIterCount)
+                    while (offs >= 0 && (index - offs) < windowLength && iterCount < QfsMaxIterCount)
                     {
                         run = MIN_MATCH - 1;
                         while (run < maxRun && input[index + run] == input[offs + run])
@@ -266,13 +283,13 @@ namespace FshDatIO
 
                             if (offset <= 1024 && run >= 3 ||
                                 offset <= 16384 && run >= 4 ||
-                                offset <= WindowLength && run >= 5)
+                                offset <= windowLength && run >= 5)
                             {
                                 bestLength = run;
                                 bestOffset = offset;
                             }
                         }
-                        offs = similar_rev[offs & WindowMask];
+                        offs = similar_rev[offs & windowMask];
                         iterCount++;
                     }
 

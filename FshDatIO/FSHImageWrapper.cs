@@ -1,10 +1,10 @@
-﻿using System;
+﻿using FshDatIO.Properties;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Security.Permissions;
-using FshDatIO.Properties;
 
 namespace FshDatIO
 {

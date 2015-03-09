@@ -34,10 +34,11 @@ namespace FshDatIO
             IList<BitmapEntry> items = Items;
             for (int i = 0; i < items.Count; i++)
             {
-                if (items[i] != null)
+                BitmapEntry item = items[i];
+                if (item != null)
                 {
-                    items[i].Dispose();
-                    items[i] = null;
+                    item.Dispose();
+                    item = null;
                 }
             }
 
@@ -80,10 +81,11 @@ namespace FshDatIO
                     IList<BitmapEntry> items = Items;
                     for (int i = 0; i < items.Count; i++)
                     {
-                        if (items[i] != null)
+                        BitmapEntry item = items[i];
+                        if (item != null)
                         {
-                            items[i].Dispose();
-                            items[i] = null;
+                            item.Dispose();
+                            item = null;
                         }
                     }
                 }

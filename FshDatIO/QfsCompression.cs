@@ -281,12 +281,12 @@ namespace FshDatIO
                         {
                             int offset = index - offs;
 
-                            if (offset <= 1024 && run >= 3 ||
+                            if (offset <= 1024 ||
                                 offset <= 16384 && run >= 4 ||
                                 offset <= windowLength && run >= 5)
                             {
                                 bestLength = run;
-                                bestOffset = offset;
+                                bestOffset = offset - 1;
                             }
                         }
                         offs = similar_rev[offs & windowMask];
@@ -320,8 +320,8 @@ namespace FshDatIO
                                 return null;
                             }
 
-                            outbuf[outIndex] = (byte)(((((bestOffset - 1) >> 8) << 5) + ((bestLength - 3) << 2)) + run);
-                            outbuf[outIndex + 1] = (byte)((bestOffset - 1) & 0xff);
+                            outbuf[outIndex] = (byte)((((bestOffset >> 8) << 5) + ((bestLength - 3) << 2)) + run);
+                            outbuf[outIndex + 1] = (byte)(bestOffset & 0xff);
                             outIndex += 2;
                         }
                         else if (bestLength <= 67 && bestOffset <= 16384)  // 3 byte op code 0x80 - 0xBF
@@ -332,8 +332,8 @@ namespace FshDatIO
                             }
 
                             outbuf[outIndex] = (byte)(0x80 + (bestLength - 4));
-                            outbuf[outIndex + 1] = (byte)((run << 6) + ((bestOffset - 1) >> 8));
-                            outbuf[outIndex + 2] = (byte)((bestOffset - 1) & 0xff);
+                            outbuf[outIndex + 1] = (byte)((run << 6) + (bestOffset >> 8));
+                            outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);
                             outIndex += 3;
                         }
                         else // 4 byte op code 0xC0 - 0xDF
@@ -343,7 +343,6 @@ namespace FshDatIO
                                 return null;
                             }
 
-                            bestOffset--;
                             outbuf[outIndex] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
                             outbuf[outIndex + 1] = (byte)((bestOffset >> 8) & 0xff);
                             outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);

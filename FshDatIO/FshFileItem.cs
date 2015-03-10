@@ -112,7 +112,7 @@ namespace FshDatIO
         {
             get
             {
-                return image;
+                return this.image;
             }
         }
 
@@ -126,7 +126,7 @@ namespace FshDatIO
         {
             get
             {
-                return compressed;
+                return this.compressed;
             }
             set
             {
@@ -147,7 +147,7 @@ namespace FshDatIO
         {
             get
             {
-                return loaded;
+                return this.loaded;
             }
         }
 
@@ -158,7 +158,7 @@ namespace FshDatIO
         {
             get
             {
-                return useFshWrite;
+                return this.useFshWrite;
             }
             set
             {

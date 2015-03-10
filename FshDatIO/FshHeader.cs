@@ -25,11 +25,11 @@ namespace FshDatIO
 		{
 			get
 			{
-				return size;
+				return this.size;
 			}
 			internal set
 			{
-				size = value;
+				this.size = value;
 			}
 		}
 
@@ -39,8 +39,8 @@ namespace FshDatIO
 		public int ImageCount
 		{
 			get 
-			{ 
-				return imageCount; 
+			{
+				return this.imageCount; 
 			}
 		}
 
@@ -50,8 +50,8 @@ namespace FshDatIO
 		public string DirectoryId
 		{
 			get 
-			{ 
-				return Encoding.ASCII.GetString(directoryId);
+			{
+				return Encoding.ASCII.GetString(this.directoryId);
 			}
 		}
 		

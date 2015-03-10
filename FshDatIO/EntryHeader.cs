@@ -25,11 +25,11 @@ namespace FshDatIO
         {
             get
             {
-                return code;
+                return this.code;
             }
             internal set
             {
-                code = value;
+                this.code = value;
             }
         }
 
@@ -43,11 +43,11 @@ namespace FshDatIO
         {
             get
             {
-                return width;
+                return this.width;
             }
             internal set
             {
-                width = value;
+                this.width = value;
             }
         }
 
@@ -61,11 +61,11 @@ namespace FshDatIO
         {
             get
             {
-                return height;
+                return this.height;
             }
             internal set
             {
-                height = value;
+                this.height = value;
             }
         }
 
@@ -77,7 +77,7 @@ namespace FshDatIO
         /// </value>
         public ushort[] GetMiscData()
         {
-            return misc;
+            return this.misc;
         }
 
         internal void SetMiscData(ushort[] data)
@@ -139,7 +139,7 @@ namespace FshDatIO
 
             for (int i = 0; i < 4; i++)
             {
-                stream.WriteUInt16(misc[i]);
+                stream.WriteUInt16(this.misc[i]);
             }
         }
 

@@ -27,7 +27,7 @@ namespace FshDatIO
         {
             get
             {
-                return bitmaps;
+                return this.bitmaps;
             }
         }
 
@@ -41,11 +41,11 @@ namespace FshDatIO
         {
             get
             {
-                return isCompressed;
+                return this.isCompressed;
             }
             set
             {
-                isCompressed = value;
+                this.isCompressed = value;
             }
         }
 
@@ -54,7 +54,7 @@ namespace FshDatIO
         /// </summary>
         public byte[] GetRawData()
         {
-            return rawData;
+            return this.rawData;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace FshDatIO
         {
             get
             {
-                return header;
+                return this.header;
             }
         }
 
@@ -72,7 +72,7 @@ namespace FshDatIO
         {
             get
             {
-                return (uint)rawData.Length;
+                return (uint)this.rawData.Length;
             }
         }
 
@@ -1193,10 +1193,10 @@ namespace FshDatIO
             if (!this.disposed)
             {
                 this.disposed = true;
-                if (bitmaps != null)
+                if (this.bitmaps != null)
                 {
-                    bitmaps.Dispose();
-                    bitmaps = null;
+                    this.bitmaps.Dispose();
+                    this.bitmaps = null;
                 }
             }
 

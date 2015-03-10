@@ -19,7 +19,7 @@ namespace FshDatIO
 		{
 			get
 			{
-				return header;
+				return this.header;
 			}
 		}
 
@@ -29,7 +29,7 @@ namespace FshDatIO
 		/// <returns>The attachment data.</returns>
 		public byte[] GetData()
 		{
-			return data;
+			return this.data;
 		}
 
 		/// <summary>

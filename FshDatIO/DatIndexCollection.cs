@@ -114,7 +114,7 @@ namespace FshDatIO
 
         private void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!this.disposed)
             {
                 this.disposed = true;
 

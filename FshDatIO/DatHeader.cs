@@ -50,7 +50,7 @@ namespace FshDatIO
         {
             get
             {
-                return majorVersion;
+                return this.majorVersion;
             }
         }
 
@@ -61,7 +61,7 @@ namespace FshDatIO
         {
             get
             {
-                return minorVersion;
+                return this.minorVersion;
             }
         }
 
@@ -72,7 +72,7 @@ namespace FshDatIO
         {
             get
             {
-                return userMajorVersion;
+                return this.userMajorVersion;
             }
         }
 
@@ -83,7 +83,7 @@ namespace FshDatIO
         {
             get
             {
-                return userMinorVersion;
+                return this.userMinorVersion;
             }
         }
 
@@ -94,7 +94,7 @@ namespace FshDatIO
         {
             get
             {
-                return flags;
+                return this.flags;
             }
         }
 
@@ -105,11 +105,11 @@ namespace FshDatIO
         {
             get
             {
-                return dateCreated;
+                return this.dateCreated;
             }
             internal set
             {
-                dateCreated = value;
+                this.dateCreated = value;
             }
         }
 
@@ -120,11 +120,11 @@ namespace FshDatIO
         {
             get
             {
-                return dateModified;
+                return this.dateModified;
             }
             internal set
             {
-                dateModified = value;
+                this.dateModified = value;
             }
         }
 
@@ -135,7 +135,7 @@ namespace FshDatIO
         {
             get
             {
-                return indexMajorVersion;
+                return this.indexMajorVersion;
             }
         }
 
@@ -146,11 +146,11 @@ namespace FshDatIO
         {
             get
             {
-                return entries;
+                return this.entries;
             }
             internal set
             {
-                entries = value;
+                this.entries = value;
             }
         }
 
@@ -161,11 +161,11 @@ namespace FshDatIO
         {
             get
             {
-                return indexLocation;
+                return this.indexLocation;
             }
             internal set
             {
-                indexLocation = value;
+                this.indexLocation = value;
             }
         }
 
@@ -176,11 +176,11 @@ namespace FshDatIO
         {
             get
             {
-                return indexSize;
+                return this.indexSize;
             }
             internal set
             {
-                indexSize = value;
+                this.indexSize = value;
             }
         }
 
@@ -191,7 +191,7 @@ namespace FshDatIO
         {
             get
             {
-                return holeCount;
+                return this.holeCount;
             }
         }
 
@@ -202,7 +202,7 @@ namespace FshDatIO
         {
             get
             {
-                return holeIndexLocation;
+                return this.holeIndexLocation;
             }
         }
 
@@ -213,7 +213,7 @@ namespace FshDatIO
         {
             get
             {
-                return holeIndexSize;
+                return this.holeIndexSize;
             }
         }
 

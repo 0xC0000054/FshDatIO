@@ -37,7 +37,7 @@ namespace FshDatIO
         {
             get
             {
-                return dirty;
+                return this.dirty;
             }
         }
 
@@ -52,7 +52,7 @@ namespace FshDatIO
         {
             get
             {
-                return datFileName;
+                return this.datFileName;
             }
         }
 
@@ -63,7 +63,7 @@ namespace FshDatIO
         {
             get
             {
-                return header;
+                return this.header;
             }
         }
         /// <summary>
@@ -73,7 +73,7 @@ namespace FshDatIO
         {
             get
             {
-                return indices.AsReadOnly();
+                return this.indices.AsReadOnly();
             }
         }
 
@@ -87,7 +87,7 @@ namespace FshDatIO
         {
             get
             {
-                return loaded;
+                return this.loaded;
             }
         }
 

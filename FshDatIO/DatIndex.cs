@@ -49,7 +49,7 @@ namespace FshDatIO
         {
             get
             {
-                return type;
+                return this.type;
             }
         }
 
@@ -60,7 +60,7 @@ namespace FshDatIO
         {
             get
             {
-                return group;
+                return this.group;
             }
         }
 
@@ -71,7 +71,7 @@ namespace FshDatIO
         {
             get
             {
-                return instance;
+                return this.instance;
             }
         }
 
@@ -82,7 +82,7 @@ namespace FshDatIO
         {
             get
             {
-                return location;
+                return this.location;
             }
         }
 
@@ -96,7 +96,7 @@ namespace FshDatIO
         {
             get
             {
-                return fileSize;
+                return this.fileSize;
             }
         }
 
@@ -110,11 +110,11 @@ namespace FshDatIO
         {
             get
             {
-                return indexState;
+                return this.indexState;
             }
             internal set
             {
-                indexState = value;
+                this.indexState = value;
             }
         }
 
@@ -128,11 +128,11 @@ namespace FshDatIO
         {
             get
             {
-                return fileItem;
+                return this.fileItem;
             }
             internal set
             {
-                fileItem = value;
+                this.fileItem = value;
             }
         }
 

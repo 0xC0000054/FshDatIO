@@ -31,7 +31,7 @@ namespace FshDatIO
         {
             get
             {
-                return bitmap;
+                return this.bitmap;
             }
             set
             {
@@ -55,7 +55,7 @@ namespace FshDatIO
         {
             get
             {
-                return alpha;
+                return this.alpha;
             }
             set
             {
@@ -79,11 +79,11 @@ namespace FshDatIO
         {
             get
             {
-                return bmpType;
+                return this.bmpType;
             }
             set
             {
-                bmpType = value;
+                this.bmpType = value;
             }
         }
 
@@ -97,11 +97,11 @@ namespace FshDatIO
         {
             get
             {
-                return dirName;
+                return this.dirName;
             }
             set
             {
-                dirName = value;
+                this.dirName = value;
             }
         }
 
@@ -115,7 +115,7 @@ namespace FshDatIO
         {
             get
             {
-                return embeddedMipmapCount;
+                return this.embeddedMipmapCount;
             }
         }
 
@@ -129,7 +129,7 @@ namespace FshDatIO
         {
             get
             {
-                return attachments;
+                return this.attachments;
             }
             internal set
             {
@@ -231,7 +231,7 @@ namespace FshDatIO
 
         private void Dispose(bool disposing)
         {
-            if (!disposed && disposing)
+            if (!this.disposed && disposing)
             {
                 this.disposed = true;
 

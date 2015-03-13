@@ -111,7 +111,7 @@ namespace FshDatIO
                         unCompressedData[outIndex] = compressedData[index];
                         index++;
                         outIndex++;
-                    } 
+                    }
                 }
 
                 if (copyCount > 0)
@@ -130,7 +130,7 @@ namespace FshDatIO
                             unCompressedData[outIndex] = unCompressedData[srcIndex];
                             srcIndex++;
                             outIndex++;
-                        } 
+                        }
                     }
                 }
             }
@@ -252,7 +252,7 @@ namespace FshDatIO
             {
                 uint v = (uint)value; // 32-bit word input to count zero bits on right
                 int count;            // count will be the number of zero bits on the right,
-                                      // so if v is 1101000 (base 2), then count will be 3
+                // so if v is 1101000 (base 2), then count will be 3
 
                 if (v == 0)
                 {
@@ -352,10 +352,23 @@ namespace FshDatIO
                     this.output[this.outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
                     this.outIndex++;
 
-                    Buffer.BlockCopy(this.input, this.lastWritePosition, this.output, this.outIndex, blockLength);
+                    // A for loop is faster than Buffer.BlockCopy for data less than or equal to 32 bytes.
+                    if (blockLength <= 32)
+                    {
+                        for (int i = 0; i < blockLength; i++)
+                        {
+                            this.output[this.outIndex] = this.input[this.lastWritePosition];
+                            this.lastWritePosition++;
+                            this.outIndex++;
+                        }
+                    }
+                    else
+                    {
+                        Buffer.BlockCopy(this.input, this.lastWritePosition, this.output, this.outIndex, blockLength);
+                        this.lastWritePosition += blockLength;
+                        this.outIndex += blockLength;
+                    }
 
-                    this.lastWritePosition += blockLength;
-                    this.outIndex += blockLength;
                     run -= blockLength;
                 }
 
@@ -427,10 +440,22 @@ namespace FshDatIO
                     this.output[this.outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
                     this.outIndex++;
 
-                    Buffer.BlockCopy(this.input, this.lastWritePosition, this.output, this.outIndex, blockLength);
-
-                    this.lastWritePosition += blockLength;
-                    this.outIndex += blockLength;
+                    // A for loop is faster than Buffer.BlockCopy for data less than or equal to 32 bytes.
+                    if (blockLength <= 32)
+                    {
+                        for (int i = 0; i < blockLength; i++)
+                        {
+                            this.output[this.outIndex] = this.input[this.lastWritePosition];
+                            this.lastWritePosition++;
+                            this.outIndex++;
+                        }
+                    }
+                    else
+                    {
+                        Buffer.BlockCopy(this.input, this.lastWritePosition, this.output, this.outIndex, blockLength);
+                        this.lastWritePosition += blockLength;
+                        this.outIndex += blockLength;
+                    }
                     run -= blockLength;
                 }
 

@@ -154,46 +154,13 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// The number of iterations to use when searching for matches.
+        /// The minimum size in bytes of an uncompressed buffer that can be compressed with QFS compression.
         /// </summary>
-        private const int QfsMaxIterCount = 150;
-        /// <summary>
-        /// The maximum size of a compressed block.
-        /// </summary>
-        private const int QfsMaxBlockSize = 1028;
-        /// <summary>
-        /// The maximum length of the LZSS sliding window.
-        /// </summary>
-        private const int MaxWindowLength = 131072;
-        /// <summary>
-        /// The maximum length of a literal run.
-        /// </summary>
-        private const int LiteralRunMaxLength = 112;
+        private const int UncompressedDataMinSize = 10;
         /// <summary>
         /// The maximum size in bytes of an uncompressed buffer that can be compressed with QFS compression.
         /// </summary>
         private const int UncompressedDataMaxSize = 16777215;
-        /// <summary>
-        /// The minimum match length.
-        /// </summary>
-        private const int MIN_MATCH = 3;
-
-        /// <summary>
-        /// Calculates the next highest the power of two.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns>The next highest power of 2.</returns>
-        private static int NextPowerOfTwo(int value)
-        {
-            value |= (value >> 1);
-            value |= (value >> 2);
-            value |= (value >> 4);
-            value |= (value >> 8);
-            value |= (value >> 16);
-            value++;
-
-            return value;
-        }
 
         /// <summary>
         /// Compresses the input byte array with QFS compression
@@ -214,219 +181,509 @@ namespace FshDatIO
             {
                 throw new FormatException(FshDatIO.Properties.Resources.UncompressedBufferTooLarge);
             }
-            int inputLength = input.Length;
 
-            // If the input is smaller than MaxWindowLength use the next highest power of 2 as the sliding window length to save memory.
-            int windowLength = inputLength < MaxWindowLength ? NextPowerOfTwo(inputLength) : MaxWindowLength;
-            int windowMask = windowLength - 1;
-            
-            int[] similar_rev = new int[windowLength];
-            int[,] last_rev = new int[256, 256];
-
-            for (int i = 0; i < similar_rev.Length; i++)
-            {
-                similar_rev[i] = -1;
-            }
-
-            for (int i = 0; i < 256; i++)
-            {
-                for (int j = 0; j < 256; j++)
-                {
-                    last_rev[i, j] = -1;
-                }
-            }
-            
-            int outLength = inputLength - 1;
-            byte[] outbuf = new byte[outLength];
-            outbuf[0] = 0x10;
-            outbuf[1] = 0xFB;
-            outbuf[2] = (byte)((inputLength >> 16) & 0xff);
-            outbuf[3] = (byte)((inputLength >> 8) & 0xff);
-            outbuf[4] = (byte)(inputLength & 0xff);
-            int outIndex = 5;
-
-            int run = 0;
-            int lastwrot = 0;
-            int index = 0;
-
-            int remaining = inputLength;
-
-            while (remaining > 0)
-            {
-                int offs = -1;
-
-                if (remaining > 2)
-                {
-                    offs = last_rev[input[index], input[index + 1]];
-                    similar_rev[index & windowMask] = offs;
-                    last_rev[input[index], input[index + 1]] = index;
-                }
-
-                if (index >= lastwrot)
-                {
-                    int bestLength = 0;
-                    int bestOffset = 0;
-                    int iterCount = 0;
-                    int maxRun = Math.Min(remaining, QfsMaxBlockSize);
-
-                    while (offs >= 0 && (index - offs) < windowLength && iterCount < QfsMaxIterCount)
-                    {
-                        run = MIN_MATCH - 1;
-                        while (run < maxRun && input[index + run] == input[offs + run])
-                        {
-                            run++;
-                        }
-
-                        if (run > bestLength && run >= MIN_MATCH)
-                        {
-                            int offset = index - offs;
-
-                            if (offset <= 1024 ||
-                                offset <= 16384 && run >= 4 ||
-                                offset <= windowLength && run >= 5)
-                            {
-                                bestLength = run;
-                                bestOffset = offset - 1;
-                            }
-                        }
-                        offs = similar_rev[offs & windowMask];
-                        iterCount++;
-                    }
-
-                    if (bestLength > 0)
-                    {
-                        run = index - lastwrot;
-                        while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
-                        {
-                            int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
-                            if ((outIndex + blockLength + 1) >= outLength)
-                            {
-                                return null; // data did not compress so return null
-                            }
-
-                            outbuf[outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
-                            outIndex++;
-
-                            Buffer.BlockCopy(input, lastwrot, outbuf, outIndex, blockLength);
-                            lastwrot += blockLength;
-                            outIndex += blockLength;
-                            run -= blockLength;
-                        }
-
-                        if (bestLength <= 10 && bestOffset <= 1024) // 2 byte op code  0x00 - 0x7f
-                        {
-                            if ((outIndex + run + 2) >= outLength)
-                            {
-                                return null;
-                            }
-
-                            outbuf[outIndex] = (byte)((((bestOffset >> 8) << 5) + ((bestLength - 3) << 2)) + run);
-                            outbuf[outIndex + 1] = (byte)(bestOffset & 0xff);
-                            outIndex += 2;
-                        }
-                        else if (bestLength <= 67 && bestOffset <= 16384)  // 3 byte op code 0x80 - 0xBF
-                        {
-                            if ((outIndex + run + 3) >= outLength)
-                            {
-                                return null;
-                            }
-
-                            outbuf[outIndex] = (byte)(0x80 + (bestLength - 4));
-                            outbuf[outIndex + 1] = (byte)((run << 6) + (bestOffset >> 8));
-                            outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);
-                            outIndex += 3;
-                        }
-                        else // 4 byte op code 0xC0 - 0xDF
-                        {
-                            if ((outIndex + run + 4) >= outLength)
-                            {
-                                return null;
-                            }
-
-                            outbuf[outIndex] = (byte)(((0xC0 + ((bestOffset >> 16) << 4)) + (((bestLength - 5) >> 8) << 2)) + run);
-                            outbuf[outIndex + 1] = (byte)((bestOffset >> 8) & 0xff);
-                            outbuf[outIndex + 2] = (byte)(bestOffset & 0xff);
-                            outbuf[outIndex + 3] = (byte)((bestLength - 5) & 0xff);
-                            outIndex += 4;
-                        }
-
-                        for (int i = 0; i < run; i++)
-                        {
-                            outbuf[outIndex] = input[lastwrot];
-                            lastwrot++;
-                            outIndex++;
-                        }
-                        lastwrot += bestLength;
-                    }
-                }
-
-                index++;
-                remaining--;
-            }
-
-            run = inputLength - lastwrot;
-            // write the end data
-            while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
-            {
-                int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
-
-                if ((outIndex + blockLength + 1) >= outLength)
-                {
-                    return null; // data did not compress so return null
-                }
-
-                outbuf[outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
-                outIndex++;
-
-                Buffer.BlockCopy(input, lastwrot, outbuf, outIndex, blockLength);
-                lastwrot += blockLength;
-                outIndex += blockLength;
-                run -= blockLength;
-            }
-            
-            if ((outIndex + run + 1) >= outLength)
+            if (input.Length < UncompressedDataMinSize)
             {
                 return null;
             }
 
-            // 1 byte EOF op code 0xFC - 0xFF
-            outbuf[outIndex] = (byte)(0xFC + run);
-            outIndex++;
+            ZlibQFS qfs = new ZlibQFS(input, prefixLength);
+            return qfs.Compress();
+        }
 
-            for (int i = 0; i < run; i++)
+        private sealed class ZlibQFS
+        {
+            private byte[] input;
+            private byte[] output;
+            private int inputLength;
+            private int outputLength;
+            private int outIndex;
+            private int readPosition;
+            private int lastWritePosition;
+            private int remaining;
+            private bool prefixLength;
+
+            private const int QfsHeaderSize = 5;
+            /// <summary>
+            /// The maximum length of a literal run.
+            /// </summary>
+            private const int LiteralRunMaxLength = 112;
+
+            private int hash;
+            private int[] head;
+            private int[] prev;
+
+            private const int MaxWindowSize = 131072;
+            private const int MaxHashSize = 65536;
+
+            private readonly int WindowSize;
+            private readonly int WindowMask;
+            private readonly int MaxWindowOffset;
+
+            private readonly int HashSize;
+            private readonly int HashMask;
+            private readonly int HashShift;
+
+            private const int GoodLength = 32;
+            private const int MaxLazy = 258;
+            private const int NiceLength = 258;
+            private const int MaxChain = 4096;
+            private const int MIN_MATCH = 3;
+            private const int MAX_MATCH = 1028;
+
+            private int match_start;
+            private int match_length;
+            private int prev_length;
+
+            private static int HighestOneBit(int value)
             {
-                outbuf[outIndex] = input[lastwrot];
-                lastwrot++;
-                outIndex++;
+                value--;
+                value |= (value >> 1);
+                value |= (value >> 2);
+                value |= (value >> 4);
+                value |= (value >> 8);
+                value |= (value >> 16);
+                value++;
+
+                return value - (value >> 1);
             }
 
-            if (prefixLength)
+            private static int Log2(int value)
             {
-                int finalLength = outIndex + 4;
-                if (finalLength >= inputLength)
+                uint v = (uint)value; // 32-bit word input to count zero bits on right
+                int count;            // count will be the number of zero bits on the right,
+                                      // so if v is 1101000 (base 2), then count will be 3
+
+                if (v == 0)
+                {
+                    return 32;
+                }
+
+                if ((v & 0x1) != 0)
+                {
+                    // special case for odd v (assumed to happen half of the time)
+                    count = 0;
+                }
+                else
+                {
+                    count = 1;
+                    if ((v & 0xffff) == 0)
+                    {
+                        v >>= 16;
+                        count += 16;
+                    }
+                    if ((v & 0xff) == 0)
+                    {
+                        v >>= 8;
+                        count += 8;
+                    }
+                    if ((v & 0xf) == 0)
+                    {
+                        v >>= 4;
+                        count += 4;
+                    }
+                    if ((v & 0x3) == 0)
+                    {
+                        v >>= 2;
+                        count += 2;
+                    }
+                    if ((v & 0x1) != 0)
+                    {
+                        count--;
+                    }
+                }
+
+                return count;
+            }
+
+            public ZlibQFS(byte[] input, bool prefixLength)
+            {
+                if (input == null)
+                {
+                    throw new ArgumentNullException("input");
+                }
+
+                this.input = input;
+                this.inputLength = input.Length;
+                this.output = new byte[this.inputLength - 1];
+                this.outputLength = output.Length;
+
+                if (this.inputLength < MaxWindowSize)
+                {
+                    int highestOneBit = HighestOneBit(this.inputLength);
+                    WindowSize = Math.Min(highestOneBit, MaxWindowSize);
+                    HashSize = Math.Min(MaxHashSize, Math.Max(highestOneBit / 2, 32));
+                    HashShift = (Log2(HashSize) + MIN_MATCH - 1) / MIN_MATCH;
+                }
+                else
+                {
+                    WindowSize = MaxWindowSize;
+                    HashSize = MaxHashSize;
+                    HashShift = 6;
+                }
+                MaxWindowOffset = WindowSize - 1;
+                WindowMask = MaxWindowOffset;
+                HashMask = HashSize - 1;
+
+                this.hash = 0;
+                this.head = new int[HashSize];
+                this.prev = new int[WindowSize];
+                this.readPosition = 0;
+                this.remaining = inputLength;
+                this.outIndex = QfsHeaderSize;
+                this.lastWritePosition = 0;
+                this.prefixLength = prefixLength;
+            }
+
+            private bool WriteCompressedData(int startOffset)
+            {
+                int endOffset = this.readPosition - 1;
+                int run = endOffset - this.lastWritePosition;
+
+                while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
+                {
+                    int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
+
+                    if ((this.outIndex + blockLength + 1) >= this.outputLength)
+                    {
+                        return false; // data did not compress
+                    }
+
+                    this.output[this.outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
+                    this.outIndex++;
+
+                    Buffer.BlockCopy(this.input, this.lastWritePosition, this.output, this.outIndex, blockLength);
+
+                    this.lastWritePosition += blockLength;
+                    this.outIndex += blockLength;
+                    run -= blockLength;
+                }
+
+                int copyLength = this.prev_length;
+                int copyOffset = endOffset - startOffset - 1;
+
+                if (copyLength <= 10 && copyOffset < 1024) // 2 byte op code  0x00 - 0x7f
+                {
+                    if ((this.outIndex + run + 2) >= this.outputLength)
+                    {
+                        return false;
+                    }
+
+                    this.output[this.outIndex] = (byte)((((copyOffset >> 8) << 5) + ((copyLength - 3) << 2)) + run);
+                    this.output[this.outIndex + 1] = (byte)(copyOffset & 0xff);
+                    this.outIndex += 2;
+                }
+                else if (copyLength <= 67 && copyOffset < 16384)  // 3 byte op code 0x80 - 0xBF
+                {
+                    if ((this.outIndex + run + 3) >= this.outputLength)
+                    {
+                        return false;
+                    }
+
+                    this.output[this.outIndex] = (byte)(0x80 + (copyLength - 4));
+                    this.output[this.outIndex + 1] = (byte)((run << 6) + (copyOffset >> 8));
+                    this.output[this.outIndex + 2] = (byte)(copyOffset & 0xff);
+                    this.outIndex += 3;
+                }
+                else // 4 byte op code 0xC0 - 0xDF
+                {
+                    if ((this.outIndex + run + 4) >= this.outputLength)
+                    {
+                        return false;
+                    }
+
+                    this.output[this.outIndex] = (byte)(((0xC0 + ((copyOffset >> 16) << 4)) + (((copyLength - 5) >> 8) << 2)) + run);
+                    this.output[this.outIndex + 1] = (byte)((copyOffset >> 8) & 0xff);
+                    this.output[this.outIndex + 2] = (byte)(copyOffset & 0xff);
+                    this.output[this.outIndex + 3] = (byte)((copyLength - 5) & 0xff);
+                    this.outIndex += 4;
+                }
+
+
+                for (int i = 0; i < run; i++)
+                {
+                    this.output[this.outIndex] = this.input[this.lastWritePosition];
+                    this.lastWritePosition++;
+                    this.outIndex++;
+                }
+                this.lastWritePosition += copyLength;
+
+                return true;
+            }
+
+            private bool WriteEndData()
+            {
+                int run = this.readPosition - this.lastWritePosition;
+
+                while (run > 3) // 1 byte literal op code 0xE0 - 0xFB
+                {
+                    int blockLength = Math.Min(run & ~3, LiteralRunMaxLength);
+
+                    if ((this.outIndex + blockLength + 1) >= this.outputLength)
+                    {
+                        return false; // data did not compress
+                    }
+
+                    this.output[this.outIndex] = (byte)(0xE0 + ((blockLength / 4) - 1));
+                    this.outIndex++;
+
+                    Buffer.BlockCopy(this.input, this.lastWritePosition, this.output, this.outIndex, blockLength);
+
+                    this.lastWritePosition += blockLength;
+                    this.outIndex += blockLength;
+                    run -= blockLength;
+                }
+
+                if ((this.outIndex + run + 1) >= this.outputLength)
+                {
+                    return false;
+                }
+                this.output[this.outIndex] = (byte)(0xFC + run);
+                this.outIndex++;
+
+                for (int i = 0; i < run; i++)
+                {
+                    this.output[this.outIndex] = this.input[this.lastWritePosition];
+                    this.lastWritePosition++;
+                    this.outIndex++;
+                }
+
+                return true;
+            }
+
+            // longest_match and Compress are adapted from deflate.c in zlib 1.2.3 which is licensed as follows:
+            /* zlib.h -- interface of the 'zlib' general purpose compression library
+              version 1.2.3, July 18th, 2005
+
+              Copyright (C) 1995-2005 Jean-loup Gailly and Mark Adler
+
+              This software is provided 'as-is', without any express or implied
+              warranty.  In no event will the authors be held liable for any damages
+              arising from the use of this software.
+
+              Permission is granted to anyone to use this software for any purpose,
+              including commercial applications, and to alter it and redistribute it
+              freely, subject to the following restrictions:
+
+              1. The origin of this software must not be misrepresented; you must not
+                 claim that you wrote the original software. If you use this software
+                 in a product, an acknowledgment in the product documentation would be
+                 appreciated but is not required.
+              2. Altered source versions must be plainly marked as such, and must not be
+                 misrepresented as being the original software.
+              3. This notice may not be removed or altered from any source distribution.
+
+              Jean-loup Gailly        Mark Adler
+              jloup@gzip.org          madler@alumni.caltech.edu
+
+
+              The data format used by the zlib library is described by RFCs (Request for
+              Comments) 1950 to 1952 in the files http://www.ietf.org/rfc/rfc1950.txt
+              (zlib format), rfc1951.txt (deflate format) and rfc1952.txt (gzip format).
+            */
+
+            private int longest_match(int cur_match)
+            {
+                int chain_length = MaxChain;
+                int scan = this.readPosition;
+                int bestLength = this.prev_length;
+
+                if (bestLength >= this.remaining)
+                {
+                    return remaining;
+                }
+
+                byte scan_end1 = input[scan + bestLength - 1];
+                byte scan_end = input[scan + bestLength];
+
+                // Do not waste too much time if we already have a good match:
+                if (this.prev_length >= GoodLength)
+                {
+                    chain_length >>= 2;
+                }
+                int niceLength = NiceLength;
+
+                // Do not look for matches beyond the end of the input. This is necessary
+                // to make deflate deterministic.
+                if (niceLength > this.remaining)
+                {
+                    niceLength = this.remaining;
+                }
+                int maxLength = Math.Min(this.remaining, MAX_MATCH);
+                int limit = this.readPosition > MaxWindowOffset ? this.readPosition - MaxWindowOffset : 0;
+
+                do
+                {
+                    int match = cur_match;
+
+                    // Skip to next match if the match length cannot increase
+                    // or if the match length is less than 2:
+                    if (input[match + bestLength] != scan_end ||
+                        input[match + bestLength - 1] != scan_end1 ||
+                        input[match] != input[scan] ||
+                        input[match + 1] != input[scan + 1])
+                    {
+                        continue;
+                    }
+
+
+                    int len = 2;
+                    do
+                    {
+                        len++;
+                    }
+                    while (len < maxLength && input[scan + len] == input[match + len]);
+
+                    if (len > bestLength)
+                    {
+                        this.match_start = cur_match;
+                        bestLength = len;
+                        if (len >= niceLength)
+                        {
+                            break;
+                        }
+                        scan_end1 = input[scan + bestLength - 1];
+                        scan_end = input[scan + bestLength];
+                    }
+                }
+                while ((cur_match = prev[cur_match & WindowMask]) >= limit && --chain_length > 0);
+
+                return bestLength;
+            }
+
+            public byte[] Compress()
+            {
+                for (int i = 0; i < head.Length; i++)
+                {
+                    head[i] = -1;
+                }
+
+                this.hash = input[0];
+                this.hash = ((this.hash << HashShift) ^ input[1]) & HashMask;
+
+                int lastMatch = this.inputLength - MIN_MATCH;
+
+                while (remaining > 0)
+                {
+                    this.prev_length = this.match_length;
+                    int prev_match = this.match_start;
+                    this.match_length = MIN_MATCH - 1;
+
+                    int hash_head = -1;
+
+                    // Insert the string window[readPosition .. readPosition+2] in the
+                    // dictionary, and set hash_head to the head of the hash chain:
+                    if (this.remaining >= MIN_MATCH)
+                    {
+                        this.hash = ((this.hash << HashShift) ^ input[this.readPosition + MIN_MATCH - 1]) & HashMask;
+
+                        hash_head = head[this.hash];
+                        prev[this.readPosition & WindowMask] = hash_head;
+                        head[this.hash] = this.readPosition;
+                    }
+
+                    if (hash_head >= 0 && this.prev_length < MaxLazy && this.readPosition - hash_head <= WindowSize)
+                    {
+                        int bestLength = longest_match(hash_head);
+
+                        if (bestLength >= MIN_MATCH)
+                        {
+                            int bestOffset = this.readPosition - this.match_start;
+
+                            if (bestOffset <= 1024 ||
+                                bestOffset <= 16384 && bestLength >= 4 ||
+                                bestOffset <= WindowSize && bestLength >= 5)
+                            {
+                                this.match_length = bestLength;
+                            }
+                        }
+                    }
+
+                    // If there was a match at the previous step and the current
+                    // match is not better, output the previous match:
+                    if (this.prev_length >= MIN_MATCH && this.match_length <= this.prev_length)
+                    {
+                        if (!WriteCompressedData(prev_match))
+                        {
+                            return null;
+                        }
+
+                        // Insert in hash table all strings up to the end of the match.
+                        // readPosition-1 and readPosition are already inserted. If there is not
+                        // enough lookahead, the last two strings are not inserted in
+                        // the hash table.
+
+                        this.remaining -= (this.prev_length - 1);
+                        this.prev_length -= 2;
+
+                        do
+                        {
+                            this.readPosition++;
+
+                            if (this.readPosition < lastMatch)
+                            {
+                                this.hash = ((this.hash << HashShift) ^ input[this.readPosition + MIN_MATCH - 1]) & HashMask;
+
+                                hash_head = head[this.hash];
+                                prev[this.readPosition & WindowMask] = hash_head;
+                                head[this.hash] = this.readPosition;
+                            }
+                            this.prev_length--;
+                        }
+                        while (prev_length > 0);
+
+                        this.match_length = MIN_MATCH - 1;
+                        this.readPosition++;
+                    }
+                    else
+                    {
+                        this.readPosition++;
+                        this.remaining--;
+                    }
+                }
+
+                if (!WriteEndData())
                 {
                     return null;
                 }
 
-                byte[] temp = new byte[finalLength];
+                // Write the compressed data header.
+                output[0] = 0x10;
+                output[1] = 0xFB;
+                output[2] = (byte)((inputLength >> 16) & 0xff);
+                output[3] = (byte)((inputLength >> 8) & 0xff);
+                output[4] = (byte)(inputLength & 0xff);
 
-                // Write the compressed length before the actual data in little endian byte order.
-                temp[0] = (byte)(outIndex & 0xff);
-                temp[1] = (byte)((outIndex >> 8) & 0xff);
-                temp[2] = (byte)((outIndex >> 16) & 0xff);
-                temp[3] = (byte)((outIndex >> 24) & 0xff);
+                // Trim the output array to its actual size.
+                if (prefixLength)
+                {
+                    int finalLength = outIndex + 4;
+                    if (finalLength >= inputLength)
+                    {
+                        return null;
+                    }
 
-                Buffer.BlockCopy(outbuf, 0, temp, 4, outIndex);
-                outbuf = temp;
+                    byte[] temp = new byte[finalLength];
+                    // Write the compressed data length in little endian byte order.
+                    temp[0] = (byte)(outIndex & 0xff);
+                    temp[1] = (byte)((outIndex >> 8) & 0xff);
+                    temp[2] = (byte)((outIndex >> 16) & 0xff);
+                    temp[3] = (byte)((outIndex >> 24) & 0xff);
+
+                    Buffer.BlockCopy(this.output, 0, temp, 4, outIndex);
+                    this.output = temp;
+                }
+                else
+                {
+                    byte[] temp = new byte[outIndex];
+                    Buffer.BlockCopy(this.output, 0, temp, 0, outIndex);
+
+                    this.output = temp;
+                }
+
+                return output;
             }
-            else
-            {
-                byte[] temp = new byte[outIndex]; // trim the outbuf array to it's actual length
-                Buffer.BlockCopy(outbuf, 0, temp, 0, outIndex);
-                outbuf = temp;
-            }
 
-            return outbuf;
         }
     }
 }

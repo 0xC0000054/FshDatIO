@@ -58,3 +58,4 @@
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Dir", Scope = "type", Target = "FshDatIO.FSHDirEntry")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dir", Scope = "member", Target = "FshDatIO.BitmapEntry.#.ctor(System.Drawing.Bitmap,System.Drawing.Bitmap,FshDatIO.FshImageFormat,System.String)")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Dir", Scope = "member", Target = "FshDatIO.BitmapEntry.#DirName")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1703:ResourceStringsShouldBeSpelledCorrectly", MessageId = "dat", Scope = "resource", Target = "FshDatIO.Properties.Resources.resources")]

@@ -262,7 +262,7 @@ namespace FshDatIO
 
             this.majorVersion = input.ReadUInt32();
             this.minorVersion = input.ReadUInt32();
-            if (this.majorVersion != SC4FormatMajorVersion || this.minorVersion != SC4FormatMinorVersion)
+            if (this.majorVersion > SC4FormatMajorVersion || this.minorVersion > SC4FormatMinorVersion)
             {
                 throw new DatFileException(string.Format(CultureInfo.CurrentCulture, Resources.UnsupportedDBPFVersion, this.majorVersion, this.minorVersion));
             }

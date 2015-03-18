@@ -248,7 +248,7 @@ namespace FshDatIO
                 return value - (value >> 1);
             }
 
-            private static int Log2(int value)
+            private static int NumberOfTrailingZeros(int value)
             {
                 uint v = (uint)value; // 32-bit word input to count zero bits on right
                 int count;            // count will be the number of zero bits on the right,
@@ -313,7 +313,7 @@ namespace FshDatIO
                     int highestOneBit = HighestOneBit(this.inputLength);
                     WindowSize = Math.Min(highestOneBit, MaxWindowSize);
                     HashSize = Math.Min(MaxHashSize, Math.Max(highestOneBit / 2, 32));
-                    HashShift = (Log2(HashSize) + MIN_MATCH - 1) / MIN_MATCH;
+                    HashShift = (NumberOfTrailingZeros(HashSize) + MIN_MATCH - 1) / MIN_MATCH;
                 }
                 else
                 {

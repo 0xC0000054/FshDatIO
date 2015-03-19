@@ -216,13 +216,12 @@ namespace FshDatIO
             private const int MaxWindowSize = 131072;
             private const int MaxHashSize = 65536;
 
-            private readonly int WindowSize;
-            private readonly int WindowMask;
-            private readonly int MaxWindowOffset;
-
-            private readonly int HashSize;
-            private readonly int HashMask;
-            private readonly int HashShift;
+            private readonly int windowSize;
+            private readonly int windowMask;
+            private readonly int maxWindowOffset;
+            private readonly int hashSize;
+            private readonly int hashMask;
+            private readonly int hashShift;
 
             private const int GoodLength = 32;
             private const int MaxLazy = 258;
@@ -310,23 +309,23 @@ namespace FshDatIO
 
                 if (this.inputLength < MaxWindowSize)
                 {
-                    WindowSize = HighestOneBit(this.inputLength);
-                    HashSize = Math.Max(WindowSize / 2, 32);
-                    HashShift = (NumberOfTrailingZeros(HashSize) + MIN_MATCH - 1) / MIN_MATCH;
+                    windowSize = HighestOneBit(this.inputLength);
+                    hashSize = Math.Max(windowSize / 2, 32);
+                    hashShift = (NumberOfTrailingZeros(hashSize) + MIN_MATCH - 1) / MIN_MATCH;
                 }
                 else
                 {
-                    WindowSize = MaxWindowSize;
-                    HashSize = MaxHashSize;
-                    HashShift = 6;
+                    windowSize = MaxWindowSize;
+                    hashSize = MaxHashSize;
+                    hashShift = 6;
                 }
-                MaxWindowOffset = WindowSize - 1;
-                WindowMask = MaxWindowOffset;
-                HashMask = HashSize - 1;
+                maxWindowOffset = windowSize - 1;
+                windowMask = maxWindowOffset;
+                hashMask = hashSize - 1;
 
                 this.hash = 0;
-                this.head = new int[HashSize];
-                this.prev = new int[WindowSize];
+                this.head = new int[hashSize];
+                this.prev = new int[windowSize];
                 this.readPosition = 0;
                 this.remaining = inputLength;
                 this.outIndex = QfsHeaderSize;
@@ -534,7 +533,7 @@ namespace FshDatIO
                     niceLength = this.remaining;
                 }
                 int maxLength = Math.Min(this.remaining, MAX_MATCH);
-                int limit = this.readPosition > MaxWindowOffset ? this.readPosition - MaxWindowOffset : 0;
+                int limit = this.readPosition > maxWindowOffset ? this.readPosition - maxWindowOffset : 0;
 
                 do
                 {
@@ -570,7 +569,7 @@ namespace FshDatIO
                         scan_end = input[scan + bestLength];
                     }
                 }
-                while ((cur_match = prev[cur_match & WindowMask]) >= limit && --chain_length > 0);
+                while ((cur_match = prev[cur_match & windowMask]) >= limit && --chain_length > 0);
 
                 return bestLength;
             }
@@ -583,7 +582,7 @@ namespace FshDatIO
                 }
 
                 this.hash = input[0];
-                this.hash = ((this.hash << HashShift) ^ input[1]) & HashMask;
+                this.hash = ((this.hash << hashShift) ^ input[1]) & hashMask;
 
                 int lastMatch = this.inputLength - MIN_MATCH;
 
@@ -599,14 +598,14 @@ namespace FshDatIO
                     // dictionary, and set hash_head to the head of the hash chain:
                     if (this.remaining >= MIN_MATCH)
                     {
-                        this.hash = ((this.hash << HashShift) ^ input[this.readPosition + MIN_MATCH - 1]) & HashMask;
+                        this.hash = ((this.hash << hashShift) ^ input[this.readPosition + MIN_MATCH - 1]) & hashMask;
 
                         hash_head = head[this.hash];
-                        prev[this.readPosition & WindowMask] = hash_head;
+                        prev[this.readPosition & windowMask] = hash_head;
                         head[this.hash] = this.readPosition;
                     }
 
-                    if (hash_head >= 0 && this.prev_length < MaxLazy && this.readPosition - hash_head <= WindowSize)
+                    if (hash_head >= 0 && this.prev_length < MaxLazy && this.readPosition - hash_head <= windowSize)
                     {
                         int bestLength = longest_match(hash_head);
 
@@ -616,7 +615,7 @@ namespace FshDatIO
 
                             if (bestOffset <= 1024 ||
                                 bestOffset <= 16384 && bestLength >= 4 ||
-                                bestOffset <= WindowSize && bestLength >= 5)
+                                bestOffset <= windowSize && bestLength >= 5)
                             {
                                 this.match_length = bestLength;
                             }
@@ -646,10 +645,10 @@ namespace FshDatIO
 
                             if (this.readPosition < lastMatch)
                             {
-                                this.hash = ((this.hash << HashShift) ^ input[this.readPosition + MIN_MATCH - 1]) & HashMask;
+                                this.hash = ((this.hash << hashShift) ^ input[this.readPosition + MIN_MATCH - 1]) & hashMask;
 
                                 hash_head = head[this.hash];
-                                prev[this.readPosition & WindowMask] = hash_head;
+                                prev[this.readPosition & windowMask] = hash_head;
                                 head[this.hash] = this.readPosition;
                             }
                             this.prev_length--;

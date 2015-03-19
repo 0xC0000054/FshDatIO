@@ -310,9 +310,8 @@ namespace FshDatIO
 
                 if (this.inputLength < MaxWindowSize)
                 {
-                    int highestOneBit = HighestOneBit(this.inputLength);
-                    WindowSize = highestOneBit;
-                    HashSize = Math.Max(highestOneBit / 2, 32);
+                    WindowSize = HighestOneBit(this.inputLength);
+                    HashSize = Math.Max(WindowSize / 2, 32);
                     HashShift = (NumberOfTrailingZeros(HashSize) + MIN_MATCH - 1) / MIN_MATCH;
                 }
                 else

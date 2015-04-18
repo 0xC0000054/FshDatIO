@@ -24,7 +24,7 @@ namespace FshDatIO
                 throw new ArgumentNullException("value");
             }
 
-            if (startIndex < 0 || startIndex > (value.Length - 4))
+            if (startIndex < 0 || startIndex > (value.Length - 2))
             {
                 throw new ArgumentOutOfRangeException("startIndex");
             }

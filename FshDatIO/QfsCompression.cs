@@ -24,7 +24,7 @@ namespace FshDatIO
             {
                 if (compressedData[4] != 0x10 || compressedData[5] != 0xFB)
                 {
-                    throw new NotSupportedException(FshDatIO.Properties.Resources.UnsupportedCompressionFormat);
+                    throw new NotSupportedException(Properties.Resources.UnsupportedCompressionFormat);
                 }
                 startOffset = 4;
             }
@@ -179,7 +179,7 @@ namespace FshDatIO
 
             if (input.Length > UncompressedDataMaxSize)
             {
-                throw new FormatException(FshDatIO.Properties.Resources.UncompressedBufferTooLarge);
+                throw new FormatException(Properties.Resources.UncompressedBufferTooLarge);
             }
 
             if (input.Length < UncompressedDataMinSize)

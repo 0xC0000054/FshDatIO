@@ -431,8 +431,8 @@ namespace FshDatIO
 
                         auxCode = LittleEndianBitConverter.ToInt32(this.rawData, auxOffset);
                     }
-                    int width = (int)eHeader.Width;
-                    int height = (int)eHeader.Height;
+                    int width = eHeader.Width;
+                    int height = eHeader.Height;
                     bool entryCompressed = (eHeader.Code & 0x80) != 0;
 
                     int numScales = 0;
@@ -520,7 +520,7 @@ namespace FshDatIO
                         }
                         else
                         {
-                            compSize = nextOffset - (int)bmpStartOffset;
+                            compSize = nextOffset - bmpStartOffset;
                         }
 
                         byte[] compressedData = new byte[compSize];

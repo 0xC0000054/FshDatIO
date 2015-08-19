@@ -161,7 +161,7 @@ namespace FshDatIO
 
                 this.indices = new DatIndexCollection(entryCount);
 
-                this.stream.Seek((long)header.IndexLocation, SeekOrigin.Begin);
+                this.stream.Seek(header.IndexLocation, SeekOrigin.Begin);
                 for (int i = 0; i < entryCount; i++)
                 {
                     uint type = stream.ReadUInt32();
@@ -222,7 +222,7 @@ namespace FshDatIO
             FshFileItem fsh = index.FileItem;
             if (!fsh.Loaded)
             {
-                this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+                this.stream.Seek(index.Location, SeekOrigin.Begin);
                 byte[] imageData = this.stream.ReadBytes((int)index.FileSize);
 
                 fsh.Load(imageData);
@@ -307,7 +307,7 @@ namespace FshDatIO
                 return false;
             }
 
-            this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+            this.stream.Seek(index.Location, SeekOrigin.Begin);
             byte[] imageBytes = this.stream.ReadBytes((int)index.FileSize);
 
             return FSHImageWrapper.CheckImageSize(imageBytes);
@@ -543,7 +543,7 @@ namespace FshDatIO
 #if DEBUG
                             System.Diagnostics.Debug.WriteLine(string.Format("Existing file Index: {0} Type: 0x{1:X8}", i, index.Type));
 #endif
-                            this.stream.Seek((long)index.Location, SeekOrigin.Begin);
+                            this.stream.Seek(index.Location, SeekOrigin.Begin);
 
                             int dataSize = (int)size;
                             byte[] buffer = this.stream.ReadBytes(dataSize);

@@ -72,7 +72,7 @@ namespace FshDatIO
                 }
                 else
                 {
-                    return (int)(*ptr | (*(ptr + 1) << 8) | (*(ptr + 2) << 16) | (*(ptr + 3) << 24));
+                    return *ptr | (*(ptr + 1) << 8) | (*(ptr + 2) << 16) | (*(ptr + 3) << 24);
                 }
             }
         }

@@ -80,6 +80,11 @@ namespace FshDatIO
             return this.misc;
         }
 
+        /// <summary>
+        /// Sets the misc data.
+        /// </summary>
+        /// <param name="data">The data to set.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="data"/> is null.</exception>
         internal void SetMiscData(ushort[] data)
         {
             if (data == null)
@@ -90,6 +95,10 @@ namespace FshDatIO
             this.misc = data;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EntryHeader"/> class.
+        /// </summary>
+        /// <param name="auxHeaderCode">The header code of the attachment.</param>
         internal EntryHeader(int auxHeaderCode)
         {
             this.code = auxHeaderCode;
@@ -97,7 +106,14 @@ namespace FshDatIO
             this.height = 0;
             this.misc = null;
         }
-        
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EntryHeader"/> class.
+        /// </summary>
+        /// <param name="rawData">The byte array containing the header.</param>
+        /// <param name="offset">The offset of the header in <paramref name="rawData"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="rawData"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="offset"/> is invalid.</exception>
         internal EntryHeader(byte[] rawData, int offset)
         {
             if (rawData == null)
@@ -123,6 +139,13 @@ namespace FshDatIO
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EntryHeader"/> class.
+        /// </summary>
+        /// <param name="format">The format of the entry.</param>
+        /// <param name="width">The width of the entry.</param>
+        /// <param name="height">The height of the entry.</param>
+        /// <param name="misc">The misc data.</param>
         internal EntryHeader(FshImageFormat format, int width, int height, ushort[] misc)
         {
             this.code = (int)format;
@@ -131,6 +154,11 @@ namespace FshDatIO
             this.misc = misc;
         }
 
+        /// <summary>
+        /// Saves the <see cref="EntryHeader"/> to the specified stream.
+        /// </summary>
+        /// <param name="stream">The <see cref="Stream"/> where the header will be saved..</param>
+        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
         internal void Save(Stream stream)
         {
             if (stream == null)

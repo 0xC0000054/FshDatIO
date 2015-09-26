@@ -54,7 +54,13 @@ namespace FshDatIO
 				return Encoding.ASCII.GetString(this.directoryId);
 			}
 		}
-		
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="FSHHeader"/> class.
+		/// </summary>
+		/// <param name="bytes">The bytes.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="bytes"/> is null.</exception>
+		/// <exception cref="FormatException">The header signature is not valid.</exception>
 		internal FSHHeader(byte[] bytes)
 		{
 			if (bytes == null)
@@ -73,6 +79,11 @@ namespace FshDatIO
 			Array.Copy(bytes, 12, this.directoryId, 0, 4);
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="FSHHeader"/> class.
+		/// </summary>
+		/// <param name="imageCount">The image count.</param>
+		/// <param name="directoryID">The directory identifier.</param>
 		internal FSHHeader(int imageCount, string directoryID)
 		{
 			this.size = 0;
@@ -80,6 +91,11 @@ namespace FshDatIO
 			this.directoryId = Encoding.ASCII.GetBytes(directoryID);
 		}
 
+		/// <summary>
+		/// Saves the <see cref="FSHHeader"/> to the specified stream.
+		/// </summary>
+		/// <param name="stream">The <see cref="Stream"/> where the header will be saved..</param>
+		/// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
 		internal void Save(Stream stream)
 		{
 			if (stream == null)

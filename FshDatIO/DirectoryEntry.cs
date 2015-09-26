@@ -30,6 +30,11 @@ namespace FshDatIO
             this.unCompressedSize = unCompressedSize;
         }
 
+        /// <summary>
+        /// Saves the <see cref="DirectoryEntry"/> to the specified stream.
+        /// </summary>
+        /// <param name="stream">The <see cref="Stream"/> where the entry will be saved..</param>
+        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
         public void Save(Stream stream)
         {
             if (stream == null)

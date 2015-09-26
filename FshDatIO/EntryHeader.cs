@@ -133,6 +133,11 @@ namespace FshDatIO
 
         internal void Save(Stream stream)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("stream");
+            }
+
             stream.WriteInt32(this.code);
             stream.WriteUInt16(this.width);
             stream.WriteUInt16(this.height);

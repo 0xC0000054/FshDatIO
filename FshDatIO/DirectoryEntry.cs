@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace FshDatIO
 {
@@ -31,6 +32,11 @@ namespace FshDatIO
 
         public void Save(Stream stream)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("stream");
+            }
+
             stream.WriteUInt32(this.type);
             stream.WriteUInt32(this.group);
             stream.WriteUInt32(this.instance);

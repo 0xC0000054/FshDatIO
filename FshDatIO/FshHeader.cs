@@ -82,6 +82,11 @@ namespace FshDatIO
 
 		internal void Save(Stream stream)
 		{
+			if (stream == null)
+			{
+				throw new ArgumentNullException("stream");
+			}
+
 			stream.WriteUInt32(FSHSignature);
 			stream.WriteInt32(this.size);
 			stream.WriteInt32(this.imageCount);

@@ -207,6 +207,14 @@ namespace FshDatIO
             this.disposed = false;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BitmapEntry"/> class.
+        /// </summary>
+        /// <param name="format">The format of the entry.</param>
+        /// <param name="dirName">The name of the parent <see cref="FSHDirEntry"/>.</param>
+        /// <param name="embeddedMipCount">The embedded mipmap count.</param>
+        /// <param name="mipsPacked"><c>true</c> if the embedded mapmaps are packed; otherwise, <c>false</c>.</param>
+        /// <param name="miscData">The misc data from the <see cref="EntryHeader"/>.</param>
         internal BitmapEntry(FshImageFormat format, string dirName, int embeddedMipCount, bool mipsPacked, ushort[] miscData)
         {
             this.bitmap = null;

@@ -258,13 +258,44 @@ namespace FshDatIO
             unchecked
             {
                 int hash = this.type.GetHashCode();
-                hash = hash * this.group.GetHashCode();
-                hash = hash * this.instance.GetHashCode();
-                hash = hash * this.location.GetHashCode();
-                hash = hash * this.fileSize.GetHashCode();
+                hash = (hash * 127) + this.group.GetHashCode();
+                hash = (hash * 127) + this.instance.GetHashCode();
+                hash = (hash * 127) + this.location.GetHashCode();
+                hash = (hash * 127) + this.fileSize.GetHashCode();
 
                 return hash;
             }
+        }
+
+        /// <summary>
+        /// Determines whether two DatIndex instances have the same value.
+        /// </summary>
+        /// <param name="index1">The first object to compare.</param>
+        /// <param name="index2">The second object to compare.</param>
+        /// <returns>
+        /// <c>true</c> if the DatIndex instances are equal; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool operator ==(DatIndex index1, DatIndex index2)
+        {
+            if (((object)index1) == null || ((object)index2) == null)
+            {
+                return Object.Equals(index1, index2);
+            }
+
+            return index1.Equals(index2);
+        }
+
+        /// <summary>
+        /// Determines whether two DatIndex instances do not have the same value.
+        /// </summary>
+        /// <param name="index1">The first object to compare.</param>
+        /// <param name="index2">The second object to compare.</param>
+        /// <returns>
+        /// <c>true</c> if the DatIndex instances are not equal; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool operator !=(DatIndex index1, DatIndex index2)
+        {
+            return !(index1 == index2);
         }
     }
 }

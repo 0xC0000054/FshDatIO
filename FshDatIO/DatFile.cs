@@ -343,7 +343,7 @@ namespace FshDatIO
         /// </summary>
         public void Close()
         {
-            Dispose(true);
+            Dispose();
         }
 
         /// <summary>

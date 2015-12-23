@@ -1199,8 +1199,6 @@ namespace FshDatIO
                     this.bitmaps = null;
                 }
             }
-
-            GC.SuppressFinalize(this);
         }
 
 

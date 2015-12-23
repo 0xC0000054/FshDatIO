@@ -371,6 +371,7 @@ namespace FshDatIO
                 }
 
                 int copyLength = this.prev_length;
+                // Subtract one before encoding the copy offset, the QFS decompression algorithm adds it back when decoding.
                 int copyOffset = endOffset - startOffset - 1;
 
                 if (copyLength <= 10 && copyOffset < 1024) // 2 byte op code  0x00 - 0x7f

@@ -639,36 +639,26 @@ namespace FshDatIO
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
             if (!this.disposed)
             {
                 this.disposed = true;
 
-                if (disposing)
+                if (this.stream != null)
                 {
-                    if (this.stream != null)
-                    {
-                        this.stream.Dispose();
-                        this.stream = null;
-                    }
-
-                    if (this.indices != null)
-                    {
-                        this.indices.Dispose();
-                        this.indices = null;
-                    }
-
-                    this.datFileName = null;
-                    this.loaded = false;
+                    this.stream.Dispose();
+                    this.stream = null;
                 }
+
+                if (this.indices != null)
+                {
+                    this.indices.Dispose();
+                    this.indices = null;
+                }
+
+                this.datFileName = null;
+                this.loaded = false;
             }
         }
-
         #endregion
     }
 }

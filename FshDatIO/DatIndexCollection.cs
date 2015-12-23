@@ -108,26 +108,17 @@ namespace FshDatIO
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
             if (!this.disposed)
             {
                 this.disposed = true;
 
-                if (disposing)
+                for (int i = 0; i < Count; i++)
                 {
-                    for (int i = 0; i < Count; i++)
+                    DatIndex index = Items[i];
+                    if (index.FileItem != null)
                     {
-                        DatIndex index = Items[i];
-                        if (index.FileItem != null)
-                        {
-                            index.FileItem.Dispose();
-                            index.FileItem = null;
-                        }
+                        index.FileItem.Dispose();
+                        index.FileItem = null;
                     }
                 }
             }

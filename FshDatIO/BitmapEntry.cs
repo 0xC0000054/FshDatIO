@@ -233,13 +233,7 @@ namespace FshDatIO
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (!this.disposed && disposing)
+            if (!this.disposed)
             {
                 this.disposed = true;
 

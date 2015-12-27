@@ -331,6 +331,11 @@ namespace FshDatIO
                 this.outIndex = QfsHeaderSize;
                 this.lastWritePosition = 0;
                 this.prefixLength = prefixLength;
+
+                for (int i = 0; i < this.head.Length; i++)
+                {
+                    this.head[i] = -1;
+                }
             }
 
             private bool WriteCompressedData(int startOffset)
@@ -577,11 +582,6 @@ namespace FshDatIO
 
             public byte[] Compress()
             {
-                for (int i = 0; i < head.Length; i++)
-                {
-                    head[i] = -1;
-                }
-
                 this.hash = input[0];
                 this.hash = ((this.hash << hashShift) ^ input[1]) & hashMask;
 

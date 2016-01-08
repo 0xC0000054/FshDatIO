@@ -478,7 +478,7 @@ namespace FshDatIO
             }
 
             string saveFileName = fileName;
-            if (fileName == this.datFileName && this.stream != null)
+            if (fileName.Equals(this.datFileName, StringComparison.OrdinalIgnoreCase) && this.stream != null)
             {
                 // When overwriting an existing file, we save to a temporary file first and then use File.Copy to overwrite it if the save was successful.
                 saveFileName = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());

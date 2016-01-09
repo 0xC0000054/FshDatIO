@@ -29,16 +29,18 @@ namespace FshDatIO
                 startOffset = 4;
             }
 
+            // The first byte contains flags that describes the information in the header.
+            if ((compressedData[0] & 1) != 0)
+            {
+                // Some files may write the compressed size after the signature.
+                startOffset += 3;
+            }
+
             int outLength = ((compressedData[startOffset + 2] << 16) | (compressedData[startOffset + 3] << 8)) | compressedData[startOffset + 4];
 
             byte[] unCompressedData = new byte[outLength];
 
             int index = startOffset + 5;
-            if (index == 5 && (compressedData[0] & 1) != 0)
-            {
-                // Some NFS files may need to be aligned to an 4 byte boundary.
-                index = 8;
-            }
 
             byte ccbyte1 = 0; // control char 0
             byte ccbyte2 = 0; // control char 1

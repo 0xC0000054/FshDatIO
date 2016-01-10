@@ -18,7 +18,7 @@ namespace FshDatIO
                 throw new ArgumentNullException("compressedData");
             }
 
-            int startOffset = 0;
+            int headerStartOffset = 0;
 
             if ((compressedData[0] & 0xfe) != 0x10 || compressedData[1] != 0xFB)
             {
@@ -26,21 +26,25 @@ namespace FshDatIO
                 {
                     throw new NotSupportedException(Properties.Resources.UnsupportedCompressionFormat);
                 }
-                startOffset = 4;
+                headerStartOffset = 4;
             }
+
+            int index = headerStartOffset + 2;
 
             // The first byte contains flags that describes the information in the header.
-            if ((compressedData[0] & 1) != 0)
+            if ((compressedData[headerStartOffset] & 1) != 0)
             {
                 // Some files may write the compressed size after the signature.
-                startOffset += 3;
+                index += 3;
+            }
+            int outLength = 0;
+            for (int i = 2; i >= 0; i--)
+            {
+                outLength |= (compressedData[index] << (i * 8));
+                index++;
             }
 
-            int outLength = ((compressedData[startOffset + 2] << 16) | (compressedData[startOffset + 3] << 8)) | compressedData[startOffset + 4];
-
             byte[] unCompressedData = new byte[outLength];
-
-            int index = startOffset + 5;
 
             byte ccbyte1 = 0; // control char 0
             byte ccbyte2 = 0; // control char 1

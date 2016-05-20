@@ -77,6 +77,22 @@ namespace FshDatIO
         /// </value>
         public ushort[] GetMiscData()
         {
+            if (this.misc == null)
+            {
+                return null;
+            }
+
+            return (ushort[])this.misc.Clone();
+        }
+
+        /// <summary>
+        /// Gets the miscellaneous entry data without copying the array.
+        /// </summary>
+        /// <value>
+        /// The misc.
+        /// </value>
+        internal ushort[] GetMiscDataReadOnly()
+        {
             return this.misc;
         }
 

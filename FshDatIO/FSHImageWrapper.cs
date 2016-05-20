@@ -437,7 +437,7 @@ namespace FshDatIO
 
                     int numScales = 0;
                     bool packedMbp = false;
-                    ushort[] miscData = eHeader.GetMiscData();
+                    ushort[] miscData = eHeader.GetMiscDataReadOnly();
 
                     if (!entryCompressed && (miscData[3] & 0x0fff) == 0)
                     {
@@ -1060,7 +1060,7 @@ namespace FshDatIO
 
                                 if (attachCode == 0x69 || attachCode == 0x7c)
                                 {
-                                    ushort[] miscData = item.Header.GetMiscData();
+                                    ushort[] miscData = item.Header.GetMiscDataReadOnly();
                                     for (int m = 0; m < 4; m++)
                                     {
                                         stream.WriteUInt16(miscData[m]);

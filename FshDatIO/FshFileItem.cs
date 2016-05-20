@@ -137,13 +137,14 @@ namespace FshDatIO
                 }
             }
         }
+        
         /// <summary>
         /// Gets a value indicating whether this <see cref="FshFileItem"/> is loaded.
         /// </summary>
         /// <value>
         ///   <c>true</c> if loaded; otherwise, <c>false</c>.
         /// </value>
-        public bool Loaded
+        internal bool Loaded
         {
             get
             {

@@ -124,13 +124,13 @@ namespace FshDatIO
         /// <value>
         /// The file item.
         /// </value>
-        public FshFileItem FileItem
+        internal FshFileItem FileItem
         {
             get
             {
                 return this.fileItem;
             }
-            internal set
+            set
             {
                 this.fileItem = value;
             }

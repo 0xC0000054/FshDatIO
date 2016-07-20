@@ -50,14 +50,6 @@ namespace FshDatIO
         }
 
         /// <summary>
-        /// Gets the raw data.
-        /// </summary>
-        public byte[] GetRawData()
-        {
-            return this.rawData;
-        }
-
-        /// <summary>
         /// Gets the FSH image header.
         /// </summary>
         public FSHHeader Header

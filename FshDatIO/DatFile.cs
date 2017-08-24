@@ -442,10 +442,13 @@ namespace FshDatIO
             for (int i = 0; i < this.indices.Count; i++)
             {
                 DatIndex index = indices[i];
-                if (index.Type == FshTypeID && index.Group == group && index.Instance == instance && index.IndexState == DatIndexState.None)
+                if (index.Type == FshTypeID && index.Group == group && index.Instance == instance)
                 {
-                    index.IndexState = DatIndexState.Deleted;
-                    this.dirty = true;
+                    if (index.IndexState == DatIndexState.Modified || index.IndexState == DatIndexState.None)
+                    {
+                        index.IndexState = DatIndexState.Deleted;
+                        this.dirty = true; 
+                    }
                 }
             }
         }

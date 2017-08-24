@@ -81,6 +81,7 @@
     <Compile Include="DatIndex.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DirectoryEntry.cs" />
+    <Compile Include="DirectoryEntryCollection.cs" />
     <Compile Include="DXTComp.cs" />
     <Compile Include="EntryHeader.cs" />
     <Compile Include="FshAttachment.cs" />

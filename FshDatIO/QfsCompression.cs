@@ -103,40 +103,23 @@ namespace FshDatIO
                     copyOffset = ((ccbyte1 & 0x60) << 3) + ccbyte2 + 1;
                 }
 
-                // Buffer.BlockCopy is faster than a for loop for data larger than 32 bytes.
-                if (plainCount > 32)
+
+                for (int i = 0; i < plainCount; i++)
                 {
-                    Buffer.BlockCopy(compressedData, index, unCompressedData, outIndex, plainCount);
-                    index += plainCount;
-                    outIndex += plainCount;
-                }
-                else
-                {
-                    for (int i = 0; i < plainCount; i++)
-                    {
-                        unCompressedData[outIndex] = compressedData[index];
-                        index++;
-                        outIndex++;
-                    }
+                    unCompressedData[outIndex] = compressedData[index];
+                    index++;
+                    outIndex++;
                 }
 
                 if (copyCount > 0)
                 {
                     int srcIndex = outIndex - copyOffset;
 
-                    if (copyCount > 32)
+                    for (int i = 0; i < copyCount; i++)
                     {
-                        Buffer.BlockCopy(unCompressedData, srcIndex, unCompressedData, outIndex, copyCount);
-                        outIndex += copyCount;
-                    }
-                    else
-                    {
-                        for (int i = 0; i < copyCount; i++)
-                        {
-                            unCompressedData[outIndex] = unCompressedData[srcIndex];
-                            srcIndex++;
-                            outIndex++;
-                        }
+                        unCompressedData[outIndex] = unCompressedData[srcIndex];
+                        srcIndex++;
+                        outIndex++;
                     }
                 }
             }

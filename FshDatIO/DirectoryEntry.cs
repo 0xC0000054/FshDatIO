@@ -16,6 +16,50 @@ namespace FshDatIO
         public const int SizeOf = 16;
 
         /// <summary>
+        /// Gets the type id of the compression directory.
+        /// </summary>
+        public uint Type
+        {
+            get
+            {
+                return this.type;
+            }
+        }
+
+        /// <summary>
+        /// Gets the group id of the compression directory.
+        /// </summary>
+        public uint Group
+        {
+            get
+            {
+                return this.group;
+            }
+        }
+
+        /// <summary>
+        /// Gets the instance id of the compression directory.
+        /// </summary>
+        public uint Instance
+        {
+            get
+            {
+                return this.instance;
+            }
+        }
+
+        /// <summary>
+        /// Gets the uncompressed size of the file.
+        /// </summary>
+        public uint UncompressedSize
+        {
+            get
+            {
+                return this.unCompressedSize;
+            }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryEntry"/> class.
         /// </summary>
         /// <param name="type">The type id of the entry.</param>

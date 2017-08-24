@@ -22,6 +22,8 @@ namespace FshDatIO
 
         private const uint FshTypeID = 0x7ab50e44;
         private const uint CompressionDirectoryType = 0xe86b1eef;
+        private const uint CompressionDirectoryGroup = 0xe86b1eef;
+        private const uint CompressionDirectoryInstance = 0x286b1f03;
         /// <summary>
         /// The start date of unix time in UTC format
         /// </summary>
@@ -579,7 +581,7 @@ namespace FshDatIO
                     }
 
                     size = (uint)(compDirs.Count * DirectoryEntry.SizeOf);
-                    saveIndices.Add(new DatIndex(CompressionDirectoryType, 0xe86b1eef, 0x286b1f03, (uint)location, size));
+                    saveIndices.Add(new DatIndex(CompressionDirectoryType, CompressionDirectoryGroup, CompressionDirectoryInstance, (uint)location, size));
                 }
 
                 uint entryCount = (uint)saveIndices.Count;

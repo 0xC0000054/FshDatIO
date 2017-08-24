@@ -14,6 +14,7 @@ namespace FshDatIO
     {
         private DatHeader header;
         private DatIndexCollection indices;
+        private DirectoryEntryCollection compressionDirectory;
         private string datFileName;
         private bool loaded;
         private bool dirty;
@@ -100,6 +101,7 @@ namespace FshDatIO
         {
             this.header = new DatHeader();
             this.indices = new DatIndexCollection();
+            this.compressionDirectory = null;
             this.datFileName = null;
             this.loaded = false;
             this.dirty = false;
@@ -124,6 +126,7 @@ namespace FshDatIO
 
             this.header = null;
             this.indices = null;
+            this.compressionDirectory = null;
             this.datFileName = path;
             this.dirty = false;
             this.loaded = false;
@@ -173,6 +176,26 @@ namespace FshDatIO
                     uint size = stream.ReadUInt32();
 
                     this.indices.Add(new DatIndex(type, group, instance, location, size));
+                }
+
+                DatIndex compressionDirectoryIndex = this.indices.Find(CompressionDirectoryType, CompressionDirectoryGroup, CompressionDirectoryInstance);
+                if (compressionDirectoryIndex != null)
+                {
+                    stream.Seek(compressionDirectoryIndex.Location, SeekOrigin.Begin);
+
+                    int recordCount = (int)(compressionDirectoryIndex.FileSize / DirectoryEntry.SizeOf);
+
+                    this.compressionDirectory = new DirectoryEntryCollection(recordCount); 
+
+                    for (int i = 0; i < recordCount; i++)
+                    {
+                        uint type = stream.ReadUInt32();
+                        uint group = stream.ReadUInt32();
+                        uint instance = stream.ReadUInt32();
+                        uint uncompressedSize = stream.ReadUInt32();
+
+                        this.compressionDirectory.Add(new DirectoryEntry(type, group, instance, uncompressedSize));
+                    }
                 }
 
                 this.indices.SortByLocation();
@@ -498,7 +521,7 @@ namespace FshDatIO
                 TrimDeletedItems();
 
                 DatIndexCollection saveIndices = new DatIndexCollection(this.indices.Count + 2);
-                List<DirectoryEntry> compDirs = new List<DirectoryEntry>();
+                DirectoryEntryCollection compDirs = new DirectoryEntryCollection();
                 long location = 0;
                 uint size = 0;
 
@@ -552,9 +575,13 @@ namespace FshDatIO
 
                             output.Write(buffer, 0, dataSize);
 
-                            if ((buffer.Length > 5) && ((buffer[0] & 0xfe) == 0x10 && buffer[1] == 0xFB || buffer[4] == 0x10 && buffer[5] == 0xFB))
+                            if (this.compressionDirectory != null)
                             {
-                                compDirs.Add(new DirectoryEntry(index.Type, index.Group, index.Instance, size));
+                                DirectoryEntry entry = this.compressionDirectory.Find(index.Type, index.Group, index.Instance);
+                                if (entry != null)
+                                {
+                                    compDirs.Add(entry);
+                                }
                             }
                             break;
 
@@ -604,6 +631,7 @@ namespace FshDatIO
 
                 this.header = head;
                 this.indices = saveIndices;
+                this.compressionDirectory = compDirs;
                 this.datFileName = fileName;
 
                 this.dirty = false;

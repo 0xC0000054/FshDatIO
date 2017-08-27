@@ -639,7 +639,7 @@ namespace FshDatIO
                 this.dirty = false;
             }
 
-            if (saveFileName != fileName)
+            if (!saveFileName.Equals(fileName, StringComparison.OrdinalIgnoreCase))
             {
                 // Close the old file and copy the new file in its place.
                 this.stream.Dispose();

@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace FshDatIO
-{ 
+{
     static class DXTComp
     {
         #region Squish Decompression Code
@@ -28,7 +28,7 @@ namespace FshDatIO
         CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
         TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
         SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-       
+
         -------------------------------------------------------------------------- */
 
         /// <summary>
@@ -240,8 +240,21 @@ namespace FshDatIO
             }
         }
         #endregion
-        
+
         #region FSHTool Compression code
+        /*
+         * The following code has been adapted from FSHTool version 1.22:
+         *
+         * ===========================================================================
+         * FSHTOOL version 1.22 - (c) Denis Auroux 2002 - auroux@math.polytechnique.fr
+         * ===========================================================================
+         *
+         * Second generation FSH/QFS decompressor/compressor to BMP format
+         * Version 1.22 - copyright (c) Denis Auroux 1998-2002
+         *
+         * FSHTOOL is free software. It is distributed under the terms of the
+         * GNU General Public License. No warranty.
+         */
 
         public static unsafe byte[] CompressFSHToolDXT1(byte* scan0, int width, int height)
         {
